@@ -1,6 +1,5 @@
-#include <iostream>
+#include "api/api.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+    api::StartCommunication();
 }
