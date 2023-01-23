@@ -3,4 +3,11 @@ project(Quirky)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Quirky src/main.cpp src/api/uci/uci_protocol.h src/api/xboard/xboard_protocol.h src/api/api.h src/api/api.cpp src/api/uci/uci_protocol.cpp src/util/io.h src/api/xboard/xboard_protocol.cpp)
+add_library(util src/util/io.h)
+set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
+
+add_library(api src/api/api.cpp src/api/uci/uci_protocol.cpp src/api/xboard/xboard_protocol.cpp)
+target_link_libraries(api util)
+
+add_executable(Quirky src/main.cpp)
+target_link_libraries(Quirky api util)
