@@ -19,7 +19,7 @@ void StartCommunication() {
             StartXBoardProtocol();
             break;
         }
-        io::Print("Undefined protocol name: use either uci or xboard.");
+        util::Print("Undefined protocol name: use either uci or xboard.");
     }
 }
 

@@ -3,11 +3,9 @@
 
 #include <iostream>
 
-namespace io {
+namespace util {
 
-inline void Print() {
-    std::cout << std::endl;
-}
+inline void Print() { std::cout << std::endl; }
 
 template <class First, class... Rest>
 inline void Print(First first, Rest... rest) {
@@ -18,6 +16,6 @@ inline void Print(First first, Rest... rest) {
     Print(rest...);
 }
 
-}  // namespace io
+}  // namespace util
 
 #endif  // QUIRKY_SRC_UTIL_IO_H
