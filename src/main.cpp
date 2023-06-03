@@ -1,5 +1,5 @@
-#include <iostream>
+#include "api/api.h"
 
 int main() {
-    std::cout << "Hello, chess world!" << std::endl;
+    q_api::StartCommunication();
 }
