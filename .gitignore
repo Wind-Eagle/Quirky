@@ -1,0 +1,6 @@
+# CMake directories
+cmake-build-debug/*
+cmake-build-release/*
+
+# IDE
+.idea/*
