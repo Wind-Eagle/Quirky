@@ -32,7 +32,7 @@ struct Board {
         InvalidMoveCount = 10
     };
 
-    Board::FENParseStatus MakeFromFEN(const std::string& fen);
+    Board::FENParseStatus MakeFromFEN(const std::string_view& fen);
     std::string GetFEN() const;
 
   private:

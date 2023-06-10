@@ -76,13 +76,13 @@ inline constexpr uint64_t GetHash32(const uint64_t v0, const uint64_t v1, const 
 
 namespace q_util {
 
-inline constexpr uint64_t GetStringHash(const char* str) {
+inline constexpr uint64_t GetStringHash(const std::string_view& str) {
     uint64_t ans = 0;
     uint64_t cur = 0;
     size_t index = 0;
-    while (str[index] != '\0') {
+    for (const auto c : str) {
         cur <<= 8;
-        cur += str[index++];
+        cur += c;
         if (!(index & 7)) {
             ans = GetHash16(ans, cur);
             cur = 0;

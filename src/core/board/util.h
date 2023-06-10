@@ -37,14 +37,14 @@ inline constexpr bool IsCastlingAllowed(const Castling c, const Castling p) {
     return (c & p) != Castling::None;
 }
 
-inline bool IsCoordStringValid(const std::string& str) {
+inline constexpr bool IsCoordStringValid(const std::string_view& str) {
     if (str.size() != 2) {
         return false;
     }
     return str[0] >= 'a' && str[0] <= 'h' && str[1] >= '1' && str[1] <= '8';
 }
 
-inline coord_t CastStringToCoord(const std::string& str) {
+inline constexpr coord_t CastStringToCoord(const std::string_view& str) {
     if (str == "-") {
         return UNDEFINED_COORD;
     }

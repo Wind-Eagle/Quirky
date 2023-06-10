@@ -172,7 +172,7 @@ inline bool IsMoveCountStringValid(const std::string& str) {
         }                                         \
     } while (false)
 
-Board::FENParseStatus Board::MakeFromFEN(const std::string& fen) {
+Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     std::vector<std::string> parsed_fen = q_util::SplitString(fen);
     Q_CHECK_FEN_PARSE_ERROR(parsed_fen.size() == 6, FENParseStatus::InvalidNumberOfFENFields);
     std::vector<std::string> parsed_position = q_util::SplitString(parsed_fen[0], '/');

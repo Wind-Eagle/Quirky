@@ -11,7 +11,7 @@
 namespace {
 
 template <size_t N>
-inline constexpr std::array<uint64_t, N> MakeRandomArray64(const char* name) {
+inline constexpr std::array<uint64_t, N> MakeRandomArray64(const std::string_view& name) {
     std::array<uint64_t, N> res;
     uint64_t x = q_util::GetStringHash(name);
     for (uint32_t i = 0; i < N; i++) {
