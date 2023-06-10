@@ -25,12 +25,8 @@
     ENUM_ASSIGNMENT_OP(type, ^)   \
     inline constexpr type operator~(const type a) { return type::All ^ a; }
 
-namespace {
-
 #define Q_CONCAT_STRING_WITH_INT_HELPER(prefix, x) prefix #x
 #define Q_CONCAT_STRING_WITH_INT(prefix, a) Q_CONCAT_STRING_WITH_INT_HELPER(prefix, a)
-
-}  // namespace
 
 #define Q_UNIQUE_STRING(prefix) Q_CONCAT_STRING_WITH_INT(prefix, __COUNTER__)
 
@@ -40,18 +36,18 @@ namespace {
 
 #define Q_UNREACHABLE() __builtin_unreachable()
 
-#define Q_PRIVATE_ASSUME(x)  \
+#define Q_ASSUME(x)  \
     do { \
         if (!(x)) { \
             Q_UNREACHABLE(); \
         } \
     } while (false)
 
-#define Q_ASSERT(condition, message) \
-    assert(condition, message)
+#define Q_ASSERT(condition) \
+    assert(condition)
 
-#define Q_STATIC_ASSERT(condition, message) \
-    static_assert(condition, message)
+#define Q_STATIC_ASSERT(condition) \
+    static_assert(condition)
 
 #define Q_EXPECT(condition, message) \
     do {                                 \

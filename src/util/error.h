@@ -3,7 +3,7 @@
 
 enum class QuirkyError : int32_t { UnknownError = -1, UnexpectedValue = 1 };
 
-inline constexpr const char* GetErrorMessage(QuirkyError error) {
+inline constexpr const char* GetErrorMessage(const QuirkyError error) {
     switch (error) {
         case QuirkyError::UnknownError:
             return "Unknown error";

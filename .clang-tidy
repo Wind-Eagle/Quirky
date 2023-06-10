@@ -9,7 +9,7 @@ readability-*, \
 -readability-named-parameter, \
 -readability-misleading-indentation"
 
-HeaderFilterRegex: 'src/.+'
+HeaderFilterRegex: '(src|test)/.+'
 
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase
