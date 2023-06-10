@@ -36,32 +36,30 @@
 
 #define Q_UNREACHABLE() __builtin_unreachable()
 
-#define Q_ASSUME(x)  \
-    do { \
-        if (!(x)) { \
+#define Q_ASSUME(x)          \
+    do {                     \
+        if (!(x)) {          \
             Q_UNREACHABLE(); \
-        } \
+        }                    \
     } while (false)
 
-#define Q_ASSERT(condition) \
-    assert(condition)
+#define Q_ASSERT(condition) assert(condition)
 
-#define Q_STATIC_ASSERT(condition) \
-    static_assert(condition)
+#define Q_STATIC_ASSERT(condition) static_assert(condition)
 
-#define Q_EXPECT(condition, message) \
+#define Q_EXPECT(condition, message)     \
     do {                                 \
         if (Q_UNLIKELY(!(condition))) {  \
             q_util::PrintError(message); \
-        } \
+        }                                \
     } while (false)
 
-#define Q_FATAL_EXPECT(condition, message) \
-    do {                                 \
-        if (Q_UNLIKELY(!(condition))) {  \
-            q_util::PrintError(message); \
+#define Q_FATAL_EXPECT(condition, message)                       \
+    do {                                                         \
+        if (Q_UNLIKELY(!(condition))) {                          \
+            q_util::PrintError(message);                         \
             q_util::ExitWithError(QuirkyError::UnexpectedValue); \
-        } \
+        }                                                        \
     } while (false)
 
 #endif  // QUIRKY_SRC_UTIL_MACRO_H

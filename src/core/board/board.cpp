@@ -124,9 +124,7 @@ inline std::string CastStringToCastling(const Castling c) {
     return res;
 }
 
-inline bool IsMoveSideStringValid(const std::string& str) {
-    return str == "w" || str == "b";
-}
+inline bool IsMoveSideStringValid(const std::string& str) { return str == "w" || str == "b"; }
 
 inline bool IsCastlingStringValid(const std::string& str) {
     if (str.empty() || str.size() > 4) {
@@ -168,23 +166,25 @@ inline bool IsMoveCountStringValid(const std::string& str) {
 }
 
 #define Q_CHECK_FEN_PARSE_ERROR(condition, error) \
-    do {                                      \
-        if (!(condition)) {                   \
-            return error;                     \
-        }                                     \
+    do {                                          \
+        if (!(condition)) {                       \
+            return error;                         \
+        }                                         \
     } while (false)
 
 Board::FENParseStatus Board::MakeFromFEN(const std::string& fen) {
     std::vector<std::string> parsed_fen = q_util::SplitString(fen);
     Q_CHECK_FEN_PARSE_ERROR(parsed_fen.size() == 6, FENParseStatus::InvalidNumberOfFENFields);
     std::vector<std::string> parsed_position = q_util::SplitString(parsed_fen[0], '/');
-    Q_CHECK_FEN_PARSE_ERROR(parsed_position.size() == BOARD_SIDE, FENParseStatus::InvalidNumberOfRows);
+    Q_CHECK_FEN_PARSE_ERROR(parsed_position.size() == BOARD_SIDE,
+                            FENParseStatus::InvalidNumberOfRows);
     for (subcoord_t i = 0; i < BOARD_SIDE; i++) {
         subcoord_t j = 0;
         for (auto c : parsed_position[i]) {
             Q_CHECK_FEN_PARSE_ERROR(j < BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
             if (isdigit(c)) {
-                Q_CHECK_FEN_PARSE_ERROR((c - '0') > 0 && (c - '0') <= BOARD_SIDE, FENParseStatus::InvalidSizeOfColumnSkip);
+                Q_CHECK_FEN_PARSE_ERROR((c - '0') > 0 && (c - '0') <= BOARD_SIDE,
+                                        FENParseStatus::InvalidSizeOfColumnSkip);
                 for (coord_t cur = j; cur < j + c - '0'; cur++) {
                     cells[MakeCoord(InvertSubcoord(i), cur)] = EMPTY_CELL;
                 }
@@ -203,11 +203,14 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string& fen) {
     move_side = CastCharToColor(parsed_fen[1][0]);
     Q_CHECK_FEN_PARSE_ERROR(IsCastlingStringValid(parsed_fen[2]), FENParseStatus::InvalidCastling);
     castling = CastStringToCastling(parsed_fen[2]);
-    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordStringValid(parsed_fen[3]), FENParseStatus::InvalidEnPassantCoord);
+    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordStringValid(parsed_fen[3]),
+                            FENParseStatus::InvalidEnPassantCoord);
     en_passant_coord = CastStringToCoord(parsed_fen[3]);
-    Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[4]), FENParseStatus::InvalidQuietMoveCount);
+    Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[4]),
+                            FENParseStatus::InvalidQuietMoveCount);
     quiet_move_count = stoi(parsed_fen[4]);
-    Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[5]), FENParseStatus::InvalidMoveCount);
+    Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[5]),
+                            FENParseStatus::InvalidMoveCount);
     move_count = stoi(parsed_fen[5]) * 2 - (move_side == Color::White ? 1 : 0);
     MakeBitboards();
     MakeHash();

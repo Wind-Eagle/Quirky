@@ -50,7 +50,9 @@ constexpr coord_t UNDEFINED_COORD = -1;
 
 inline constexpr bool IsSubcoordValid(const subcoord_t c) { return c >= 0 && c < BOARD_SIDE; }
 
-inline constexpr bool IsCoordValid(const subcoord_t c) { return (c == UNDEFINED_COORD) || (c >= 0 && c < BOARD_SIZE); }
+inline constexpr bool IsCoordValid(const subcoord_t c) {
+    return (c == UNDEFINED_COORD) || (c >= 0 && c < BOARD_SIZE);
+}
 
 inline constexpr bool IsColorValid(const Color c) {
     return static_cast<int8_t>(c) == 0 || static_cast<int8_t>(c) == 1;

@@ -1,9 +1,10 @@
 #include "api.h"
-#include "uci/uci_protocol.h"
-#include "xboard/xboard_protocol.h"
-#include "../util/io.h"
 
 #include <iostream>
+
+#include "../util/io.h"
+#include "uci/uci_protocol.h"
+#include "xboard/xboard_protocol.h"
 
 namespace q_api {
 

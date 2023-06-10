@@ -25,6 +25,6 @@ inline constexpr subcoord_t GetYSubcoord(const coord_t c) {
     return c & ((1 << BOARD_SIDE_LOG) - 1);
 }
 
-}  // namespace
+}  // namespace q_core
 
 #endif  // QUIRKY_SRC_CORE_BOARD_GEOMETRY_H

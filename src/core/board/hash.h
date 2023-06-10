@@ -28,7 +28,7 @@ inline constexpr std::array<uint64_t, N> MakeRandomArray64(const char* name) {
 
 namespace q_core {
 
-constexpr std::array<hash_t, BOARD_SIZE * NUMBER_OF_CELLS> ZOBRIST_HASH_CELLS =
+constexpr std::array<hash_t, BOARD_SIZE* NUMBER_OF_CELLS> ZOBRIST_HASH_CELLS =
     MakeRandomArray64<BOARD_SIZE * NUMBER_OF_CELLS>(Q_UNIQUE_STRING("ZOBRIST"));
 constexpr std::array<hash_t, BOARD_SIZE> ZOBRIST_HASH_EN_PASSANT_COORD =
     MakeRandomArray64<BOARD_SIZE>(Q_UNIQUE_STRING("ZOBRIST"));

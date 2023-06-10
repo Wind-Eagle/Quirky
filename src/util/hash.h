@@ -61,7 +61,7 @@ inline constexpr uint64_t GetHash16(const uint64_t v0, const uint64_t v1) {
 }
 
 inline constexpr uint64_t GetHash32(const uint64_t v0, const uint64_t v1, const uint64_t v2,
-                                 const uint64_t v3) {
+                                    const uint64_t v3) {
     constexpr uint64_t LEN = 32;
     const uint64_t mul = HASH_K2 + LEN * 2;
     const uint64_t a = v0 * HASH_K1;
@@ -69,7 +69,7 @@ inline constexpr uint64_t GetHash32(const uint64_t v0, const uint64_t v1, const 
     const uint64_t c = v2 * mul;
     const uint64_t d = v3 * HASH_K2;
     return FinalizeHash(RotateRight(a + b, 43) + RotateRight(c, 30) + d,
-                                 a + RotateRight(b + HASH_K2, 18) + c, mul);
+                        a + RotateRight(b + HASH_K2, 18) + c, mul);
 }
 
 }  // namespace

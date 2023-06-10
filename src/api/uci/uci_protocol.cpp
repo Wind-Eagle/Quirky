@@ -10,4 +10,4 @@ void StartUciProtocol() {
         "yet.");
 }
 
-}  // namespace api
+}  // namespace q_api

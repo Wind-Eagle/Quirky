@@ -8,4 +8,3 @@ void StartXBoardProtocol();
 }  // namespace q_api
 
 #endif  // QUIRKY_SRC_API_XBOARD_XBOARD_PROTOCOL_H
-

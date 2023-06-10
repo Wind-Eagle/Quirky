@@ -103,7 +103,8 @@ void TestErrors() {
     EXPECT_EQ(parse_status, q_core::Board::FENParseStatus::InvalidSizeOfColumnSkip);
     fen = "r1bqk2r/2pp1ppp/p1n2n2/1pb1p3/4P93/1B3N2/PPPP1PPP/RNBQ1RK1 w kq - 2 7";
     parse_status = board.MakeFromFEN(fen);
-    EXPECT_TRUE(parse_status == q_core::Board::FENParseStatus::InvalidSizeOfColumnSkip || parse_status ==q_core::Board::FENParseStatus::InvalidNumberOfColumns);
+    EXPECT_TRUE(parse_status == q_core::Board::FENParseStatus::InvalidSizeOfColumnSkip ||
+                parse_status == q_core::Board::FENParseStatus::InvalidNumberOfColumns);
     fen = "r1wqk2r/2pp1ppp/p1n2n2/1pb1p3/4P3/1B3N2/PPPP1PPP/RNBQ1RK1 w kq - 2 7";
     parse_status = board.MakeFromFEN(fen);
     EXPECT_EQ(parse_status, q_core::Board::FENParseStatus::InvalidCell);
@@ -130,21 +131,13 @@ void TestErrors() {
     EXPECT_EQ(parse_status, q_core::Board::FENParseStatus::InvalidMoveCount);
 }
 
-TEST(CoreBoardMakeFromFEN, Startpos) {
-    TestStartpos();
-}
+TEST(CoreBoardMakeFromFEN, Startpos) { TestStartpos(); }
 
-TEST(CoreBoardMakeFromFEN, TrickyPos) {
-    TestTrickyPos();
-}
+TEST(CoreBoardMakeFromFEN, TrickyPos) { TestTrickyPos(); }
 
-TEST(CoreBoardMakeFromFEN, MoveCount) {
-    TestMoveCount();
-}
+TEST(CoreBoardMakeFromFEN, MoveCount) { TestMoveCount(); }
 
-TEST(CoreBoardMakeFromFEN, Errors) {
-    TestErrors();
-}
+TEST(CoreBoardMakeFromFEN, Errors) { TestErrors(); }
 
 TEST(CoreBoardMakeFromFEN, Rewrite) {
     TestStartpos();
