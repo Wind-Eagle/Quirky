@@ -1,8 +1,8 @@
 #ifndef QUIRKY_SRC_CORE_BOARD_UTIL_H
 #define QUIRKY_SRC_CORE_BOARD_UTIL_H
 
-#include "geometry.h"
-#include "types.h"
+#include "board/geometry.h"
+#include "board/types.h"
 
 namespace {
 

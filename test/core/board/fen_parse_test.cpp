@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../../../src/core/board/board.h"
-#include "../../../src/core/board/util.h"
+#include "../../../src/core/util.h"
 
 void TestStartpos() {
     q_core::Board board;
@@ -30,7 +30,7 @@ void TestStartpos() {
     EXPECT_EQ(board.en_passant_coord, q_core::UNDEFINED_COORD);
     EXPECT_EQ(board.castling, q_core::Castling::All);
     EXPECT_EQ(board.move_side, q_core::Color::White);
-    EXPECT_EQ(board.quiet_move_count, 0);
+    EXPECT_EQ(board.fifty_rule_move_count, 0);
     EXPECT_EQ(board.move_count, 1);
     EXPECT_EQ(board.GetFEN(), fen);
 }
@@ -61,7 +61,7 @@ void TestTrickyPos() {
     EXPECT_NE(board.hash, 0);
     EXPECT_EQ(board.en_passant_coord, q_core::CastStringToCoord("a3"));
     EXPECT_EQ(board.move_side, q_core::Color::Black);
-    EXPECT_EQ(board.quiet_move_count, 0);
+    EXPECT_EQ(board.fifty_rule_move_count, 0);
     EXPECT_EQ(board.move_count, 22);
     EXPECT_EQ(board.GetFEN(), fen);
 }
@@ -71,13 +71,13 @@ void TestMoveCount() {
     std::string fen = "8/1R1K4/6r1/3k4/5b2/8/8/8 b - - 99 171";
     q_core::Board::FENParseStatus parse_status = board.MakeFromFEN(fen);
     EXPECT_EQ(parse_status, q_core::Board::FENParseStatus::Ok);
-    EXPECT_EQ(board.quiet_move_count, 99);
+    EXPECT_EQ(board.fifty_rule_move_count, 99);
     EXPECT_EQ(board.move_count, 342);
     EXPECT_EQ(board.castling, q_core::Castling::None);
     fen = "2K5/1R6/6r1/2k5/8/8/3b4/8 w - - 94 169";
     parse_status = board.MakeFromFEN(fen);
     EXPECT_EQ(parse_status, q_core::Board::FENParseStatus::Ok);
-    EXPECT_EQ(board.quiet_move_count, 94);
+    EXPECT_EQ(board.fifty_rule_move_count, 94);
     EXPECT_EQ(board.move_count, 337);
 }
 

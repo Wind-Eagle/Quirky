@@ -4,9 +4,9 @@
 
 #include "../../util/bit.h"
 #include "../../util/string.h"
+#include "../util.h"
 #include "geometry.h"
 #include "hash.h"
-#include "util.h"
 
 namespace q_core {
 
@@ -208,7 +208,7 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     en_passant_coord = CastStringToCoord(parsed_fen[3]);
     Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[4]),
                             FENParseStatus::InvalidQuietMoveCount);
-    quiet_move_count = stoi(parsed_fen[4]);
+    fifty_rule_move_count = stoi(parsed_fen[4]);
     Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[5]),
                             FENParseStatus::InvalidMoveCount);
     move_count = stoi(parsed_fen[5]) * 2 - (move_side == Color::White ? 1 : 0);
@@ -243,7 +243,7 @@ std::string Board::GetFEN() const {
     res += {' ', CastColorToChar(move_side)};
     res += " " + CastStringToCastling(castling);
     res += " " + CastCoordToString(en_passant_coord);
-    res += " " + std::to_string(quiet_move_count);
+    res += " " + std::to_string(fifty_rule_move_count);
     res += " " + std::to_string((move_count + 1) / 2);
     return res;
 }

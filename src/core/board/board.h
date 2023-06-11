@@ -14,7 +14,7 @@ struct Board {
     coord_t en_passant_coord;
     Castling castling;
     Color move_side;
-    uint8_t quiet_move_count;
+    uint8_t fifty_rule_move_count;
     uint16_t move_count;
     int16_t info;
 
