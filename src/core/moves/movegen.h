@@ -1,27 +1,10 @@
 #ifndef QUIRKY_SRC_CORE_MOVES_MOVEGEN_H
 #define QUIRKY_SRC_CORE_MOVES_MOVEGEN_H
 
+#include "../board/board.h"
 #include "move.h"
 
 namespace q_core {
-
-struct PseudolegalMovegen {
-    void GenerateAllMoves();
-    void GenerateCaptures();
-    void GeneratePromotions();
-    void GenerateSimpleMoves();
-    MoveList moves;
-};
-
-struct LegalMovegen {
-    void Init();
-    void GenerateAllMoves();
-    void GenerateCaptures();
-    void GeneratePromotions();
-    void GenerateSimpleMoves();
-    MoveList moves;
-    bitboard_t attackers_bitboard;
-};
 
 }  // namespace q_core
 

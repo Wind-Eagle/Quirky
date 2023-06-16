@@ -18,7 +18,7 @@ struct Board {
     uint16_t move_count;
     int16_t info;
 
-    enum class FENParseStatus {
+    enum class FENParseStatus : int8_t {
         Ok = 0,
         InvalidNumberOfFENFields = 1,
         InvalidNumberOfRows = 2,

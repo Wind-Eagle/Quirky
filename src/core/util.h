@@ -22,6 +22,16 @@ inline constexpr bool IsCellWithPiece(const cell_t c) {
     return c != UNDEFINED_CELL && c != EMPTY_CELL;
 }
 
+inline constexpr Color GetInvertedColor(const Color c) {
+    Q_ASSERT(IsColorValid(c));
+    return c == Color::White ? Color::Black : Color::White;
+}
+
+inline constexpr bitboard_t MakeBitboardFromCoord(const coord_t c) {
+    Q_ASSERT(IsCoordValidAndDefined(c));
+    return static_cast<bitboard_t>(1ULL << static_cast<uint8_t>(c));
+}
+
 inline constexpr Color GetCellColor(const cell_t c) {
     Q_ASSERT(IsCellValid(c) && IsCellWithPiece(c));
     return c <= COLOR_OFFSET ? Color::White : Color::Black;
@@ -58,7 +68,7 @@ inline std::string CastCoordToString(const coord_t c) {
         return "-";
     }
     return std::string(
-        {static_cast<char>(GetYSubcoord(c) + 'a'), static_cast<char>(GetXSubcoord(c) + '1')});
+        {static_cast<char>(GetFile(c) + 'a'), static_cast<char>(GetRank(c) + '1')});
 }
 
 }  // namespace q_core

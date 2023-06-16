@@ -46,12 +46,16 @@ constexpr int8_t NUMBER_OF_CELLS = 13;
 constexpr cell_t EMPTY_CELL = 0;
 constexpr cell_t UNDEFINED_CELL = -1;
 
-constexpr coord_t UNDEFINED_COORD = -1;
+constexpr coord_t UNDEFINED_COORD = BOARD_SIZE;
 
 inline constexpr bool IsSubcoordValid(const subcoord_t c) { return c >= 0 && c < BOARD_SIDE; }
 
 inline constexpr bool IsCoordValid(const subcoord_t c) {
     return (c == UNDEFINED_COORD) || (c >= 0 && c < BOARD_SIZE);
+}
+
+inline constexpr bool IsCoordValidAndDefined(const subcoord_t c) {
+    return c >= 0 && c < BOARD_SIZE;
 }
 
 inline constexpr bool IsColorValid(const Color c) {
