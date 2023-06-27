@@ -46,7 +46,7 @@ constexpr int8_t NUMBER_OF_CELLS = 13;
 constexpr cell_t EMPTY_CELL = 0;
 constexpr cell_t UNDEFINED_CELL = -1;
 
-constexpr coord_t UNDEFINED_COORD = BOARD_SIZE;
+constexpr coord_t UNDEFINED_COORD = -1;
 
 inline constexpr bool IsSubcoordValid(const subcoord_t c) { return c >= 0 && c < BOARD_SIDE; }
 

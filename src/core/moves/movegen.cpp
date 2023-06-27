@@ -16,7 +16,7 @@ inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t src) {
         Q_ASSERT(q_util::GetHighestBit(src) + delta < 64);
         return src << delta;
     } else {
-        Q_ASSERT(q_util::GetHighestBit(src) + delta >= 0);
+        Q_ASSERT(q_util::GetLowestBit(src) + delta >= 0);
         return src >> (-delta);
     }
 }
@@ -94,8 +94,10 @@ void GeneratePawnCaptures(const Board& board, MoveList& list, const bitboard_t s
 
 template <Color c, PromotionPolicy pp>
 void GenerateAllPawnCaptures(const Board& board, MoveList& list, const bitboard_t src) {
-    const bitboard_t dst = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)] |
-                           MakeBitboardFromCoord(board.en_passant_coord);
+    const bitboard_t dst = (board.en_passant_coord != UNDEFINED_COORD
+                                ? board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)] |
+                                      MakeBitboardFromCoord(board.en_passant_coord)
+                                : board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)]);
     GeneratePawnCaptures<c, pp>(board, list, src, dst);
 }
 
