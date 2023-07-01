@@ -6,7 +6,7 @@
 
 namespace q_core {
 
-constexpr std::size_t MAX_NUMBER_OF_MOVES = 300;
+constexpr std::size_t MAX_MOVES_COUNT = 300;
 
 constexpr uint8_t CAPTURE_MOVE_BIT = (1 << 0);
 constexpr uint8_t PAWN_DOUBLE_MOVE_BIT = (1 << 1);
@@ -33,7 +33,7 @@ struct Move {
 };
 
 struct MoveList {
-    Move moves[MAX_NUMBER_OF_MOVES];
+    Move moves[MAX_MOVES_COUNT];
     std::size_t size = 0;
 };
 

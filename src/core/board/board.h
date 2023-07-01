@@ -34,6 +34,7 @@ struct Board {
 
     Board::FENParseStatus MakeFromFEN(const std::string_view& fen);
     std::string GetFEN() const;
+    bool IsValid() const;
 
   private:
     void MakeBitboards();

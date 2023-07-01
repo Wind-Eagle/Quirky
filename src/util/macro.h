@@ -54,11 +54,11 @@
         }                                \
     } while (false)
 
-#define Q_FATAL_EXPECT(condition, message)                       \
+#define Q_FATAL_EXPECT(condition, error, message)                       \
     do {                                                         \
         if (Q_UNLIKELY(!(condition))) {                          \
             q_util::PrintError(message);                         \
-            q_util::ExitWithError(QuirkyError::UnexpectedValue); \
+            q_util::ExitWithError(error); \
         }                                                        \
     } while (false)
 

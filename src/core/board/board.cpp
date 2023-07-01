@@ -1,5 +1,6 @@
 #include "board.h"
 
+#include <cstring>
 #include <vector>
 
 #include "../../util/bit.h"
@@ -146,14 +147,17 @@ inline bool IsCastlingStringValid(const std::string& str) {
     return true;
 }
 
-inline bool IsEnPassantCoordStringValid(const std::string& str) {
-    if (str == "-") {
-        return true;
-    }
-    if (!IsCoordStringValid(str)) {
+constexpr subcoord_t WHITE_EN_PASSANT_RANK = 5;
+constexpr subcoord_t BLACK_EN_PASSANT_RANK = 2;
+
+inline bool IsEnPassantCoordValid(const Color c, const coord_t coord) {
+    if (!IsCoordValid(coord)) {
         return false;
     }
-    return str[1] == '3' || str[1] == '6';
+    if (coord == UNDEFINED_COORD) {
+        return true;
+    }
+    return GetRank(coord) == (c == Color::White ? WHITE_EN_PASSANT_RANK : BLACK_EN_PASSANT_RANK);
 }
 
 inline bool IsMoveCountStringValid(const std::string& str) {
@@ -203,7 +207,7 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     move_side = CastCharToColor(parsed_fen[1][0]);
     Q_CHECK_FEN_PARSE_ERROR(IsCastlingStringValid(parsed_fen[2]), FENParseStatus::InvalidCastling);
     castling = CastStringToCastling(parsed_fen[2]);
-    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordStringValid(parsed_fen[3]),
+    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordValid(move_side, CastStringToCoord(parsed_fen[3])),
                             FENParseStatus::InvalidEnPassantCoord);
     en_passant_coord = CastStringToCoord(parsed_fen[3]);
     Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[4]),
@@ -214,10 +218,12 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     move_count = stoi(parsed_fen[5]) * 2 - (move_side == Color::White ? 1 : 0);
     MakeBitboards();
     MakeHash();
+    Q_ASSERT(IsValid());
     return FENParseStatus::Ok;
 }
 
 std::string Board::GetFEN() const {
+    Q_ASSERT(IsValid());
     std::string res;
     for (subcoord_t i = 0; i < BOARD_SIDE; i++) {
         uint8_t block_size = 0;
@@ -246,6 +252,34 @@ std::string Board::GetFEN() const {
     res += " " + std::to_string(fifty_rule_move_count);
     res += " " + std::to_string((move_count + 1) / 2);
     return res;
+}
+
+bool Board::IsValid() const {
+    for (coord_t i = 0; i < BOARD_SIZE; i++) {
+        if (!IsCellValid(cells[i])) {
+            return false;
+        }
+    }
+    if (!(IsCastlingValid(castling) && IsColorValid(move_side) &&
+          IsEnPassantCoordValid(move_side, en_passant_coord))) {
+        return false;
+    }
+    if (q_util::GetBitCount(bb_colors[0]) > 16 || q_util::GetBitCount(bb_colors[1]) > 16) {
+        return false;
+    }
+    if (q_util::GetBitCount(bb_pieces[MakeCell(Color::White, Piece::King)]) != 1 ||
+        q_util::GetBitCount(bb_pieces[MakeCell(Color::Black, Piece::King)]) != 1) {
+        return false;
+    }
+    if ((bb_pieces[MakeCell(Color::White, Piece::Pawn)] |
+         bb_pieces[MakeCell(Color::Black, Piece::Pawn)]) &
+        (RANK_BITBOARD[0] | RANK_BITBOARD[BOARD_SIDE - 1])) {
+        return false;
+    }
+    Board old_board = (*this);
+    old_board.MakeBitboards();
+    old_board.MakeHash();
+    return memcmp(static_cast<void*>(&old_board), this, sizeof(Board)) == 0;
 }
 
 void Board::MakeBitboards() {

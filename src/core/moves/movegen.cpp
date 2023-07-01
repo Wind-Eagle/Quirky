@@ -1,6 +1,7 @@
 #include "movegen.h"
 
 #include "../../util/bit.h"
+#include "magic.h"
 
 namespace q_core {
 
@@ -9,17 +10,6 @@ enum class PromotionPolicy : int8_t { None = 0, OnlyPromotions = 1, All = 2 };
 enum class CapturePolicy : int8_t { None = 0, OnlyCaptures = 1, All = 2 };
 
 constexpr uint8_t PAWN_MOVE_DELTA = BOARD_SIDE;
-
-template <uint8_t delta>
-inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t src) {
-    if constexpr (delta > 0) {
-        Q_ASSERT(q_util::GetHighestBit(src) + delta < 64);
-        return src << delta;
-    } else {
-        Q_ASSERT(q_util::GetLowestBit(src) + delta >= 0);
-        return src >> (-delta);
-    }
-}
 
 template <Color c>
 inline constexpr uint8_t GetPawnMoveDelta() {
@@ -31,9 +21,15 @@ inline constexpr uint8_t GetPawnPromotionLine() {
     return c == Color::White ? BOARD_SIDE - 2 : 1;
 }
 
+template <uint8_t delta>
+inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t b) {
+    return static_cast<bitboard_t>(q_util::MoveAllBitsByDelta<delta>(b));
+}
+
 template <bool c, PromotionPolicy p, bool d>
 void AddPawnMoves(const coord_t src, const coord_t dst, MoveList& list) {
     Q_STATIC_ASSERT(!(c & d));
+    Q_ASSERT(IsCoordValid(src) && IsCoordValid(dst) && list.size < MAX_MOVES_COUNT);
     constexpr uint8_t MAIN_MOVE_BITS =
         (c ? CAPTURE_MOVE_BIT : 0) | (d ? PAWN_DOUBLE_MOVE_BIT : 0) | FIFTY_RULE_MOVE_BIT;
     if constexpr (p != PromotionPolicy::None) {
@@ -53,6 +49,7 @@ void AddPawnMoves(const coord_t src, const coord_t dst, MoveList& list) {
 template <Color c, PromotionPolicy p>
 void GeneratePawnSimpleMoves(const Board& board, MoveList& list, const bitboard_t src,
                              const bitboard_t dst) {
+    Q_ASSERT(IsCoordValid(src) && IsCoordValid(dst) && list.size < MAX_MOVES_COUNT);
     constexpr uint8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta<c>();
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     while (move_dst) {
@@ -64,6 +61,7 @@ void GeneratePawnSimpleMoves(const Board& board, MoveList& list, const bitboard_
 template <Color c, PromotionPolicy p>
 void GeneratePawnDoubleMoves(const Board& board, MoveList& list, const bitboard_t src,
                              const bitboard_t dst) {
+    Q_ASSERT(IsCoordValid(src) && IsCoordValid(dst) && list.size < MAX_MOVES_COUNT);
     constexpr uint8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta<c>();
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst;
@@ -76,6 +74,7 @@ void GeneratePawnDoubleMoves(const Board& board, MoveList& list, const bitboard_
 template <Color c, PromotionPolicy p>
 void GeneratePawnCaptures(const Board& board, MoveList& list, const bitboard_t src,
                           const bitboard_t dst) {
+    Q_ASSERT(IsCoordValid(src) && IsCoordValid(dst) && list.size < MAX_MOVES_COUNT);
     constexpr uint8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta<c>();
     bitboard_t move_dst_left =
         MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA - 1>(src & (~FILE_BITBOARD[0])) & dst;
@@ -92,17 +91,25 @@ void GeneratePawnCaptures(const Board& board, MoveList& list, const bitboard_t s
     }
 }
 
+uint64_t GetPawnCaptureDstBitboard(const uint64_t dst, const coord_t en_passant_coord) {
+    uint64_t ans = dst;
+    if (Q_UNLIKELY(en_passant_coord != UNDEFINED_COORD)) {
+        q_util::SetBit(ans, en_passant_coord);
+    }
+    return ans;
+}
+
 template <Color c, PromotionPolicy pp>
 void GenerateAllPawnCaptures(const Board& board, MoveList& list, const bitboard_t src) {
-    const bitboard_t dst = (board.en_passant_coord != UNDEFINED_COORD
-                                ? board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)] |
-                                      MakeBitboardFromCoord(board.en_passant_coord)
-                                : board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)]);
+    Q_ASSERT(IsCoordValid(src) && list.size < MAX_MOVES_COUNT);
+    const bitboard_t dst = GetPawnCaptureDstBitboard(
+        board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))], board.en_passant_coord);
     GeneratePawnCaptures<c, pp>(board, list, src, dst);
 }
 
 template <Color c, PromotionPolicy pp>
 void GenerateAllPawnSimpleMoves(const Board& board, MoveList& list, const bitboard_t src) {
+    Q_ASSERT(IsCoordValid(src) && list.size < MAX_MOVES_COUNT);
     const bitboard_t dst = board.bb_pieces[EMPTY_CELL];
     GeneratePawnSimpleMoves<c, pp>(board, list, src, dst);
     GeneratePawnDoubleMoves<c, pp>(board, list, src, dst);
@@ -110,6 +117,7 @@ void GenerateAllPawnSimpleMoves(const Board& board, MoveList& list, const bitboa
 
 template <Color c, CapturePolicy cp, PromotionPolicy pp>
 void GenerateAllPawnMoves(const Board& board, MoveList& list) {
+    Q_ASSERT(list.size < MAX_MOVES_COUNT);
     const bitboard_t src =
         (pp == PromotionPolicy::All
              ? board.bb_pieces[MakeCell(c, Piece::Pawn)]
@@ -125,6 +133,95 @@ void GenerateAllPawnMoves(const Board& board, MoveList& list) {
         GenerateAllPawnCaptures<c, pp>(board, list, src);
         GenerateAllPawnSimpleMoves<c, pp>(board, list, src);
     }
+}
+
+constexpr Move WHITE_KING_SIDE_CASTLING_MOVE =
+    Move{WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION + 2, KINGSIDE_CASTLING_MOVE};
+constexpr Move WHITE_QUEEN_SIDE_CASTLING_MOVE =
+    Move{WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION - 2, KINGSIDE_CASTLING_MOVE};
+constexpr Move BLACK_KING_SIDE_CASTLING_MOVE =
+    Move{WHITE_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION + 2, QUEENSIDE_CASTLING_MOVE};
+constexpr Move BLACK_QUEEN_SIDE_CASTLING_MOVE =
+    Move{WHITE_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION - 2, QUEENSIDE_CASTLING_MOVE};
+constexpr bitboard_t WHITE_KING_SIDE_CASTLING_MOVE_BITBOARD =
+    MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 1) |
+    MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 2);
+constexpr bitboard_t WHITE_QUEEN_SIDE_CASTLING_MOVE_BITBOARD =
+    MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION - 1) |
+    MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION - 2) |
+    MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION - 3);
+constexpr bitboard_t BLACK_KING_SIDE_CASTLING_MOVE_BITBOARD =
+    MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION + 1) |
+    MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION + 2);
+constexpr bitboard_t BLACK_QUEEN_SIDE_CASTLING_MOVE_BITBOARD =
+    MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION - 1) |
+    MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION - 2) |
+    MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION - 3);
+
+template <Color c>
+void GenerateCastling(const Board& board, MoveList& list) {
+    Q_ASSERT(list.size < MAX_MOVES_COUNT);
+    if constexpr (c == Color::White) {
+        if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::WhiteAll))) {
+            if ((board.bb_pieces[EMPTY_CELL] & WHITE_KING_SIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteKingSide)) {
+                list.moves[list.size++] = WHITE_KING_SIDE_CASTLING_MOVE;
+            }
+            if ((board.bb_pieces[EMPTY_CELL] & WHITE_QUEEN_SIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteQueenSide)) {
+                list.moves[list.size++] = WHITE_QUEEN_SIDE_CASTLING_MOVE;
+            }
+        }
+    } else {
+        if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::BlackAll))) {
+            if ((board.bb_pieces[EMPTY_CELL] & BLACK_KING_SIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackKingSide)) {
+                list.moves[list.size++] = BLACK_KING_SIDE_CASTLING_MOVE;
+            }
+            if ((board.bb_pieces[EMPTY_CELL] & BLACK_QUEEN_SIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackQueenSide)) {
+                list.moves[list.size++] = BLACK_QUEEN_SIDE_CASTLING_MOVE;
+            }
+        }
+    }
+}
+
+template <Color c, Piece p, CapturePolicy cp>
+void GenerateAllKnightOrKingMoves(const Board& board, MoveList& list, const bitboard_t src) {
+    Q_ASSERT(list.size < MAX_MOVES_COUNT);
+    constexpr auto MOVES_BITBOARD =
+        (p == Piece::Knight ? KNIGHT_ATTACK_BITBOARD : KING_ATTACK_BITBOARD);
+    bitboard_t pieces_src = src;
+    while (pieces_src) {
+        const coord_t src_coord = q_util::ExtractLowestBit(pieces_src);
+        if constexpr (cp != CapturePolicy::None) {
+            bitboard_t move_dst = MOVES_BITBOARD[src_coord] &
+                                  board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))];
+            while (move_dst) {
+                const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
+                list.moves[list.size++] = Move{.src = src_coord,
+                                               .dst = dst_coord,
+                                               .type = CAPTURE_MOVE_BIT | FIFTY_RULE_MOVE_BIT};
+            }
+        }
+        if constexpr (cp != CapturePolicy::OnlyCaptures) {
+            bitboard_t move_dst = MOVES_BITBOARD[src_coord] & board.bb_colors[EMPTY_CELL];
+            while (move_dst) {
+                const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
+                list.moves[list.size++] = Move{.src = src_coord, .dst = dst_coord, .type = 0};
+            }
+        }
+    }
+    if constexpr (p == Piece::King && cp != CapturePolicy::OnlyCaptures) {
+        GenerateCastling<c>(board, list);
+    }
+}
+
+template <Color c, Piece p, CapturePolicy cp>
+void GenerateAllKnightOrKingMoves(const Board& board, MoveList& list) {
+    Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::King);
+    Q_ASSERT(list.size < MAX_MOVES_COUNT);
+    GenerateAllKnightOrKingMoves<c, p, cp>(board, list, board.bb_pieces[MakeCell(c, p)]);
 }
 
 }  // namespace q_core

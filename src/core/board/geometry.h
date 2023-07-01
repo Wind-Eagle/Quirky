@@ -33,6 +33,9 @@ inline constexpr subcoord_t GetFile(const coord_t c) {
     return c & ((1 << BOARD_SIDE_LOG) - 1);
 }
 
+constexpr coord_t WHITE_KING_INITIAL_POSITION = MakeCoord(0, 4);
+constexpr coord_t BLACK_KING_INITIAL_POSITION = MakeCoord(7, 4);
+
 }  // namespace q_core
 
 #endif  // QUIRKY_SRC_CORE_BOARD_GEOMETRY_H

@@ -24,7 +24,9 @@ enum class Castling : uint8_t {
     WhiteQueenSide = 2,
     BlackKingSide = 4,
     BlackQueenSide = 8,
-    All = 15
+    All = 15,
+    WhiteAll = WhiteKingSide | WhiteQueenSide,
+    BlackAll = BlackKingSide | BlackQueenSide
 };
 
 ENUM_TO_INT(Castling, uint8_t)
