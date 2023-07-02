@@ -135,25 +135,25 @@ void GenerateAllPawnMoves(const Board& board, MoveList& list) {
     }
 }
 
-constexpr Move WHITE_KING_SIDE_CASTLING_MOVE =
+constexpr Move WHITE_KINGSIDE_CASTLING_MOVE =
     Move{WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION + 2, KINGSIDE_CASTLING_MOVE};
-constexpr Move WHITE_QUEEN_SIDE_CASTLING_MOVE =
+constexpr Move WHITE_QUEENSIDE_CASTLING_MOVE =
     Move{WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION - 2, KINGSIDE_CASTLING_MOVE};
-constexpr Move BLACK_KING_SIDE_CASTLING_MOVE =
+constexpr Move BLACK_KINGSIDE_CASTLING_MOVE =
     Move{WHITE_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION + 2, QUEENSIDE_CASTLING_MOVE};
-constexpr Move BLACK_QUEEN_SIDE_CASTLING_MOVE =
+constexpr Move BLACK_QUEENSIDE_CASTLING_MOVE =
     Move{WHITE_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION - 2, QUEENSIDE_CASTLING_MOVE};
-constexpr bitboard_t WHITE_KING_SIDE_CASTLING_MOVE_BITBOARD =
+constexpr bitboard_t WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD =
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 1) |
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 2);
-constexpr bitboard_t WHITE_QUEEN_SIDE_CASTLING_MOVE_BITBOARD =
+constexpr bitboard_t WHITE_QUEENSIDE_CASTLING_MOVE_BITBOARD =
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION - 1) |
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION - 2) |
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION - 3);
-constexpr bitboard_t BLACK_KING_SIDE_CASTLING_MOVE_BITBOARD =
+constexpr bitboard_t BLACK_KINGSIDE_CASTLING_MOVE_BITBOARD =
     MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION + 1) |
     MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION + 2);
-constexpr bitboard_t BLACK_QUEEN_SIDE_CASTLING_MOVE_BITBOARD =
+constexpr bitboard_t BLACK_QUEENSIDE_CASTLING_MOVE_BITBOARD =
     MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION - 1) |
     MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION - 2) |
     MakeBitboardFromCoord(BLACK_KING_INITIAL_POSITION - 3);
@@ -163,24 +163,24 @@ void GenerateCastling(const Board& board, MoveList& list) {
     Q_ASSERT(list.size < MAX_MOVES_COUNT);
     if constexpr (c == Color::White) {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::WhiteAll))) {
-            if ((board.bb_pieces[EMPTY_CELL] & WHITE_KING_SIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteKingSide)) {
-                list.moves[list.size++] = WHITE_KING_SIDE_CASTLING_MOVE;
+            if ((board.bb_pieces[EMPTY_CELL] & WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteKingside)) {
+                list.moves[list.size++] = WHITE_KINGSIDE_CASTLING_MOVE;
             }
-            if ((board.bb_pieces[EMPTY_CELL] & WHITE_QUEEN_SIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteQueenSide)) {
-                list.moves[list.size++] = WHITE_QUEEN_SIDE_CASTLING_MOVE;
+            if ((board.bb_pieces[EMPTY_CELL] & WHITE_QUEENSIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteQueenside)) {
+                list.moves[list.size++] = WHITE_QUEENSIDE_CASTLING_MOVE;
             }
         }
     } else {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::BlackAll))) {
-            if ((board.bb_pieces[EMPTY_CELL] & BLACK_KING_SIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackKingSide)) {
-                list.moves[list.size++] = BLACK_KING_SIDE_CASTLING_MOVE;
+            if ((board.bb_pieces[EMPTY_CELL] & BLACK_KINGSIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackKingside)) {
+                list.moves[list.size++] = BLACK_KINGSIDE_CASTLING_MOVE;
             }
-            if ((board.bb_pieces[EMPTY_CELL] & BLACK_QUEEN_SIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackQueenSide)) {
-                list.moves[list.size++] = BLACK_QUEEN_SIDE_CASTLING_MOVE;
+            if ((board.bb_pieces[EMPTY_CELL] & BLACK_QUEENSIDE_CASTLING_MOVE_BITBOARD) ==
+                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackQueenside)) {
+                list.moves[list.size++] = BLACK_QUEENSIDE_CASTLING_MOVE;
             }
         }
     }

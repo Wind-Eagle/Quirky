@@ -20,13 +20,13 @@ using hash_t = uint64_t;
 
 enum class Castling : uint8_t {
     None = 0,
-    WhiteKingSide = 1,
-    WhiteQueenSide = 2,
-    BlackKingSide = 4,
-    BlackQueenSide = 8,
+    WhiteKingside = 1,
+    WhiteQueenside = 2,
+    BlackKingside = 4,
+    BlackQueenside = 8,
     All = 15,
-    WhiteAll = WhiteKingSide | WhiteQueenSide,
-    BlackAll = BlackKingSide | BlackQueenSide
+    WhiteAll = WhiteKingside | WhiteQueenside,
+    BlackAll = BlackKingside | BlackQueenside
 };
 
 ENUM_TO_INT(Castling, uint8_t)

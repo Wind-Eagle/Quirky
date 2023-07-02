@@ -90,16 +90,16 @@ inline constexpr char CastColorToChar(const Color c) {
 inline Castling CastStringToCastling(const std::string& str) {
     Castling res = Castling::None;
     if (str.find('k') != std::string::npos) {
-        res |= Castling::BlackKingSide;
+        res |= Castling::BlackKingside;
     }
     if (str.find('K') != std::string::npos) {
-        res |= Castling::WhiteKingSide;
+        res |= Castling::WhiteKingside;
     }
     if (str.find('q') != std::string::npos) {
-        res |= Castling::BlackQueenSide;
+        res |= Castling::BlackQueenside;
     }
     if (str.find('Q') != std::string::npos) {
-        res |= Castling::WhiteQueenSide;
+        res |= Castling::WhiteQueenside;
     }
     return res;
 }
@@ -107,16 +107,16 @@ inline Castling CastStringToCastling(const std::string& str) {
 inline std::string CastStringToCastling(const Castling c) {
     Q_ASSERT(IsCastlingValid(c));
     std::string res;
-    if (IsCastlingAllowed(c, Castling::WhiteKingSide)) {
+    if (IsCastlingAllowed(c, Castling::WhiteKingside)) {
         res += "K";
     }
-    if (IsCastlingAllowed(c, Castling::WhiteQueenSide)) {
+    if (IsCastlingAllowed(c, Castling::WhiteQueenside)) {
         res += "Q";
     }
-    if (IsCastlingAllowed(c, Castling::BlackKingSide)) {
+    if (IsCastlingAllowed(c, Castling::BlackKingside)) {
         res += "k";
     }
-    if (IsCastlingAllowed(c, Castling::BlackQueenSide)) {
+    if (IsCastlingAllowed(c, Castling::BlackQueenside)) {
         res += "q";
     }
     if (res.empty()) {
