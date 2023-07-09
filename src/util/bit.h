@@ -1,9 +1,11 @@
 #ifndef QUIRKY_SRC_UTIL_BIT_H
 #define QUIRKY_SRC_UTIL_BIT_H
 
-#include "macro.h"
+#include <immintrin.h>
 
 #include <bit>
+
+#include "macro.h"
 
 namespace q_util {
 
@@ -44,9 +46,7 @@ inline constexpr uint8_t ExtractLowestBit(uint64_t& num) {
     return ans;
 }
 
-inline constexpr uint8_t GetBitCount(const uint64_t num) {
-    return std::popcount(num);
-}
+inline constexpr uint8_t GetBitCount(const uint64_t num) { return std::popcount(num); }
 
 template <uint8_t delta>
 inline constexpr uint64_t MoveAllBitsByDelta(const uint64_t num) {
@@ -57,6 +57,14 @@ inline constexpr uint64_t MoveAllBitsByDelta(const uint64_t num) {
         Q_ASSERT(q_util::GetLowestBit(num) + delta >= 0);
         return num >> (-delta);
     }
+}
+
+inline uint64_t DepositBits(const uint64_t submask, const uint64_t mask) {
+    return _pdep_u64(submask, mask);
+}
+
+inline uint64_t ExtractBits(const uint64_t mask, const uint64_t submask) {
+    return _pext_u64(mask, submask);
 }
 
 }  // namespace q_util

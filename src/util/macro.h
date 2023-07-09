@@ -54,12 +54,12 @@
         }                                \
     } while (false)
 
-#define Q_FATAL_EXPECT(condition, error, message)                       \
-    do {                                                         \
-        if (Q_UNLIKELY(!(condition))) {                          \
-            q_util::PrintError(message);                         \
-            q_util::ExitWithError(error); \
-        }                                                        \
+#define Q_FATAL_EXPECT(condition, error, message) \
+    do {                                          \
+        if (Q_UNLIKELY(!(condition))) {           \
+            q_util::PrintError(message);          \
+            q_util::ExitWithError(error);         \
+        }                                         \
     } while (false)
 
 #endif  // QUIRKY_SRC_UTIL_MACRO_H

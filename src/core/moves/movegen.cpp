@@ -164,39 +164,63 @@ void GenerateCastling(const Board& board, MoveList& list) {
     if constexpr (c == Color::White) {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::WhiteAll))) {
             if ((board.bb_pieces[EMPTY_CELL] & WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteKingside)) {
+                    board.bb_pieces[EMPTY_CELL] &&
+                IsCastlingAllowed(board.castling, Castling::WhiteKingside)) {
                 list.moves[list.size++] = WHITE_KINGSIDE_CASTLING_MOVE;
             }
             if ((board.bb_pieces[EMPTY_CELL] & WHITE_QUEENSIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::WhiteQueenside)) {
+                    board.bb_pieces[EMPTY_CELL] &&
+                IsCastlingAllowed(board.castling, Castling::WhiteQueenside)) {
                 list.moves[list.size++] = WHITE_QUEENSIDE_CASTLING_MOVE;
             }
         }
     } else {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::BlackAll))) {
             if ((board.bb_pieces[EMPTY_CELL] & BLACK_KINGSIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackKingside)) {
+                    board.bb_pieces[EMPTY_CELL] &&
+                IsCastlingAllowed(board.castling, Castling::BlackKingside)) {
                 list.moves[list.size++] = BLACK_KINGSIDE_CASTLING_MOVE;
             }
             if ((board.bb_pieces[EMPTY_CELL] & BLACK_QUEENSIDE_CASTLING_MOVE_BITBOARD) ==
-                    board.bb_pieces[EMPTY_CELL] && IsCastlingAllowed(board.castling, Castling::BlackQueenside)) {
+                    board.bb_pieces[EMPTY_CELL] &&
+                IsCastlingAllowed(board.castling, Castling::BlackQueenside)) {
                 list.moves[list.size++] = BLACK_QUEENSIDE_CASTLING_MOVE;
             }
         }
     }
 }
 
+inline bitboard_t GetBishopAttackBitboard(const bitboard_t occupied, coord_t src) {
+    const auto& entry = MAGIC_BITBOARD.bishop_entry[src];
+    return entry.lookup[q_util::ExtractBits(occupied, entry.mask)] & entry.postmask;
+}
+
+inline bitboard_t GetRookAttackBitboard(const bitboard_t occupied, coord_t src) {
+    const auto& entry = MAGIC_BITBOARD.rook_entry[src];
+    return entry.lookup[q_util::ExtractBits(occupied, entry.mask)] & entry.postmask;
+}
+
 template <Color c, Piece p, CapturePolicy cp>
-void GenerateAllKnightOrKingMoves(const Board& board, MoveList& list, const bitboard_t src) {
+void GenerateAllKNBRMoves(const Board& board, MoveList& list, const bitboard_t src) {
+    Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::Bishop || p == Piece::Rook ||
+                    p == Piece::King);
     Q_ASSERT(list.size < MAX_MOVES_COUNT);
-    constexpr auto MOVES_BITBOARD =
-        (p == Piece::Knight ? KNIGHT_ATTACK_BITBOARD : KING_ATTACK_BITBOARD);
     bitboard_t pieces_src = src;
     while (pieces_src) {
         const coord_t src_coord = q_util::ExtractLowestBit(pieces_src);
+        bitboard_t move_dst_init;
+        if constexpr (p == Piece::Knight) {
+            move_dst_init = KNIGHT_ATTACK_BITBOARD[pieces_src];
+        } else if constexpr (p == Piece::King) {
+            move_dst_init = KING_ATTACK_BITBOARD[pieces_src];
+        } else if constexpr (p == Piece::Bishop) {
+            move_dst_init = GetBishopAttackBitboard(~board.bb_pieces[EMPTY_CELL], pieces_src);
+        } else {
+            move_dst_init = GetRookAttackBitboard(~board.bb_pieces[EMPTY_CELL], pieces_src);
+        }
         if constexpr (cp != CapturePolicy::None) {
-            bitboard_t move_dst = MOVES_BITBOARD[src_coord] &
-                                  board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))];
+            bitboard_t move_dst =
+                move_dst_init & board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))];
             while (move_dst) {
                 const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
                 list.moves[list.size++] = Move{.src = src_coord,
@@ -205,7 +229,7 @@ void GenerateAllKnightOrKingMoves(const Board& board, MoveList& list, const bitb
             }
         }
         if constexpr (cp != CapturePolicy::OnlyCaptures) {
-            bitboard_t move_dst = MOVES_BITBOARD[src_coord] & board.bb_colors[EMPTY_CELL];
+            bitboard_t move_dst = move_dst_init & board.bb_colors[EMPTY_CELL];
             while (move_dst) {
                 const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
                 list.moves[list.size++] = Move{.src = src_coord, .dst = dst_coord, .type = 0};
@@ -218,10 +242,11 @@ void GenerateAllKnightOrKingMoves(const Board& board, MoveList& list, const bitb
 }
 
 template <Color c, Piece p, CapturePolicy cp>
-void GenerateAllKnightOrKingMoves(const Board& board, MoveList& list) {
-    Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::King);
+void GenerateAllKNBRMoves(const Board& board, MoveList& list) {
+    Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::Bishop || p == Piece::Rook ||
+                    p == Piece::King);
     Q_ASSERT(list.size < MAX_MOVES_COUNT);
-    GenerateAllKnightOrKingMoves<c, p, cp>(board, list, board.bb_pieces[MakeCell(c, p)]);
+    GenerateAllPieceMoves<c, p, cp>(board, list, board.bb_pieces[MakeCell(c, p)]);
 }
 
 }  // namespace q_core

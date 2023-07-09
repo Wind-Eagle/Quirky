@@ -67,8 +67,7 @@ inline std::string CastCoordToString(const coord_t c) {
     if (c == UNDEFINED_COORD) {
         return "-";
     }
-    return std::string(
-        {static_cast<char>(GetFile(c) + 'a'), static_cast<char>(GetRank(c) + '1')});
+    return std::string({static_cast<char>(GetFile(c) + 'a'), static_cast<char>(GetRank(c) + '1')});
 }
 
 }  // namespace q_core
