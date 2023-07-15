@@ -1,6 +1,7 @@
 #ifndef QUIRKY_SRC_CORE_BOARD_UTIL_H
 #define QUIRKY_SRC_CORE_BOARD_UTIL_H
 
+#include "../util/bit.h"
 #include "board/geometry.h"
 #include "board/types.h"
 
@@ -68,6 +69,45 @@ inline std::string CastCoordToString(const coord_t c) {
         return "-";
     }
     return std::string({static_cast<char>(GetFile(c) + 'a'), static_cast<char>(GetRank(c) + '1')});
+}
+
+inline constexpr Piece CastCharToPiece(char c) {
+    switch (c) {
+        case 'p':
+            return Piece::Pawn;
+        case 'n':
+            return Piece::Knight;
+        case 'b':
+            return Piece::Bishop;
+        case 'r':
+            return Piece::Rook;
+        case 'q':
+            return Piece::Queen;
+        case 'k':
+            return Piece::King;
+        default:
+            Q_UNREACHABLE();
+    }
+}
+
+inline constexpr char CastPieceToChar(Piece p) {
+    Q_ASSERT(IsPieceValid(p));
+    switch (p) {
+        case Piece::Pawn:
+            return 'p';
+        case Piece::Knight:
+            return 'n';
+        case Piece::Bishop:
+            return 'b';
+        case Piece::Rook:
+            return 'r';
+        case Piece::Queen:
+            return 'q';
+        case Piece::King:
+            return 'k';
+        default:
+            Q_UNREACHABLE();
+    }
 }
 
 }  // namespace q_core

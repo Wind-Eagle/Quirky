@@ -3,11 +3,13 @@
 
 #include <array>
 
+#include "../../util/bit.h"
 #include "move.h"
 
 namespace q_core {
 
-extern const std::array<bitboard_t, BOARD_SIZE * 2> PAWN_REVERSED_ATTACK_BITBOARD;
+extern const std::array<bitboard_t, BOARD_SIZE> WHITE_PAWN_REVERSED_ATTACK_BITBOARD;
+extern const std::array<bitboard_t, BOARD_SIZE> BLACK_PAWN_REVERSED_ATTACK_BITBOARD;
 extern const std::array<bitboard_t, BOARD_SIZE> KNIGHT_ATTACK_BITBOARD;
 extern const std::array<bitboard_t, BOARD_SIZE> KING_ATTACK_BITBOARD;
 extern const std::array<bitboard_t, BOARD_SIZE> BISHOP_ATTACK_BITBOARD;
@@ -33,6 +35,9 @@ struct MagicBitboard {
 };
 
 extern const MagicBitboard MAGIC_BITBOARD;
+
+bitboard_t GetBishopAttackBitboard(bitboard_t occupied, coord_t src);
+bitboard_t GetRookAttackBitboard(bitboard_t occupied, coord_t src);
 
 }  // namespace q_core
 

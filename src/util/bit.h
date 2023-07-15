@@ -48,13 +48,13 @@ inline constexpr uint8_t ExtractLowestBit(uint64_t& num) {
 
 inline constexpr uint8_t GetBitCount(const uint64_t num) { return std::popcount(num); }
 
-template <uint8_t delta>
+template <int8_t delta>
 inline constexpr uint64_t MoveAllBitsByDelta(const uint64_t num) {
     if constexpr (delta > 0) {
-        Q_ASSERT(q_util::GetHighestBit(num) + delta < 64);
+        Q_ASSERT(num == 0 || q_util::GetHighestBit(num) + delta < 64);
         return num << delta;
     } else {
-        Q_ASSERT(q_util::GetLowestBit(num) + delta >= 0);
+        Q_ASSERT(num == 0 || q_util::GetLowestBit(num) + delta >= 0);
         return num >> (-delta);
     }
 }

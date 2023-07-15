@@ -4,22 +4,20 @@
 #include <vector>
 
 #include "../../util/bit.h"
+#include "../util.h"
 
 namespace q_core {
 
-constexpr std::array<bitboard_t, BOARD_SIZE * 2> GetPawnReversedAttackBitboard() {
-    std::array<bitboard_t, BOARD_SIZE * 2> res{};
-    for (Color c : {Color::White, Color::Black}) {
-        int8_t pawn_move_delta = (c == Color::White ? -BOARD_SIDE : BOARD_SIDE);
-        for (coord_t i = 0; i < BOARD_SIZE; i++) {
-            if (IsCoordValidAndDefined(i + pawn_move_delta - 1)) {
-                res[i + static_cast<uint8_t>(c) * BOARD_SIZE] |=
-                    (1ULL << (i + pawn_move_delta - 1));
-            }
-            if (IsCoordValidAndDefined(i + pawn_move_delta + 1)) {
-                res[i + static_cast<uint8_t>(c) * BOARD_SIZE] |=
-                    (1ULL << (i + pawn_move_delta + 1));
-            }
+template <Color c>
+constexpr std::array<bitboard_t, BOARD_SIZE> GetPawnReversedAttackBitboard() {
+    std::array<bitboard_t, BOARD_SIZE> res{};
+    int8_t pawn_move_delta = (c == Color::White ? -BOARD_SIDE : BOARD_SIDE);
+    for (coord_t i = 0; i < BOARD_SIZE; i++) {
+        if (IsCoordValidAndDefined(i + pawn_move_delta - 1)) {
+            res[i] |= (1ULL << (i + pawn_move_delta - 1));
+        }
+        if (IsCoordValidAndDefined(i + pawn_move_delta + 1)) {
+            res[i] |= (1ULL << (i + pawn_move_delta + 1));
         }
     }
     return res;
@@ -63,8 +61,10 @@ constexpr std::array<bitboard_t, BOARD_SIZE> GetKingAttackBitboard() {
     return res;
 }
 
-constexpr std::array<bitboard_t, BOARD_SIZE* 2> PAWN_REVERSED_ATTACK_BITBOARD =
-    GetPawnReversedAttackBitboard();
+constexpr std::array<bitboard_t, BOARD_SIZE> WHITE_PAWN_REVERSED_ATTACK_BITBOARD =
+    GetPawnReversedAttackBitboard<Color::White>();
+constexpr std::array<bitboard_t, BOARD_SIZE> BLACK_PAWN_REVERSED_ATTACK_BITBOARD =
+    GetPawnReversedAttackBitboard<Color::Black>();
 constexpr std::array<bitboard_t, BOARD_SIZE> KNIGHT_ATTACK_BITBOARD = GetKnightAttackBitboard();
 constexpr std::array<bitboard_t, BOARD_SIZE> KING_ATTACK_BITBOARD = GetKingAttackBitboard();
 
@@ -92,14 +92,17 @@ void MagicBitboard::FillLookupTable(const std::array<uint64_t, 64>& piece_offset
             const bitboard_t occupied = q_util::DepositBits(submask, piece_entry[i].mask);
             bitboard_t& res = piece_lookup[piece_offset[i] + submask];
             for (uint8_t dir = 0; dir < 4; dir++) {
-                subcoord_t x = GetFile(i);
-                subcoord_t y = GetRank(i);
+                subcoord_t x = GetRank(i);
+                subcoord_t y = GetFile(i);
                 for (;;) {
                     res |= MakeBitboardFromCoord(MakeCoord(x, y));
                     x += dx[dir];
                     y += dy[dir];
-                    if (!(IsSubcoordValid(x) && IsSubcoordValid(y) &&
-                          !q_util::CheckBit(occupied, MakeCoord(x, y)))) {
+                    if (!(IsSubcoordValid(x) && IsSubcoordValid(y))) {
+                        break;
+                    }
+                    if (q_util::CheckBit(occupied, MakeCoord(x, y))) {
+                        res |= MakeBitboardFromCoord(MakeCoord(x, y));
                         break;
                     }
                 }
@@ -118,7 +121,19 @@ MagicBitboard::MagicBitboard() {
             (~FRAME_BITBOARD);
         bishop_entry[i].postmask =
             LEFT_DIAGONAL_BITBOARD[x + y] ^ RIGHT_DIAGONAL_BITBOARD[x - y + BOARD_SIDE - 1];
-        rook_entry[i].mask = (RANK_BITBOARD[x] ^ FILE_BITBOARD[y]) & (~FRAME_BITBOARD);
+        rook_entry[i].mask = (RANK_BITBOARD[x] ^ FILE_BITBOARD[y]);
+        if (GetRank(i) != 0) {
+            rook_entry[i].mask &= (~RANK_BITBOARD[0]);
+        }
+        if (GetFile(i) != 0) {
+            rook_entry[i].mask &= (~FILE_BITBOARD[0]);
+        }
+        if (GetRank(i) != BOARD_SIDE - 1) {
+            rook_entry[i].mask &= (~RANK_BITBOARD[BOARD_SIDE - 1]);
+        }
+        if (GetFile(i) != BOARD_SIDE - 1) {
+            rook_entry[i].mask &= (~FILE_BITBOARD[BOARD_SIDE - 1]);
+        }
         rook_entry[i].postmask = RANK_BITBOARD[x] ^ FILE_BITBOARD[y];
     }
     std::array<uint64_t, 64> bishop_offset;
@@ -138,6 +153,7 @@ MagicBitboard::MagicBitboard() {
                       q_util::GetBitCount(bishop_entry[bishop_groups[i][2]].mask),
                       q_util::GetBitCount(bishop_entry[bishop_groups[i][3]].mask)});
         for (const auto& j : bishop_groups[i]) {
+            bishop_offset[j] = count;
             bishop_entry[j].lookup = bishop_lookup + count;
         }
         count += (1ULL << max_len);
@@ -149,6 +165,7 @@ MagicBitboard::MagicBitboard() {
             std::max({q_util::GetBitCount(rook_entry[rook_groups[i][0]].mask),
                       q_util::GetBitCount(rook_entry[rook_groups[i][1]].mask)});
         for (const auto& j : rook_groups[i]) {
+            rook_offset[j] = count;
             rook_entry[j].lookup = rook_lookup + count;
         }
         count += (1ULL << max_len);
@@ -158,5 +175,15 @@ MagicBitboard::MagicBitboard() {
 }
 
 const MagicBitboard MAGIC_BITBOARD;
+
+bitboard_t GetBishopAttackBitboard(const bitboard_t occupied, coord_t src) {
+    const auto& entry = MAGIC_BITBOARD.bishop_entry[src];
+    return entry.lookup[q_util::ExtractBits(occupied, entry.mask)] & entry.postmask;
+}
+
+bitboard_t GetRookAttackBitboard(const bitboard_t occupied, coord_t src) {
+    const auto& entry = MAGIC_BITBOARD.rook_entry[src];
+    return entry.lookup[q_util::ExtractBits(occupied, entry.mask)] & entry.postmask;
+}
 
 }  // namespace q_core

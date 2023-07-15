@@ -3,6 +3,13 @@
 #include "../../../src/core/board/board.h"
 #include "../../../src/core/util.h"
 
+template <class T>
+void CompareArrays(const T* lhs, const T* rhs, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        EXPECT_EQ(lhs[i], rhs[i]) << std::to_string(i) << "th elements are not equal" << std::endl;
+    }
+}
+
 void TestStartpos() {
     q_core::Board board;
     std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -26,6 +33,11 @@ void TestStartpos() {
                                              0, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0,  0,  0, 0, 0,
                                              0, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0,  0,  0, 0, 0,
                                              7, 7, 7, 7, 7, 7, 7, 7, 10, 8, 9, 11, 12, 9, 8, 10};
+    CompareArrays<q_core::bitboard_t>(board.bb_pieces, expected_bb_pieces.data(),
+                                      expected_bb_pieces.size());
+    CompareArrays<q_core::bitboard_t>(board.bb_colors, expected_bb_colors.data(),
+                                      expected_bb_colors.size());
+    CompareArrays<q_core::cell_t>(board.cells, expected_cells.data(), 64);
     EXPECT_NE(board.hash, 0);
     EXPECT_EQ(board.en_passant_coord, q_core::UNDEFINED_COORD);
     EXPECT_EQ(board.castling, q_core::Castling::All);
@@ -58,6 +70,11 @@ void TestTrickyPos() {
                                              0, 3, 1, 0,  0, 2, 0, 1, 1,  7, 0, 0,  1, 0, 0, 0,
                                              0, 0, 9, 1,  7, 0, 0, 0, 7,  0, 0, 7,  0, 8, 0, 0,
                                              8, 0, 7, 12, 0, 7, 7, 7, 10, 0, 9, 11, 0, 0, 0, 10};
+    CompareArrays<q_core::bitboard_t>(board.bb_pieces, expected_bb_pieces.data(),
+                                      expected_bb_pieces.size());
+    CompareArrays<q_core::bitboard_t>(board.bb_colors, expected_bb_colors.data(),
+                                      expected_bb_colors.size());
+    CompareArrays<q_core::cell_t>(board.cells, expected_cells.data(), 64);
     EXPECT_NE(board.hash, 0);
     EXPECT_EQ(board.en_passant_coord, q_core::CastStringToCoord("a3"));
     EXPECT_EQ(board.move_side, q_core::Color::Black);

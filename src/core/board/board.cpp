@@ -74,7 +74,7 @@ inline constexpr char CastCellToChar(const cell_t c) {
         case EMPTY_CELL:
             return '.';
         default:
-            return '?';
+            Q_UNREACHABLE();
     }
 }
 
