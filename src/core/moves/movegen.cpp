@@ -33,13 +33,22 @@ inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t b) {
     return static_cast<bitboard_t>(q_util::MoveAllBitsByDelta<delta>(b));
 }
 
-template <bool c, bool p, bool d>
+constexpr uint8_t PAWN_MOVE_CAPTURE_BIT = (1 << 0);
+constexpr uint8_t PAWN_MOVE_PROMOTION_BIT = (1 << 1);
+constexpr uint8_t PAWN_MOVE_DOUBLE_BIT = (1 << 2);
+constexpr uint8_t PAWN_MOVE_EN_PASSANT_BIT = (1 << 3);
+
+template <uint8_t type>
 void AddPawnMoves(const coord_t src, const coord_t dst, MoveList& list) {
-    Q_STATIC_ASSERT(!(c & d));
+    constexpr bool C = (type & PAWN_MOVE_CAPTURE_BIT);
+    constexpr bool P = (type & PAWN_MOVE_PROMOTION_BIT);
+    constexpr bool D = (type & PAWN_MOVE_DOUBLE_BIT);
+    constexpr bool E = (type & PAWN_MOVE_EN_PASSANT_BIT);
+    Q_STATIC_ASSERT(!(C & D) && !(E && !C) && !(D && E) && !(D && P) && !(E && P));
     Q_ASSERT(IsCoordValid(src) && IsCoordValid(dst) && list.size < MAX_MOVES_COUNT);
-    constexpr uint8_t MAIN_MOVE_BITS =
-        (c ? CAPTURE_MOVE_BIT : 0) | (d ? PAWN_DOUBLE_MOVE_BIT : 0) | FIFTY_RULE_MOVE_BIT;
-    if constexpr (p) {
+    constexpr uint8_t MAIN_MOVE_BITS = (C ? CAPTURE_MOVE_BIT : 0) | (D ? PAWN_DOUBLE_MOVE_BIT : 0) |
+                                       FIFTY_RULE_MOVE_BIT | (E ? EN_PASSANT_MOVE_BIT : 0);
+    if constexpr (P) {
         list.moves[list.size++] =
             Move{.src = src, .dst = dst, .type = KNIGHT_PROMOTION_MOVE | MAIN_MOVE_BITS};
         list.moves[list.size++] =
@@ -61,7 +70,8 @@ void GeneratePawnSimpleMoves(const Board& board, MoveList& list, const bitboard_
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     while (move_dst) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-        AddPawnMoves<false, p, false>(dst_coord - CURRENT_PAWN_MOVE_DELTA, dst_coord, list);
+        AddPawnMoves<p ? PAWN_MOVE_PROMOTION_BIT : 0>(dst_coord - CURRENT_PAWN_MOVE_DELTA,
+                                                      dst_coord, list);
     }
 }
 
@@ -74,7 +84,8 @@ void GeneratePawnDoubleMoves(const Board& board, MoveList& list, const bitboard_
     move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst;
     while (move_dst) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-        AddPawnMoves<false, false, true>(dst_coord - CURRENT_PAWN_MOVE_DELTA * 2, dst_coord, list);
+        AddPawnMoves<PAWN_MOVE_DOUBLE_BIT>(dst_coord - CURRENT_PAWN_MOVE_DELTA * 2, dst_coord,
+                                           list);
     }
 }
 
@@ -82,41 +93,55 @@ template <Color c, bool p>
 void GeneratePawnCaptures(const Board& board, MoveList& list, const bitboard_t src,
                           const bitboard_t dst) {
     Q_ASSERT(list.size < MAX_MOVES_COUNT);
+    Q_ASSERT(IsCoordValid(board.en_passant_coord));
+    if constexpr (p) {
+        if (Q_LIKELY(src == 0)) {
+            return;
+        }
+    }
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta<c>();
-    bitboard_t move_dst_left =
-        MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA - 1>(src & (~FILE_BITBOARD[0])) & dst;
-    bitboard_t move_dst_right =
-        MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA + 1>(src & (~FILE_BITBOARD[BOARD_SIDE - 1])) &
-        dst;
+    const bitboard_t move_left =
+        MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA - 1>(src & (~FILE_BITBOARD[0]));
+    bitboard_t move_dst_left = move_left & dst;
     while (move_dst_left) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_left);
-        AddPawnMoves<true, p, false>(dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list);
+        AddPawnMoves<(p ? PAWN_MOVE_PROMOTION_BIT : 0) | PAWN_MOVE_CAPTURE_BIT>(
+            dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list);
     }
+    const bitboard_t move_right =
+        MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA + 1>(src & (~FILE_BITBOARD[BOARD_SIDE - 1]));
+    bitboard_t move_dst_right = move_right & dst;
     while (move_dst_right) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_right);
-        AddPawnMoves<true, p, false>(dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list);
+        AddPawnMoves<(p ? PAWN_MOVE_PROMOTION_BIT : 0) | PAWN_MOVE_CAPTURE_BIT>(
+            dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list);
     }
-}
-
-uint64_t GetPawnCaptureDstBitboard(const uint64_t dst, const coord_t en_passant_coord) {
-    uint64_t ans = dst;
-    if (Q_UNLIKELY(en_passant_coord != UNDEFINED_COORD)) {
-        q_util::SetBit(ans, en_passant_coord);
+    if constexpr (!p) {
+        move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord);
+        if (Q_UNLIKELY(move_dst_left)) {
+            const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_left);
+            AddPawnMoves<PAWN_MOVE_CAPTURE_BIT | PAWN_MOVE_EN_PASSANT_BIT>(
+                dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list);
+        }
+        move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord);
+        if (Q_UNLIKELY(move_dst_right)) {
+            const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_right);
+            AddPawnMoves<PAWN_MOVE_CAPTURE_BIT | PAWN_MOVE_EN_PASSANT_BIT>(
+                dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list);
+        }
     }
-    return ans;
 }
 
 template <Color c, bool p>
 void GenerateAllPawnCaptures(const Board& board, MoveList& list, const bitboard_t src) {
-    Q_ASSERT(IsCoordValid(src) && list.size < MAX_MOVES_COUNT);
-    const bitboard_t dst = GetPawnCaptureDstBitboard(
-        board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))], board.en_passant_coord);
-    GeneratePawnCaptures<c, p>(board, list, src, dst);
+    Q_ASSERT(list.size < MAX_MOVES_COUNT);
+    GeneratePawnCaptures<c, p>(board, list, src,
+                               board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))]);
 }
 
 template <Color c, bool p>
 void GenerateAllPawnSimpleMoves(const Board& board, MoveList& list, const bitboard_t src) {
-    Q_ASSERT(IsCoordValid(src) && list.size < MAX_MOVES_COUNT);
+    Q_ASSERT(list.size < MAX_MOVES_COUNT);
     const bitboard_t dst = board.bb_pieces[EMPTY_CELL];
     GeneratePawnSimpleMoves<c, p>(board, list, src, dst);
     if constexpr (!p) {
@@ -135,8 +160,12 @@ void GenerateAllPawnMoves(const Board& board, MoveList& list) {
             board.bb_pieces[MakeCell(c, Piece::Pawn)] &
             (pp == PromotionPolicy::None ? (~RANK_BITBOARD[GetPawnPromotionLine<c>()])
                                          : RANK_BITBOARD[GetPawnPromotionLine<c>()]);
-        GenerateAllPawnSimpleMoves<c, pp != PromotionPolicy::None>(board, list, src);
-        GenerateAllPawnCaptures<c, pp != PromotionPolicy::None>(board, list, src);
+        if constexpr (cp != CapturePolicy::OnlyCaptures) {
+            GenerateAllPawnSimpleMoves<c, pp != PromotionPolicy::None>(board, list, src);
+        }
+        if constexpr (cp != CapturePolicy::None) {
+            GenerateAllPawnCaptures<c, pp != PromotionPolicy::None>(board, list, src);
+        }
     }
 }
 

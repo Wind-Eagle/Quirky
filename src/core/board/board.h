@@ -5,6 +5,8 @@
 
 namespace q_core {
 
+constexpr coord_t NO_ENPASSANT_COORD = 0;
+
 struct Board {
   public:
     bitboard_t bb_pieces[NUMBER_OF_CELLS];
@@ -13,9 +15,9 @@ struct Board {
     hash_t hash;
     coord_t en_passant_coord;
     Castling castling;
-    Color move_side;
     uint8_t fifty_rule_move_count;
     uint16_t move_count;
+    Color move_side;
     int16_t info;
 
     enum class FENParseStatus : int8_t {

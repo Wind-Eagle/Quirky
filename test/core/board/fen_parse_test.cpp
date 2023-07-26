@@ -39,7 +39,7 @@ void TestStartpos() {
                                       expected_bb_colors.size());
     CompareArrays<q_core::cell_t>(board.cells, expected_cells.data(), 64);
     EXPECT_NE(board.hash, 0);
-    EXPECT_EQ(board.en_passant_coord, q_core::UNDEFINED_COORD);
+    EXPECT_EQ(board.en_passant_coord, q_core::NO_ENPASSANT_COORD);
     EXPECT_EQ(board.castling, q_core::Castling::All);
     EXPECT_EQ(board.move_side, q_core::Color::White);
     EXPECT_EQ(board.fifty_rule_move_count, 0);

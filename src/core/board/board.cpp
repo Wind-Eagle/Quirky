@@ -151,11 +151,11 @@ constexpr subcoord_t WHITE_EN_PASSANT_RANK = 5;
 constexpr subcoord_t BLACK_EN_PASSANT_RANK = 2;
 
 inline bool IsEnPassantCoordValid(const Color c, const coord_t coord) {
+    if (coord == NO_ENPASSANT_COORD) {
+        return true;
+    }
     if (!IsCoordValid(coord)) {
         return false;
-    }
-    if (coord == UNDEFINED_COORD) {
-        return true;
     }
     return GetRank(coord) == (c == Color::White ? WHITE_EN_PASSANT_RANK : BLACK_EN_PASSANT_RANK);
 }
@@ -167,6 +167,22 @@ inline bool IsMoveCountStringValid(const std::string& str) {
         }
     }
     return true;
+}
+
+inline std::string CastEnPassantCoordToString(const coord_t c) {
+    Q_ASSERT(IsCoordValid(c));
+    if (c == NO_ENPASSANT_COORD) {
+        return "-";
+    }
+    return std::string({static_cast<char>(GetFile(c) + 'a'), static_cast<char>(GetRank(c) + '1')});
+}
+
+inline constexpr coord_t CastStringToEnPassantCoord(const std::string_view& str) {
+    if (str == "-") {
+        return NO_ENPASSANT_COORD;
+    }
+    Q_ASSERT(IsCoordStringValid(str));
+    return ((str[1] - '1') << BOARD_SIDE_LOG) + str[0] - 'a';
 }
 
 #define Q_CHECK_FEN_PARSE_ERROR(condition, error) \
@@ -207,9 +223,9 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     move_side = CastCharToColor(parsed_fen[1][0]);
     Q_CHECK_FEN_PARSE_ERROR(IsCastlingStringValid(parsed_fen[2]), FENParseStatus::InvalidCastling);
     castling = CastStringToCastling(parsed_fen[2]);
-    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordValid(move_side, CastStringToCoord(parsed_fen[3])),
+    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordValid(move_side, CastStringToEnPassantCoord(parsed_fen[3])),
                             FENParseStatus::InvalidEnPassantCoord);
-    en_passant_coord = CastStringToCoord(parsed_fen[3]);
+    en_passant_coord = CastStringToEnPassantCoord(parsed_fen[3]);
     Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[4]),
                             FENParseStatus::InvalidQuietMoveCount);
     fifty_rule_move_count = stoi(parsed_fen[4]);
@@ -248,7 +264,7 @@ std::string Board::GetFEN() const {
     }
     res += {' ', CastColorToChar(move_side)};
     res += " " + CastStringToCastling(castling);
-    res += " " + CastCoordToString(en_passant_coord);
+    res += " " + CastEnPassantCoordToString(en_passant_coord);
     res += " " + std::to_string(fifty_rule_move_count);
     res += " " + std::to_string((move_count + 1) / 2);
     return res;

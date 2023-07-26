@@ -6,16 +6,16 @@
 
 namespace q_core {
 
-struct MadeMoveInfo {
+struct MakeMoveInfo {
     cell_t dst_cell;
     hash_t hash;
-    Castling castling;
     coord_t en_passant;
+    Castling castling;
     uint8_t fifty_rule_move_counter;
 };
 
-void MakeMove(Board& board, Move move, MadeMoveInfo& info);
-void UnmakeMove(Board& board, Move move, const MadeMoveInfo& info);
+bool MakeMove(Board& board, Move move, MakeMoveInfo& info);
+void UnmakeMove(Board& board, Move move, const MakeMoveInfo& info);
 
 }  // namespace q_core
 
