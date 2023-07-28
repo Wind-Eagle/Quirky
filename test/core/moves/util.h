@@ -10,4 +10,6 @@ void TestMovesInPosition(const std::string_view& fen, const std::string_view& an
 
 void TestMakeMoveFunctionSimple(const std::string_view& fen, const std::string_view& move_string);
 
+void TestMakeMoveFunction(const std::string_view& fen, const std::string_view& move_string, const std::string_view& move_string_final);
+
 #endif  // QUIRKY_TEST_CORE_MOVES_FUNC_H

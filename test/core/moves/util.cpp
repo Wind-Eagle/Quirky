@@ -49,3 +49,17 @@ void TestMakeMoveFunctionSimple(const std::string_view& fen, const std::string_v
         EXPECT_EQ(board.GetFEN(), fen);
     }
 }
+
+void TestMakeMoveFunction(const std::string_view& fen, const std::string_view& move_string, const std::string_view& move_string_final) {
+    std::vector<std::string> parsed_move_string = q_util::SplitString(move_string);
+    std::vector<q_core::Move> moves(parsed_move_string.size());
+    q_core::Board board;
+    board.MakeFromFEN(fen);
+    for (size_t i = 0; i < parsed_move_string.size(); i++) {
+        moves[i] = q_core::TranslateStringIntoMove(board, parsed_move_string[i]);
+        q_core::MakeMoveInfo info;
+        q_core::MakeMove(board, moves[i], info);
+        EXPECT_TRUE(board.IsValid());
+    }
+    TestMovesInPosition(board.GetFEN(), move_string_final);
+}

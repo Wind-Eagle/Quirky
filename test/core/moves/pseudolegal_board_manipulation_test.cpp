@@ -108,3 +108,14 @@ TEST(CoreMovesPseudolegalBoardManipulation, TrickyPos) {
         "e6f5 e6f6 e6f7 e6g4 e7f6 g5f4 g5h4 g7f6 g7f8 g7h8 g8e8 g8f8 g8h8 h6f5 h6f7 h6g4";
     TestMovesInPosition(board.GetFEN(), moves_new);
 }
+
+TEST(CoreMovesPseudolegalBoardManipulation, Game) {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    std::string moves =
+        "e2e4 d7d6 d2d4 g8f6 b1c3 g7g6 c1e3 f8g7 d1d2 c7c6 f2f3 b7b5 g1e2 b8d7 e3h6 g7h6 d2h6 c8b7 "
+        "a2a3 e7e5 e1c1";
+    std::string moves_final =
+        "a7a5 a7a6 a8b8 a8c8 b5b4 b7a6 b7c8 c6c5 d6d5 d7b6 d7b8 d7c5 d7f8 d8a5 d8b6 d8b8 d8c7 d8c8 "
+        "d8e7 e5d4 e8e7 e8f8 e8g8 f6d5 f6e4 f6g4 f6g8 f6h5 g6g5 h8f8 h8g8";
+    TestMakeMoveFunction(fen, moves, moves_final);
+}

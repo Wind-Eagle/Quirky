@@ -31,9 +31,13 @@ Move TranslateStringIntoMove(const Board& board, const std::string_view& str) {
     Q_ASSERT(str.size() >= 4);
     Q_ASSERT(str.size() <= 5);
     coord_t src = CastStringToCoord(str.substr(0, 2));
-    Q_ASSERT(IsCoordValidAndDefined(src));
+    if (!IsCoordValidAndDefined(src)) {
+        return Move{.type = UNDEFINED_MOVE_TYPE};
+    }
     coord_t dst = CastStringToCoord(str.substr(2, 2));
-    Q_ASSERT(IsCoordValidAndDefined(dst));
+    if (!IsCoordValidAndDefined(dst)) {
+        return Move{.type = UNDEFINED_MOVE_TYPE};
+    }
     if (board.cells[src] == EMPTY_CELL) {
         return Move{.type = UNDEFINED_MOVE_TYPE};
     }

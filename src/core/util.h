@@ -121,7 +121,6 @@ inline constexpr Piece GetCellPiece(const cell_t cell) {
     } else {
         ans = static_cast<Piece>(cell);
     }
-    Q_ASSERT(IsPieceValid(ans));
     return ans;
 }
 
