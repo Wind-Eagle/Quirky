@@ -29,4 +29,7 @@ bool IsCellAttacked(const Board& board, coord_t src) {
     return false;
 }
 
+template bool IsCellAttacked<Color::White>(const Board& board, coord_t src);
+template bool IsCellAttacked<Color::Black>(const Board& board, coord_t src);
+
 }  // namespace q_core

@@ -24,10 +24,10 @@ struct MagicEntry {
 struct MagicBitboard {
   public:
     MagicBitboard();
-    MagicEntry bishop_entry[64];
-    MagicEntry rook_entry[64];
-    bitboard_t bishop_lookup[1792];
     bitboard_t rook_lookup[65536];
+    bitboard_t bishop_lookup[1792];
+    MagicEntry rook_entry[64];
+    MagicEntry bishop_entry[64];
 
   private:
     template <Piece p>

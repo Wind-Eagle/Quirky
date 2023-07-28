@@ -223,8 +223,9 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     move_side = CastCharToColor(parsed_fen[1][0]);
     Q_CHECK_FEN_PARSE_ERROR(IsCastlingStringValid(parsed_fen[2]), FENParseStatus::InvalidCastling);
     castling = CastStringToCastling(parsed_fen[2]);
-    Q_CHECK_FEN_PARSE_ERROR(IsEnPassantCoordValid(move_side, CastStringToEnPassantCoord(parsed_fen[3])),
-                            FENParseStatus::InvalidEnPassantCoord);
+    Q_CHECK_FEN_PARSE_ERROR(
+        IsEnPassantCoordValid(move_side, CastStringToEnPassantCoord(parsed_fen[3])),
+        FENParseStatus::InvalidEnPassantCoord);
     en_passant_coord = CastStringToEnPassantCoord(parsed_fen[3]);
     Q_CHECK_FEN_PARSE_ERROR(IsMoveCountStringValid(parsed_fen[4]),
                             FENParseStatus::InvalidQuietMoveCount);

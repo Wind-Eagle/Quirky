@@ -50,8 +50,6 @@ constexpr cell_t UNDEFINED_CELL = -1;
 
 constexpr coord_t UNDEFINED_COORD = -1;
 
-constexpr uint8_t NUMBER_OF_CASTLING_VARIANTS = 4;
-
 inline constexpr bool IsSubcoordValid(const subcoord_t c) { return c >= 0 && c < BOARD_SIDE; }
 
 inline constexpr bool IsCoordValid(const subcoord_t c) {

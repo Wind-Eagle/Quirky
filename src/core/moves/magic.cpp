@@ -13,10 +13,10 @@ constexpr std::array<bitboard_t, BOARD_SIZE> GetPawnReversedAttackBitboard() {
     std::array<bitboard_t, BOARD_SIZE> res{};
     int8_t pawn_move_delta = (c == Color::White ? -BOARD_SIDE : BOARD_SIDE);
     for (coord_t i = 0; i < BOARD_SIZE; i++) {
-        if (IsCoordValidAndDefined(i + pawn_move_delta - 1)) {
+        if (IsCoordValidAndDefined(i + pawn_move_delta - 1) && GetFile(i) != 0) {
             res[i] |= (1ULL << (i + pawn_move_delta - 1));
         }
-        if (IsCoordValidAndDefined(i + pawn_move_delta + 1)) {
+        if (IsCoordValidAndDefined(i + pawn_move_delta + 1) && GetFile(i) != BOARD_SIDE - 1) {
             res[i] |= (1ULL << (i + pawn_move_delta + 1));
         }
     }

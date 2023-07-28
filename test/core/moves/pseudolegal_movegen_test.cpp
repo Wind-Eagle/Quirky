@@ -3,30 +3,7 @@
 #include "../../../src/core/moves/movegen.h"
 #include "../../../src/core/util.h"
 
-std::string GetSortedMovesList(q_core::MoveList& move_list) {
-    std::vector<std::string> moves;
-    for (size_t i = 0; i < move_list.size; i++) {
-        moves.push_back(q_core::CastMoveToString(move_list.moves[i]));
-    }
-    std::sort(moves.begin(), moves.end());
-    std::string res;
-    for (size_t i = 0; i < moves.size(); i++) {
-        if (i > 0) {
-            res += " ";
-        }
-        res += moves[i];
-    }
-    return res;
-}
-
-void TestMovesInPosition(const std::string_view& fen, const std::string_view& ans) {
-    q_core::Board board;
-    board.MakeFromFEN(fen);
-    q_core::MoveList move_list;
-    q_core::GenerateAllMoves(board, move_list);
-    std::string res = GetSortedMovesList(move_list);
-    EXPECT_EQ(res, ans);
-}
+#include "util.h"
 
 TEST(CoreMovesPseudolegalMovegen, Startpos) {
     TestMovesInPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",

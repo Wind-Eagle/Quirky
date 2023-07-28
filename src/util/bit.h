@@ -31,22 +31,22 @@ inline constexpr bool CheckBit(const uint64_t num, const uint8_t bit) {
 
 inline constexpr uint8_t GetLowestBit(const uint64_t num) {
     Q_ASSERT(num > 0);
-    return std::countr_zero(num);
+    return __builtin_ctzll(num);
 }
 
 inline constexpr uint8_t GetHighestBit(const uint64_t num) {
     Q_ASSERT(num + 1 > 0);
-    return std::countl_zero(num);
+    return 63 - __builtin_clzll(num);
 }
 
 inline constexpr uint8_t ExtractLowestBit(uint64_t& num) {
     Q_ASSERT(num > 0);
     uint8_t ans = GetLowestBit(num);
-    ClearBit(num, ans);
+    num &= (num - 1);
     return ans;
 }
 
-inline constexpr uint8_t GetBitCount(const uint64_t num) { return std::popcount(num); }
+inline constexpr uint8_t GetBitCount(const uint64_t num) { return __builtin_popcountll(num); }
 
 template <int8_t delta>
 inline constexpr uint64_t MoveAllBitsByDelta(const uint64_t num) {

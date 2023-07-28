@@ -1,16 +1,9 @@
 #include "move.h"
 
+#include "../board/board.h"
 #include "../util.h"
 
 namespace q_core {
-
-inline constexpr Piece GetPromotionPiece(const Move move) {
-    Q_ASSERT(IsMovePromotion(move));
-    uint8_t res = ((static_cast<uint8_t>(move.type) >> (PROMOTION_MOVE_BIT_LOG + 1)) &
-                  ((1 << PROMOTION_MOVE_COUNT_LOG) - 1)) + static_cast<uint8_t>(Piece::Knight);
-    Q_ASSERT(res >= static_cast<uint8_t>(Piece::Knight) && res <= static_cast<uint8_t>(Piece::Queen));
-    return static_cast<Piece>(res);
-}
 
 std::string CastMoveToString(const Move move) {
     if (IsMoveNull(move)) {
@@ -24,6 +17,66 @@ std::string CastMoveToString(const Move move) {
         ans += CastPieceToChar(GetPromotionPiece(move));
     }
     return ans;
+}
+
+constexpr uint8_t PAWN_MOVE_DELTA = BOARD_SIDE;
+
+template <Color c>
+inline constexpr int8_t GetPawnMoveDelta() {
+    return c == Color::White ? PAWN_MOVE_DELTA : -PAWN_MOVE_DELTA;
+}
+
+Move TranslateStringIntoMove(const Board& board, const std::string_view& str) {
+    Q_ASSERT(board.IsValid());
+    Q_ASSERT(str.size() >= 4);
+    Q_ASSERT(str.size() <= 5);
+    coord_t src = CastStringToCoord(str.substr(0, 2));
+    Q_ASSERT(IsCoordValidAndDefined(src));
+    coord_t dst = CastStringToCoord(str.substr(2, 2));
+    Q_ASSERT(IsCoordValidAndDefined(dst));
+    if (board.cells[src] == EMPTY_CELL) {
+        return Move{.type = UNDEFINED_MOVE_TYPE};
+    }
+    uint8_t type = 0;
+    if (q_core::GetCellPiece(board.cells[src]) == Piece::Pawn) {
+        type |= FIFTY_RULE_MOVE_BIT;
+        if (dst - src == GetPawnMoveDelta<Color::White>() * 2 || dst - src == GetPawnMoveDelta<Color::Black>() * 2) {
+            return Move{.src = src, .dst = dst, .type = PAWN_DOUBLE_MOVE_BIT};
+        }
+        if (dst - src != GetPawnMoveDelta<Color::White>() && dst - src != GetPawnMoveDelta<Color::Black>()) {
+            if (board.cells[dst] == EMPTY_CELL) {
+                return Move{.src = src, .dst = dst, .type = EN_PASSANT_MOVE_BIT | CAPTURE_MOVE_BIT | FIFTY_RULE_MOVE_BIT};
+            }
+        }
+        if (str.size() == 5) {
+            Piece piece = CastCharToPiece(str[4]);
+            if (!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King) {
+                return Move{.type = UNDEFINED_MOVE_TYPE};
+            }
+            if (piece == Piece::Queen) {
+                return Move{.src = src, .dst = dst, .type = QUEEN_PROMOTION_MOVE_TYPE};
+            }
+            if (piece == Piece::Rook) {
+                return Move{.src = src, .dst = dst, .type = ROOK_PROMOTION_MOVE_TYPE};
+            }
+            if (piece == Piece::Knight) {
+                return Move{.src = src, .dst = dst, .type = KNIGHT_PROMOTION_MOVE_TYPE};
+            }
+            return Move{.src = src, .dst = dst, .type = BISHOP_PROMOTION_MOVE_TYPE};
+        }
+    }
+    if (q_core::GetCellPiece(board.cells[src]) == Piece::King) {
+        if (GetFile(dst) - GetFile(src) == 2) {
+            return Move{.src = src, .dst = dst, .type = KINGSIDE_CASTLING_MOVE_TYPE};
+        }
+        if (GetFile(dst) - GetFile(src) == -2) {
+            return Move{.src = src, .dst = dst, .type = QUEENSIDE_CASTLING_MOVE_TYPE};
+        }
+    }
+    if (board.cells[dst] != EMPTY_CELL) {
+        type |= CAPTURE_MOVE_BIT | FIFTY_RULE_MOVE_BIT;
+    }
+    return Move{.src = src, .dst = dst, .type = type};
 }
 
 }  // namespace q_core

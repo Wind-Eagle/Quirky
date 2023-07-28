@@ -40,7 +40,7 @@ inline constexpr Color GetCellColor(const cell_t c) {
 
 inline constexpr bool IsAnyCastlingAllowed(const Castling c) {
     Q_ASSERT(IsCastlingValid(c));
-    return c == Castling::None;
+    return c != Castling::None;
 }
 
 inline constexpr bool IsCastlingAllowed(const Castling c, const Castling p) {
@@ -108,6 +108,21 @@ inline constexpr char CastPieceToChar(Piece p) {
         default:
             Q_UNREACHABLE();
     }
+}
+
+inline constexpr Piece GetCellPiece(const cell_t cell) {
+    Q_ASSERT(IsCellValid(cell));
+    Q_ASSERT(cell > 0);
+    Q_ASSERT(cell < NUMBER_OF_CELLS);
+    Q_ASSUME(cell < NUMBER_OF_CELLS);
+    Piece ans;
+    if (cell > static_cast<int8_t>(Piece::King)) {
+        ans = static_cast<Piece>(cell - static_cast<int8_t>(Piece::King));
+    } else {
+        ans = static_cast<Piece>(cell);
+    }
+    Q_ASSERT(IsPieceValid(ans));
+    return ans;
 }
 
 }  // namespace q_core
