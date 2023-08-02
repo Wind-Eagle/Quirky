@@ -12,6 +12,9 @@ using see_score_t = int16_t;
 template <Color c>
 bool IsCellAttacked(const Board& board, coord_t dst);
 
+template <Color c>
+bool IsKingInCheck(const Board& board);
+
 see_score_t GetSEE(const Board& board, coord_t dst,
                    const std::array<see_score_t, NUMBER_OF_CELLS>& cells_cost);
 

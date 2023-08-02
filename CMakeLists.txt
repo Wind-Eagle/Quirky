@@ -11,11 +11,14 @@ target_link_libraries(util)
 add_library(core src/core/board/board.cpp src/core/board/geometry.h src/core/board/types.h src/core/util.h src/core/moves/movegen.cpp src/core/moves/attack.cpp src/core/moves/board_manipulation.cpp src/core/moves/magic.cpp src/core/moves/move.cpp)
 target_link_libraries(core util)
 
+add_library(eval src/eval/feature.h src/eval/evaluator.cpp src/eval/model.h src/eval/pawns.h)
+target_link_libraries(eval core util)
+
 add_library(api src/api/api.cpp src/api/uci/uci_protocol.cpp src/api/xboard/xboard_protocol.cpp)
 target_link_libraries(api util)
 
 add_executable(Quirky src/main.cpp)
-target_link_libraries(Quirky core api util)
+target_link_libraries(Quirky core api util eval)
 
 find_package(GTest)
 if(GTest_FOUND)

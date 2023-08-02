@@ -43,7 +43,7 @@
         }                    \
     } while (false)
 
-#define Q_ASSERT(condition) assert(condition)
+#define Q_ASSERT(condition) assert(Q_UNLIKELY(condition))
 
 #define Q_STATIC_ASSERT(condition) static_assert(condition)
 

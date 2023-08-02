@@ -38,14 +38,16 @@ void TestMakeMoveFunctionSimple(const std::string_view& fen, const std::string_v
     q_core::Board board;
     board.MakeFromFEN(fen);
     for (size_t i = 0; i < parsed_move_string.size(); i++) {
-        moves[i] = q_core::TranslateStringIntoMove(board, parsed_move_string[i]);
+        moves[i] = q_core::TranslateStringToMove(board, parsed_move_string[i]);
     }
     for (size_t i = 0; i < moves.size(); i++) {
         q_core::MakeMoveInfo info;
-        q_core::MakeMove(board, moves[i], info);
+        bool legal = q_core::MakeMove(board, moves[i], info);
         EXPECT_TRUE(board.IsValid());
-        q_core::UnmakeMove(board, moves[i], info);
-        EXPECT_TRUE(board.IsValid());
+        if (legal) {
+            q_core::UnmakeMove(board, moves[i], info);
+            EXPECT_TRUE(board.IsValid());
+        }
         EXPECT_EQ(board.GetFEN(), fen);
     }
 }
@@ -56,7 +58,7 @@ void TestMakeMoveFunction(const std::string_view& fen, const std::string_view& m
     q_core::Board board;
     board.MakeFromFEN(fen);
     for (size_t i = 0; i < parsed_move_string.size(); i++) {
-        moves[i] = q_core::TranslateStringIntoMove(board, parsed_move_string[i]);
+        moves[i] = q_core::TranslateStringToMove(board, parsed_move_string[i]);
         q_core::MakeMoveInfo info;
         q_core::MakeMove(board, moves[i], info);
         EXPECT_TRUE(board.IsValid());

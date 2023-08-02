@@ -42,7 +42,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, Promotion) {
     std::string fen = "3R4/6pk/7p/8/6P1/5KN1/3p4/1r6 b - - 0 46";
     std::string moves =
         "b1a1 b1b2 b1b3 b1b4 b1b5 b1b6 b1b7 b1b8 b1c1 b1d1 b1e1 b1f1 b1g1 b1h1 d2d1b d2d1n d2d1q "
-        "d2d1r g7g5 g7g6 h6h5 h7g6 h7g8 h7h8";
+        "d2d1r g7g5 g7g6 h6h5 h7g6 h7g8";
     TestMakeMoveFunctionSimple(fen, moves);
 }
 
@@ -90,7 +90,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, TrickyPos) {
     q_core::Board board;
     board.MakeFromFEN(fen);
     q_core::MakeMoveInfo info;
-    q_core::Move move = q_core::TranslateStringIntoMove(board, "a5b6");
+    q_core::Move move = q_core::TranslateStringToMove(board, "a5b6");
     MakeMove(board, move, info);
     EXPECT_TRUE(board.IsValid());
     TestMakeMoveFunctionSimple(fen, moves);
@@ -99,7 +99,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, TrickyPos) {
         "e6f5 e6f6 e6f7 e6g4 e7f6 g5f4 g5h4 g7f6 g7f8 g7h8 g8e8 g8f8 g8h8 h6f5 h6f7 h6g4";
     TestMovesInPosition(board.GetFEN(), moves_new);
     q_core::UnmakeMove(board, move, info);
-    move = q_core::TranslateStringIntoMove(board, "e1g1");
+    move = q_core::TranslateStringToMove(board, "e1g1");
     MakeMove(board, move, info);
     EXPECT_TRUE(board.IsValid());
     TestMakeMoveFunctionSimple(fen, moves);
@@ -117,5 +117,17 @@ TEST(CoreMovesPseudolegalBoardManipulation, Game) {
     std::string moves_final =
         "a7a5 a7a6 a8b8 a8c8 b5b4 b7a6 b7c8 c6c5 d6d5 d7b6 d7b8 d7c5 d7f8 d8a5 d8b6 d8b8 d8c7 d8c8 "
         "d8e7 e5d4 e8e7 e8f8 e8g8 f6d5 f6e4 f6g4 f6g8 f6h5 g6g5 h8f8 h8g8";
+    TestMakeMoveFunction(fen, moves, moves_final);
+}
+
+TEST(CoreMovesPseudolegalBoardManipulation, PawnMarch) {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    std::string moves =
+        "e2e4 g8h6 e4e5 f7f5 e5f6 e7e6 d2d4 f8d6 d4d5 e8g8 f6g7 d8f6 g7f8r g8g7 d5e6 f6e6 g1e2 "
+        "c7c5";
+    std::string moves_final =
+        "a2a3 a2a4 b1a3 b1c3 b1d2 b2b3 b2b4 c1d2 c1e3 c1f4 c1g5 c1h6 c2c3 c2c4 d1d2 d1d3 d1d4 d1d5 "
+        "d1d6 e1d2 e2c3 e2d4 e2f4 e2g1 e2g3 f2f3 f2f4 f8c8 f8d8 f8e8 f8f3 f8f4 f8f5 f8f6 f8f7 f8g8 "
+        "f8h8 g2g3 g2g4 h1g1 h2h3 h2h4";
     TestMakeMoveFunction(fen, moves, moves_final);
 }

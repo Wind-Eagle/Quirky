@@ -45,7 +45,6 @@ void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size
     constexpr bool D = (type & PAWN_MOVE_DOUBLE_BIT);
     constexpr bool E = (type & PAWN_MOVE_EN_PASSANT_BIT);
     Q_STATIC_ASSERT(!(C & D) && !(E && !C) && !(D && E) && !(D && P) && !(E && P));
-    Q_ASSERT(IsCoordValid(src) && IsCoordValid(dst) && size < MAX_MOVES_COUNT);
     constexpr uint8_t MAIN_MOVE_BITS = (C ? CAPTURE_MOVE_BIT : 0) | (D ? PAWN_DOUBLE_MOVE_BIT : 0) |
                                        FIFTY_RULE_MOVE_BIT | (E ? EN_PASSANT_MOVE_BIT : 0);
     if constexpr (P) {
@@ -61,7 +60,6 @@ void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size
 template <Color c, bool p>
 void GeneratePawnSimpleMoves(const Board& board, Move* list, const bitboard_t src,
                              const bitboard_t dst, size_t& size) {
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta<c>();
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     while (move_dst) {
@@ -74,7 +72,6 @@ void GeneratePawnSimpleMoves(const Board& board, Move* list, const bitboard_t sr
 template <Color c>
 void GeneratePawnDoubleMoves(const Board& board, Move* list, const bitboard_t src,
                              const bitboard_t dst, size_t& size) {
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta<c>();
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst;
@@ -88,8 +85,6 @@ void GeneratePawnDoubleMoves(const Board& board, Move* list, const bitboard_t sr
 template <Color c, bool p>
 void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
                           const bitboard_t dst, size_t& size) {
-    Q_ASSERT(size < MAX_MOVES_COUNT);
-    Q_ASSERT(IsCoordValid(board.en_passant_coord));
     if constexpr (p) {
         if (Q_LIKELY(src == 0)) {
             return;
@@ -113,6 +108,7 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
             dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list, size);
     }
     if constexpr (!p) {
+        Q_ASSERT(IsCoordValidAndDefined(board.en_passant_coord));
         if (Q_UNLIKELY(board.en_passant_coord != NO_ENPASSANT_COORD)) {
             move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_left)) {
@@ -132,7 +128,6 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
 
 template <Color c, bool p>
 void GenerateAllPawnCaptures(const Board& board, Move* list, const bitboard_t src, size_t& size) {
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     GeneratePawnCaptures<c, p>(board, list, src,
                                board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))], size);
 }
@@ -140,7 +135,6 @@ void GenerateAllPawnCaptures(const Board& board, Move* list, const bitboard_t sr
 template <Color c, bool p>
 void GenerateAllPawnSimpleMoves(const Board& board, Move* list, const bitboard_t src,
                                 size_t& size) {
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     const bitboard_t dst = board.bb_pieces[EMPTY_CELL];
     GeneratePawnSimpleMoves<c, p>(board, list, src, dst, size);
     if constexpr (!p) {
@@ -150,8 +144,6 @@ void GenerateAllPawnSimpleMoves(const Board& board, Move* list, const bitboard_t
 
 template <Color c, CapturePolicy cp, PromotionPolicy pp>
 void GenerateAllPawnMoves(const Board& board, Move* list, size_t& size) {
-    Q_ASSERT(board.IsValid());
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     if constexpr (pp == PromotionPolicy::All) {
         GenerateAllPawnMoves<c, cp, PromotionPolicy::None>(board, list, size);
         GenerateAllPawnMoves<c, cp, PromotionPolicy::OnlyPromotions>(board, list, size);
@@ -194,7 +186,6 @@ constexpr bitboard_t BLACK_QUEENSIDE_CASTLING_MOVE_BITBOARD =
 
 template <Color c>
 void GenerateCastling(const Board& board, Move* list, size_t& size) {
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     if constexpr (c == Color::White) {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::WhiteAll))) {
             if (!((~board.bb_pieces[EMPTY_CELL]) & WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD) &&
@@ -218,13 +209,13 @@ void GenerateCastling(const Board& board, Move* list, size_t& size) {
             }
         }
     }
+    Q_ASSERT(size < MAX_MOVES_COUNT);
 }
 
 template <Color c, Piece p, CapturePolicy cp>
 void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, size_t& size) {
     Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::Bishop || p == Piece::Rook ||
                     p == Piece::King);
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     bitboard_t pieces_src = src;
     while (pieces_src) {
         const coord_t src_coord = q_util::ExtractLowestBit(pieces_src);
@@ -261,10 +252,8 @@ void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, 
 
 template <Color c, Piece p, CapturePolicy cp>
 void GenerateAllKNBRQMoves(const Board& board, Move* list, size_t& size) {
-    Q_ASSERT(board.IsValid());
     Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::Bishop || p == Piece::Rook ||
                     p == Piece::King);
-    Q_ASSERT(size < MAX_MOVES_COUNT);
     if constexpr (p == Piece::Bishop) {
         GenerateAllKNBRMoves<c, Piece::Bishop, cp>(board, list,
                                                    board.bb_pieces[MakeCell(c, Piece::Bishop)] |
@@ -281,6 +270,7 @@ void GenerateAllKNBRQMoves(const Board& board, Move* list, size_t& size) {
 }
 
 void GenerateAllMoves(const Board& board, MoveList& list) {
+    Q_ASSERT(board.IsValid());
     size_t size = 0;
     if (board.move_side == q_core::Color::White) {
         q_core::GenerateAllPawnMoves<q_core::Color::White, q_core::CapturePolicy::All,

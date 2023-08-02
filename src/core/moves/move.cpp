@@ -26,7 +26,24 @@ inline constexpr int8_t GetPawnMoveDelta() {
     return c == Color::White ? PAWN_MOVE_DELTA : -PAWN_MOVE_DELTA;
 }
 
-Move TranslateStringIntoMove(const Board& board, const std::string_view& str) {
+Move TranslatePromotionStringToMove(const Board& board, const std::string_view& str, const coord_t src, const coord_t dst) {
+    Piece piece = CastCharToPiece(str[4]);
+    if (!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King) {
+        return Move{.type = UNDEFINED_MOVE_TYPE};
+    }
+    if (piece == Piece::Queen) {
+        return Move{.src = src, .dst = dst, .type = QUEEN_PROMOTION_MOVE_TYPE};
+    }
+    if (piece == Piece::Rook) {
+        return Move{.src = src, .dst = dst, .type = ROOK_PROMOTION_MOVE_TYPE};
+    }
+    if (piece == Piece::Knight) {
+        return Move{.src = src, .dst = dst, .type = KNIGHT_PROMOTION_MOVE_TYPE};
+    }
+    return Move{.src = src, .dst = dst, .type = BISHOP_PROMOTION_MOVE_TYPE};
+}
+
+Move TranslateStringToMove(const Board& board, const std::string_view& str) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(str.size() >= 4);
     Q_ASSERT(str.size() <= 5);
@@ -53,20 +70,7 @@ Move TranslateStringIntoMove(const Board& board, const std::string_view& str) {
             }
         }
         if (str.size() == 5) {
-            Piece piece = CastCharToPiece(str[4]);
-            if (!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King) {
-                return Move{.type = UNDEFINED_MOVE_TYPE};
-            }
-            if (piece == Piece::Queen) {
-                return Move{.src = src, .dst = dst, .type = QUEEN_PROMOTION_MOVE_TYPE};
-            }
-            if (piece == Piece::Rook) {
-                return Move{.src = src, .dst = dst, .type = ROOK_PROMOTION_MOVE_TYPE};
-            }
-            if (piece == Piece::Knight) {
-                return Move{.src = src, .dst = dst, .type = KNIGHT_PROMOTION_MOVE_TYPE};
-            }
-            return Move{.src = src, .dst = dst, .type = BISHOP_PROMOTION_MOVE_TYPE};
+            return TranslatePromotionStringToMove(board, str, src, dst);
         }
     }
     if (q_core::GetCellPiece(board.cells[src]) == Piece::King) {

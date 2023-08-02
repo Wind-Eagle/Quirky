@@ -85,7 +85,7 @@ inline Piece GetPromotionPiece(const Move move) {
 
 std::string CastMoveToString(Move move);
 
-Move TranslateStringIntoMove(const Board& board, const std::string_view& str);
+Move TranslateStringToMove(const Board& board, const std::string_view& str);
 
 }  // namespace q_core
 
