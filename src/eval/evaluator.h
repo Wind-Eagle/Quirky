@@ -27,20 +27,18 @@ struct Evaluator {
         void BuildTag(const q_core::Board& board);
         Tag UpdateTag(const q_core::Board& board, const q_core::Move move);
       private:
-        typename EvaluationResultType<type>::type score;
-        uint8_t stage;
+        typename EvaluationResultType<type>::type score_;
+        stage_t stage_;
     };
 
-    void StartTrackingBoard(const q_core::Board& board) {
-        tag.BuildTag(board);
+    void StartTrackingBoard(const q_core::Board& board) { tag_.BuildTag(board);
     }
 
     void UpdateOnMove(const q_core::Board& board, const q_core::Move move) {
-        tag.UpdateTag(board, move);
+        tag_.UpdateTag(board, move);
     }
 
-    void ReplaceTag(const Tag new_tag) {
-        tag = new_tag;
+    void ReplaceTag(const Tag new_tag) { tag_ = new_tag;
     }
 
     typename EvaluationResultType<type>::type Evaluate(const q_core::Board& board,
@@ -48,7 +46,7 @@ struct Evaluator {
                                                        score_t beta = SCORE_MAX);
 
   private:
-    Tag tag;
+    Tag tag_;
 };
 
 }  // namespace q_eval
