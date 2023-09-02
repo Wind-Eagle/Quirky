@@ -92,17 +92,17 @@ void MagicBitboard::FillLookupTable(const std::array<uint64_t, 64>& piece_offset
             const bitboard_t occupied = q_util::DepositBits(submask, piece_entry[i].mask);
             bitboard_t& res = piece_lookup[piece_offset[i] + submask];
             for (uint8_t dir = 0; dir < 4; dir++) {
-                subcoord_t x = GetRank(i);
-                subcoord_t y = GetFile(i);
+                subcoord_t rank = GetRank(i);
+                subcoord_t file = GetFile(i);
                 for (;;) {
-                    res |= MakeBitboardFromCoord(MakeCoord(x, y));
-                    x += dx[dir];
-                    y += dy[dir];
-                    if (!(IsSubcoordValid(x) && IsSubcoordValid(y))) {
+                    res |= MakeBitboardFromCoord(MakeCoord(rank, file));
+                    rank += dx[dir];
+                    file += dy[dir];
+                    if (!(IsSubcoordValid(rank) && IsSubcoordValid(file))) {
                         break;
                     }
-                    if (q_util::CheckBit(occupied, MakeCoord(x, y))) {
-                        res |= MakeBitboardFromCoord(MakeCoord(x, y));
+                    if (q_util::CheckBit(occupied, MakeCoord(rank, file))) {
+                        res |= MakeBitboardFromCoord(MakeCoord(rank, file));
                         break;
                     }
                 }

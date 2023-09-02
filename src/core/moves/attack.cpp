@@ -32,7 +32,19 @@ bool IsCellAttacked(const Board& board, coord_t src) {
 
 template <Color c>
 bool IsKingInCheck(const Board& board) {
-    return IsCellAttacked<GetInvertedColor(c)>(board, q_util::GetLowestBit(board.bb_pieces[MakeCell(c, Piece::King)]));
+    return IsCellAttacked<GetInvertedColor(c)>(
+        board, q_util::GetLowestBit(board.bb_pieces[MakeCell(c, Piece::King)]));
+}
+
+template <Color c>
+bitboard_t GetPawnAttacks(const bitboard_t pawns) {
+    constexpr int8_t PAWN_MOVE_DELTA = BOARD_SIDE;
+    constexpr int8_t CURRENT_PAWN_MOVE_DELTA =
+        (c == Color::White ? PAWN_MOVE_DELTA : -PAWN_MOVE_DELTA);
+    return static_cast<bitboard_t>(
+        q_util::MoveAllBitsByDelta<CURRENT_PAWN_MOVE_DELTA - 1>(pawns & (~FILE_BITBOARD[0])) |
+        q_util::MoveAllBitsByDelta<CURRENT_PAWN_MOVE_DELTA + 1>(pawns &
+                                                                (~FILE_BITBOARD[BOARD_SIDE - 1])));
 }
 
 template bool IsCellAttacked<Color::White>(const Board& board, coord_t src);
@@ -40,5 +52,8 @@ template bool IsCellAttacked<Color::Black>(const Board& board, coord_t src);
 
 template bool IsKingInCheck<Color::White>(const Board& board);
 template bool IsKingInCheck<Color::Black>(const Board& board);
+
+template bitboard_t GetPawnAttacks<Color::White>(const bitboard_t pawns);
+template bitboard_t GetPawnAttacks<Color::Black>(const bitboard_t pawns);
 
 }  // namespace q_core

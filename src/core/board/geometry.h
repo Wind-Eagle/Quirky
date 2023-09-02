@@ -26,9 +26,9 @@ constexpr std::array<bitboard_t, BOARD_SIDE* 2 - 1> RIGHT_DIAGONAL_BITBOARD = {
 constexpr bitboard_t FRAME_BITBOARD =
     RANK_BITBOARD[0] | RANK_BITBOARD[7] | FILE_BITBOARD[0] | FILE_BITBOARD[7];
 
-inline constexpr subcoord_t MakeCoord(const subcoord_t x, const subcoord_t y) {
-    Q_ASSERT(IsSubcoordValid(x) && IsSubcoordValid(y));
-    return (x << BOARD_SIDE_LOG) | y;
+inline constexpr subcoord_t MakeCoord(const subcoord_t rank, const subcoord_t file) {
+    Q_ASSERT(IsSubcoordValid(rank) && IsSubcoordValid(file));
+    return (rank << BOARD_SIDE_LOG) | file;
 }
 
 inline constexpr subcoord_t InvertSubcoord(const subcoord_t c) {

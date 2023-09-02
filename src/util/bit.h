@@ -14,6 +14,11 @@ inline constexpr void SetBit(uint64_t& num, const uint8_t bit) {
     num |= (1ULL << bit);
 }
 
+inline constexpr void SetBit(uint8_t& num, const uint8_t bit) {
+    Q_ASSERT(bit < 8);
+    num |= (1ULL << bit);
+}
+
 inline constexpr void FlipBit(uint64_t& num, const uint8_t bit) {
     Q_ASSERT(bit < 64);
     num ^= (1ULL << bit);
@@ -57,6 +62,18 @@ inline constexpr uint64_t MoveAllBitsByDelta(const uint64_t num) {
         Q_ASSERT(num == 0 || q_util::GetLowestBit(num) + delta >= 0);
         return num >> (-delta);
     }
+}
+
+inline constexpr bool ContainsBits(uint64_t num, uint64_t mask) {
+    return (num & mask) == num;
+}
+
+inline constexpr uint64_t ScatterByte(const uint8_t num) {
+    uint64_t ans = num;
+    ans |= ans << 8;
+    ans |= ans << 16;
+    ans |= ans << 32;
+    return ans;
 }
 
 inline uint64_t DepositBits(const uint64_t submask, const uint64_t mask) {

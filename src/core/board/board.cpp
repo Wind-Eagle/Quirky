@@ -198,26 +198,26 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
     std::vector<std::string> parsed_position = q_util::SplitString(parsed_fen[0], '/');
     Q_CHECK_FEN_PARSE_ERROR(parsed_position.size() == BOARD_SIDE,
                             FENParseStatus::InvalidNumberOfRows);
-    for (subcoord_t i = 0; i < BOARD_SIDE; i++) {
-        subcoord_t j = 0;
-        for (auto c : parsed_position[i]) {
-            Q_CHECK_FEN_PARSE_ERROR(j < BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
+    for (subcoord_t rank = 0; rank < BOARD_SIDE; rank++) {
+        subcoord_t file = 0;
+        for (auto c : parsed_position[rank]) {
+            Q_CHECK_FEN_PARSE_ERROR(file < BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
             if (isdigit(c)) {
                 Q_CHECK_FEN_PARSE_ERROR((c - '0') > 0 && (c - '0') <= BOARD_SIDE,
                                         FENParseStatus::InvalidSizeOfColumnSkip);
-                for (coord_t cur = j; cur < j + c - '0'; cur++) {
-                    cells[MakeCoord(InvertSubcoord(i), cur)] = EMPTY_CELL;
+                for (coord_t cur = file; cur < file + c - '0'; cur++) {
+                    cells[MakeCoord(InvertSubcoord(rank), cur)] = EMPTY_CELL;
                 }
-                j += c - '0';
+                file += c - '0';
             } else {
                 cell_t cell = CastCharToCell(c);
                 Q_CHECK_FEN_PARSE_ERROR(cell != UNDEFINED_CELL, FENParseStatus::InvalidCell);
-                cells[MakeCoord(InvertSubcoord(i), j)] = cell;
-                j++;
+                cells[MakeCoord(InvertSubcoord(rank), file)] = cell;
+                file++;
             }
-            Q_CHECK_FEN_PARSE_ERROR(j <= BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
+            Q_CHECK_FEN_PARSE_ERROR(file <= BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
         }
-        Q_CHECK_FEN_PARSE_ERROR(j == BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
+        Q_CHECK_FEN_PARSE_ERROR(file == BOARD_SIDE, FENParseStatus::InvalidNumberOfColumns);
     }
     Q_CHECK_FEN_PARSE_ERROR(IsMoveSideStringValid(parsed_fen[1]), FENParseStatus::InvalidMoveSide);
     move_side = CastCharToColor(parsed_fen[1][0]);
@@ -242,10 +242,10 @@ Board::FENParseStatus Board::MakeFromFEN(const std::string_view& fen) {
 std::string Board::GetFEN() const {
     Q_ASSERT(IsValid());
     std::string res;
-    for (subcoord_t i = 0; i < BOARD_SIDE; i++) {
+    for (subcoord_t rank = 0; rank < BOARD_SIDE; rank++) {
         uint8_t block_size = 0;
-        for (subcoord_t j = 0; j < BOARD_SIDE; j++) {
-            coord_t cur = MakeCoord(InvertSubcoord(i), j);
+        for (subcoord_t file = 0; file < BOARD_SIDE; file++) {
+            coord_t cur = MakeCoord(InvertSubcoord(rank), file);
             if (cells[cur] == EMPTY_CELL) {
                 block_size++;
             } else {
@@ -259,7 +259,7 @@ std::string Board::GetFEN() const {
         if (block_size > 0) {
             res += static_cast<char>(block_size + '0');
         }
-        if (i != BOARD_SIDE - 1) {
+        if (rank != BOARD_SIDE - 1) {
             res += "/";
         }
     }

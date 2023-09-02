@@ -20,7 +20,7 @@ void StartCommunication() {
             StartXBoardProtocol();
             break;
         }
-        q_util::Print("Unidentified protocol name: use either uci or xboard.");
+        q_util::Print("Unidentified protocol name: use uci, xboard or internal.");
     }
 }
 

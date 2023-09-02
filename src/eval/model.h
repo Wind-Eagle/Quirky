@@ -8,16 +8,16 @@
 
 namespace q_eval {
 
-inline constexpr void AssignFeatureValue(std::array<score_t, q_eval::FEATURE_COUNT>& res, Feature feature, int16_t weight) {
+inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_COUNT>& res, Feature feature, ScorePair weight) {
     res[static_cast<uint16_t>(feature)] = weight;
 }
 
-inline constexpr std::array<score_t, q_eval::FEATURE_COUNT> GetModelWeights() {
-    std::array<score_t, q_eval::FEATURE_COUNT> res{};
+inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> GetModelWeights() {
+    std::array<ScorePair, q_eval::FEATURE_COUNT> res{};
     return res;
 }
 
-inline constexpr std::array<score_t, q_eval::FEATURE_COUNT> MODEL_WEIGHTS = GetModelWeights();
+inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> MODEL_WEIGHTS = GetModelWeights();
 
 }  // namespace q_eval
 
