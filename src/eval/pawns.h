@@ -7,8 +7,8 @@ namespace q_eval {
 
 struct PawnHashTableEntry {
     ScorePair score;
-    uint8_t white_half_open_files_mask;
-    uint8_t black_half_open_files_mask;
+    uint8_t white_open_files_mask;
+    uint8_t black_open_files_mask;
     uint16_t info;
 };
 

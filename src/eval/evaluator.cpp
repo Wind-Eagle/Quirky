@@ -6,21 +6,23 @@
 #include "pawns.h"
 #include "psq.h"
 
+using namespace q_core;
+
 namespace q_eval {
 
-template <EvaluationType type, q_core::Color c>
+template <EvaluationType type, Color c>
 void AddFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
                 const int8_t count) {
     /*Q_ASSERT(MODEL_WEIGHTS[static_cast<uint16_t>(feature)].GetFirst() != 0 ||
              MODEL_WEIGHTS[static_cast<uint16_t>(feature)].GetSecond() != 0);*/
     if constexpr (type == EvaluationType::Value) {
-        if constexpr (c == q_core::Color::White) {
+        if constexpr (c == Color::White) {
             score += MODEL_WEIGHTS[static_cast<uint16_t>(feature)] * count;
         } else {
             score -= MODEL_WEIGHTS[static_cast<uint16_t>(feature)] * count;
         }
     } else {
-        if constexpr (c == q_core::Color::White) {
+        if constexpr (c == Color::White) {
             score[static_cast<uint16_t>(feature)] += count;
         } else {
             score[static_cast<uint16_t>(feature)] -= count;
@@ -28,31 +30,31 @@ void AddFeature(typename EvaluationResultType<type>::type& score, const Feature 
     }
 }
 
-template <EvaluationType type, q_core::Color c>
-void EvaluatePawns(const q_core::Board& board, typename EvaluationResultType<type>::type& score,
+template <EvaluationType type, Color c>
+void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score,
                    uint8_t& open_files_mask) {
-    const q_core::bitboard_t our_pawns = board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Pawn)];
-    const q_core::bitboard_t enemy_pawns =
-        board.bb_pieces[q_core::MakeCell(q_core::GetInvertedColor(c), q_core::Piece::Pawn)];
+    const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
+    const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)];
 
     const auto colored_pawn_frontspan =
-        (c == q_core::Color::White ? WHITE_PAWN_FRONTSPAN_BITBOARD : BLACK_PAWN_FRONTSPAN_BITBOARD);
+        (c == Color::White ? WHITE_PAWN_FRONTSPAN_BITBOARD : BLACK_PAWN_FRONTSPAN_BITBOARD);
 
     uint8_t pawn_islands_mask = 0;
-    q_core::bitboard_t pawn_bitboard = board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Pawn)];
+    bitboard_t pawn_bitboard = board.bb_pieces[MakeCell(c, Piece::Pawn)];
     while (pawn_bitboard) {
-        const q_core::coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
-        const q_core::subcoord_t pawn_rank = q_core::GetRank(pawn_coord);
-        const q_core::subcoord_t pawn_file = q_core::GetFile(pawn_coord);
+        const coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
+        const subcoord_t pawn_rank = GetRank(pawn_coord);
+        const subcoord_t pawn_file = GetFile(pawn_coord);
         q_util::SetBit(pawn_islands_mask, pawn_file);
-        const q_core::subcoord_t relative_pawn_rank =
-            (c == q_core::Color::White ? pawn_rank : q_core::InvertSubcoord(pawn_rank));
+        const subcoord_t relative_pawn_rank =
+            (c == Color::White ? pawn_rank : InvertSubcoord(pawn_rank));
+        Q_ASSUME(relative_pawn_rank > 0 && relative_pawn_rank < BOARD_SIDE - 1);
 
         bool is_pawn_isolated = false;
         bool is_pawn_passed = false;
 
-        if ((c == q_core::Color::White ? q_core::WHITE_PAWN_REVERSED_ATTACK_BITBOARD[pawn_coord]
-                                       : q_core::BLACK_PAWN_REVERSED_ATTACK_BITBOARD[pawn_coord]) &
+        if ((c == Color::White ? WHITE_PAWN_REVERSED_ATTACK_BITBOARD[pawn_coord]
+                               : BLACK_PAWN_REVERSED_ATTACK_BITBOARD[pawn_coord]) &
             our_pawns) {
             AddFeature<type, c>(score, Feature::DefendedPawn, 1);
             if (relative_pawn_rank >= DEFENDED_PAWN_FEATURE_FIRST &&
@@ -73,8 +75,8 @@ void EvaluatePawns(const q_core::Board& board, typename EvaluationResultType<typ
         if (!(colored_pawn_frontspan[pawn_coord] & (our_pawns | enemy_pawns))) {
             AddFeature<type, c>(score, Feature::OpenedPawn, 1);
 
-            if (!((c == q_core::Color::White ? WHITE_PAWN_PASSED_BITBOARD[pawn_coord]
-                                             : BLACK_PAWN_PASSED_BITBOARD[pawn_coord]) &
+            if (!((c == Color::White ? WHITE_PAWN_PASSED_BITBOARD[pawn_coord]
+                                     : BLACK_PAWN_PASSED_BITBOARD[pawn_coord]) &
                   enemy_pawns)) {
                 is_pawn_passed = true;
                 AddFeature<type, c>(score, Feature::PassedPawn, 1);
@@ -102,12 +104,11 @@ void EvaluatePawns(const q_core::Board& board, typename EvaluationResultType<typ
             }
         }
 
-        if (!((c == q_core::Color::White ? (~(BLACK_PAWN_PASSED_BITBOARD[pawn_coord]))
-                                         : (~(WHITE_PAWN_PASSED_BITBOARD[pawn_coord]))) |
-              PAWN_CONNECTED_BITBOARD[pawn_coord] & (~q_core::FILE_BITBOARD[pawn_rank]) &
-                  our_pawns) &&
-            ((c == q_core::Color::White ? WHITE_PAWN_BACKWARD_SENTRY_BITBOARD[pawn_coord]
-                                        : BLACK_PAWN_BACKWARD_SENTRY_BITBOARD[pawn_coord]) &
+        if (!((c == Color::White ? (~(BLACK_PAWN_PASSED_BITBOARD[pawn_coord]))
+                                 : (~(WHITE_PAWN_PASSED_BITBOARD[pawn_coord]))) |
+              PAWN_CONNECTED_BITBOARD[pawn_coord] & (~FILE_BITBOARD[pawn_rank]) & our_pawns) &&
+            ((c == Color::White ? WHITE_PAWN_BACKWARD_SENTRY_BITBOARD[pawn_coord]
+                                : BLACK_PAWN_BACKWARD_SENTRY_BITBOARD[pawn_coord]) &
              enemy_pawns)) {
             AddFeature<type, c>(score, Feature::BackwardPawn, 1);
         }
@@ -132,12 +133,13 @@ void EvaluatePawns(const q_core::Board& board, typename EvaluationResultType<typ
 }
 
 template <EvaluationType type>
-PawnHashTableEntry EvaluatePawns(const q_core::Board& board, typename EvaluationResultType<type>::type& res) {
+PawnHashTableEntry EvaluatePawns(const Board& board,
+                                 typename EvaluationResultType<type>::type& res) {
     uint8_t white_open_files_mask = 0;
     uint8_t black_open_files_mask = 0;
     typename EvaluationResultType<type>::type score{};
-    EvaluatePawns<type, q_core::Color::White>(board, score, white_open_files_mask);
-    EvaluatePawns<type, q_core::Color::Black>(board, score, black_open_files_mask);
+    EvaluatePawns<type, Color::White>(board, score, white_open_files_mask);
+    EvaluatePawns<type, Color::Black>(board, score, black_open_files_mask);
     if constexpr (type == EvaluationType::Vector) {
         return PawnHashTableEntry{ScorePair(), white_open_files_mask, black_open_files_mask};
     } else {
@@ -145,38 +147,34 @@ PawnHashTableEntry EvaluatePawns(const q_core::Board& board, typename Evaluation
     }
 }
 
-template <EvaluationType type, q_core::Color c>
-void EvaluateKNBRQ(const q_core::Board& board, typename EvaluationResultType<type>::type& score,
+template <EvaluationType type, Color c>
+void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
                    const PawnHashTableEntry pawn_hash_table_entry) {
-    q_core::bitboard_t open_files = pawn_hash_table_entry.white_half_open_files_mask &
-                                    pawn_hash_table_entry.black_half_open_files_mask;
-    q_core::bitboard_t half_open_files =
-        (c == q_core::Color::White ? ~pawn_hash_table_entry.white_half_open_files_mask
-                                   : ~pawn_hash_table_entry.black_half_open_files_mask);
-    if (board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Knight)]) {
-        AddFeature<type, c>(
-            score, Feature::KnightPair,
-            q_util::GetBitCount(board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Knight)]) - 1);
+    bitboard_t open_files = pawn_hash_table_entry.white_open_files_mask &
+                            pawn_hash_table_entry.black_open_files_mask;
+    bitboard_t half_open_files =
+        (c == Color::White ? pawn_hash_table_entry.white_open_files_mask
+                           : pawn_hash_table_entry.black_open_files_mask);
+    if (board.bb_pieces[MakeCell(c, Piece::Knight)]) {
+        AddFeature<type, c>(score, Feature::KnightPair,
+                            q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Knight)]) - 1);
     }
-    if (board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Bishop)]) {
-        AddFeature<type, c>(
-            score, Feature::BishopPair,
-            q_util::GetBitCount(board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Bishop)]) - 1);
+    if (board.bb_pieces[MakeCell(c, Piece::Bishop)]) {
+        AddFeature<type, c>(score, Feature::BishopPair,
+                            q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Bishop)]) - 1);
     }
-    AddFeature<type, c>(
-        score, Feature::RookOnOpenFile,
-        q_util::GetBitCount(board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Rook)] &
-                            q_util::ScatterByte(open_files)));
-    AddFeature<type, c>(
-        score, Feature::RookOnHalfOpenFile,
-        q_util::GetBitCount(board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Rook)] &
-                            q_util::ScatterByte(half_open_files)));
-    const q_core::coord_t enemy_king_pos = q_util::GetLowestBit(
-        board.bb_pieces[q_core::MakeCell(q_core::GetInvertedColor(c), q_core::Piece::King)]);
-    if (board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Queen)] != 0) {
-        const q_core::coord_t queen_pos =
-            q_util::GetLowestBit(board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Queen)]);
+    AddFeature<type, c>(score, Feature::RookOnOpenFile,
+                        q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
+                                            q_util::ScatterByte(open_files)));
+    AddFeature<type, c>(score, Feature::RookOnHalfOpenFile,
+                        q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
+                                            q_util::ScatterByte(half_open_files)));
+    const coord_t enemy_king_pos =
+        q_util::GetLowestBit(board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::King)]);
+    if (board.bb_pieces[MakeCell(c, Piece::Queen)]) {
+        const coord_t queen_pos = q_util::GetLowestBit(board.bb_pieces[MakeCell(c, Piece::Queen)]);
         const uint8_t queen_king_distance = GetLInftyDistance(enemy_king_pos, queen_pos);
+        Q_ASSUME(queen_king_distance > 0);
         if (queen_king_distance >= QUEEN_KING_DISTANCE_FEATURE_FIRST &&
             queen_king_distance <= QUEEN_KING_DISTANCE_FEATURE_LAST) {
             AddFeature<type, c>(
@@ -186,41 +184,34 @@ void EvaluateKNBRQ(const q_core::Board& board, typename EvaluationResultType<typ
                 1);
         }
     }
-    const q_core::coord_t king_pos =
-        q_util::GetLowestBit(board.bb_pieces[q_core::MakeCell(c, q_core::Piece::King)]);
-    const q_core::subcoord_t king_rank = q_core::GetRank(king_pos);
-    const q_core::subcoord_t king_file = q_core::GetFile(king_pos);
-    if (!(c == q_core::Color::White
-              ? q_core::IsAnyCastlingAllowed(board.castling & q_core::Castling::WhiteAll)
-              : q_core::IsAnyCastlingAllowed(board.castling & q_core::Castling::BlackAll)) &&
-        (c == q_core::Color::White ? WHITE_KING_SHIELDED_BITBOARD : BLACK_KING_SHIELDED_BITBOARD) &
-            q_core::MakeBitboardFromCoord(king_pos)) {
-        constexpr int8_t DIR = (c == q_core::Color::White ? 1 : -1);
-        const q_core::bitboard_t our_pawns =
-            board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Pawn)];
-        const q_core::bitboard_t enemy_pawns =
-            board.bb_pieces[q_core::MakeCell(q_core::GetInvertedColor(c), q_core::Piece::Pawn)];
+    const coord_t king_pos = q_util::GetLowestBit(board.bb_pieces[MakeCell(c, Piece::King)]);
+    const subcoord_t king_rank = GetRank(king_pos);
+    const subcoord_t king_file = GetFile(king_pos);
+    bool is_king_castled = c == Color::White ? IsAnyCastlingAllowed(board.castling & Castling::WhiteAll)
+                            : IsAnyCastlingAllowed(board.castling & Castling::BlackAll);
+    bool is_king_shielded = (c == Color::White ? WHITE_KING_SHIELDED_BITBOARD : BLACK_KING_SHIELDED_BITBOARD) &
+            MakeBitboardFromCoord(king_pos);
+    if (!is_king_castled && is_king_shielded) {
+        constexpr int8_t DIR = (c == Color::White ? 1 : -1);
+        const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
+        const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)];
         const uint8_t shield_mask1 =
-            ((our_pawns & q_core::RANK_BITBOARD[king_rank + DIR]) >>
-             (c == q_core::Color::White ? q_core::BOARD_SIDE - 1 + king_pos
-                                        : king_pos - q_core::BOARD_SIDE - 1)) &
+            ((our_pawns & RANK_BITBOARD[king_rank + DIR]) >>
+             (c == Color::White ? BOARD_SIDE - 1 + king_pos : king_pos - BOARD_SIDE - 1)) &
             7;
         const uint8_t shield_mask2 =
-            ((our_pawns & q_core::RANK_BITBOARD[king_rank + DIR * 2]) >>
-             (c == q_core::Color::White ? q_core::BOARD_SIDE * 2 - 1 + king_pos
-                                        : king_pos - q_core::BOARD_SIDE * 2 - 1)) &
+            ((our_pawns & RANK_BITBOARD[king_rank + DIR * 2]) >>
+             (c == Color::White ? BOARD_SIDE * 2 - 1 + king_pos : king_pos - BOARD_SIDE * 2 - 1)) &
             7;
         const uint8_t storm_mask2 =
-            ((enemy_pawns & q_core::RANK_BITBOARD[king_rank + DIR * 2]) >>
-             (c == q_core::Color::White ? q_core::BOARD_SIDE * 2 - 1 + king_pos
-                                        : king_pos - q_core::BOARD_SIDE * 2 - 1)) &
+            ((enemy_pawns & RANK_BITBOARD[king_rank + DIR * 2]) >>
+             (c == Color::White ? BOARD_SIDE * 2 - 1 + king_pos : king_pos - BOARD_SIDE * 2 - 1)) &
             7;
         const uint8_t storm_mask3 =
-            ((enemy_pawns & q_core::RANK_BITBOARD[king_rank + DIR * 3]) >>
-             (c == q_core::Color::White ? q_core::BOARD_SIDE * 3 - 1 + king_pos
-                                        : king_pos - q_core::BOARD_SIDE * 3 - 1)) &
+            ((enemy_pawns & RANK_BITBOARD[king_rank + DIR * 3]) >>
+             (c == Color::White ? BOARD_SIDE * 3 - 1 + king_pos : king_pos - BOARD_SIDE * 3 - 1)) &
             7;
-        const bool inverted = king_file >= q_core::BOARD_SIDE / 2;
+        const bool inverted = king_file >= BOARD_SIDE / 2;
         if constexpr (type == EvaluationType::Value) {
             const auto shield_weights = (inverted ? SHIELD_WEIGHTS_INVERTED : SHIELD_WEIGHTS);
             const auto storm_weights = (inverted ? STORM_WEIGHTS_INVERTED : STORM_WEIGHTS);
@@ -250,14 +241,14 @@ void EvaluateKNBRQ(const q_core::Board& board, typename EvaluationResultType<typ
 }
 
 template <EvaluationType type>
-void EvaluateKNBRQ(const q_core::Board& board, typename EvaluationResultType<type>::type& score,
+void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
                    const PawnHashTableEntry pawn_hash_table_entry) {
-    EvaluateKNBRQ<type, q_core::Color::White>(board, score, pawn_hash_table_entry);
-    EvaluateKNBRQ<type, q_core::Color::Black>(board, score, pawn_hash_table_entry);
+    EvaluateKNBRQ<type, Color::White>(board, score, pawn_hash_table_entry);
+    EvaluateKNBRQ<type, Color::Black>(board, score, pawn_hash_table_entry);
 }
 
 template <EvaluationType type>
-typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const q_core::Board& board) const {
+typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board& board) const {
     Q_ASSERT(board.IsValid());
     Q_ASSERT([&]() {
         Tag cur_tag;
@@ -268,7 +259,7 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const q_core
     const auto pawn_entry = EvaluatePawns<type>(board, res);
     EvaluateKNBRQ<type>(board, res, pawn_entry);
     if constexpr (type == EvaluationType::Value) {
-        if (board.move_side == q_core::Color::Black) {
+        if (board.move_side == Color::Black) {
             res *= -1;
         }
     }
@@ -276,7 +267,8 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const q_core
 }
 
 template <EvaluationType type>
-score_t Evaluator<type>::GetEvaluationScore(const typename EvaluationResultType<type>::type score) const {
+score_t Evaluator<type>::GetEvaluationScore(
+    const typename EvaluationResultType<type>::type score) const {
     ScorePair ans = 0;
     if constexpr (type == EvaluationType::Vector) {
         const auto& features = score.GetFeatures();
@@ -284,7 +276,7 @@ score_t Evaluator<type>::GetEvaluationScore(const typename EvaluationResultType<
             ans += MODEL_WEIGHTS[i];
         }
         for (size_t i = 0; i < PSQ_SIZE; i++) {
-            ans += PSQ[i / q_core::BOARD_SIZE][i % q_core::BOARD_SIZE];
+            ans += PSQ[i / BOARD_SIZE][i % BOARD_SIZE];
         }
     } else {
         ans = score;
@@ -294,11 +286,11 @@ score_t Evaluator<type>::GetEvaluationScore(const typename EvaluationResultType<
 }
 
 template <EvaluationType type>
-void Evaluator<type>::Tag::BuildTag(const q_core::Board& board) {
-    for (q_core::coord_t i = 0; i < q_core::BOARD_SIZE; i++) {
+void Evaluator<type>::Tag::BuildTag(const Board& board) {
+    for (coord_t i = 0; i < BOARD_SIZE; i++) {
         if constexpr (type == EvaluationType::Value) {
-            if (board.cells[i] != q_core::EMPTY_CELL) {
-                if (q_core::GetCellColor(board.cells[i]) == q_core::Color::White) {
+            if (board.cells[i] != EMPTY_CELL) {
+                if (GetCellColor(board.cells[i]) == Color::White) {
                     score_ += PSQ[board.cells[i]][i];
                 } else {
                     score_ -= PSQ[board.cells[i]][i];
@@ -307,8 +299,8 @@ void Evaluator<type>::Tag::BuildTag(const q_core::Board& board) {
             }
         } else {
             const uint16_t index = GetPSQIndex(board.cells[i], i);
-            if (board.cells[i] != q_core::EMPTY_CELL) {
-                if (q_core::GetCellColor(board.cells[i]) == q_core::Color::White) {
+            if (board.cells[i] != EMPTY_CELL) {
+                if (GetCellColor(board.cells[i]) == Color::White) {
                     score_[FEATURE_COUNT + index]++;
                 } else {
                     score_[FEATURE_COUNT + index]--;
@@ -319,57 +311,56 @@ void Evaluator<type>::Tag::BuildTag(const q_core::Board& board) {
     }
 }
 
-constexpr std::array<ScorePair, 2> KINGSIGE_CASTLING_PSQ_UPDATE =
-    {PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::WHITE_KING_INITIAL_POSITION + 2] +
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::WHITE_KING_INITIAL_POSITION + 1] -
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::WHITE_KING_INITIAL_POSITION] -
-     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::WHITE_KING_INITIAL_POSITION + 3],
-     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::BLACK_KING_INITIAL_POSITION + 2] +
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::BLACK_KING_INITIAL_POSITION + 1] -
-     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::BLACK_KING_INITIAL_POSITION] -
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::BLACK_KING_INITIAL_POSITION + 3]};
+constexpr std::array<ScorePair, 2> KINGSIGE_CASTLING_PSQ_UPDATE = {
+    PSQ[MakeCell(Color::White, Piece::King)][WHITE_KING_INITIAL_POSITION + 2] +
+        PSQ[MakeCell(Color::White, Piece::Rook)][WHITE_KING_INITIAL_POSITION + 1] -
+        PSQ[MakeCell(Color::White, Piece::King)][WHITE_KING_INITIAL_POSITION] -
+        PSQ[MakeCell(Color::White, Piece::Rook)][WHITE_KING_INITIAL_POSITION + 3],
+    PSQ[MakeCell(Color::White, Piece::King)][BLACK_KING_INITIAL_POSITION + 2] +
+        PSQ[MakeCell(Color::White, Piece::Rook)][BLACK_KING_INITIAL_POSITION + 1] -
+        PSQ[MakeCell(Color::White, Piece::King)][BLACK_KING_INITIAL_POSITION] -
+        PSQ[MakeCell(Color::White, Piece::Rook)][BLACK_KING_INITIAL_POSITION + 3]};
 
-constexpr std::array<ScorePair, 2> QUEENSIGE_CASTLING_PSQ_UPDATE =
-    {     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::WHITE_KING_INITIAL_POSITION - 2] +
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::WHITE_KING_INITIAL_POSITION - 1] -
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::WHITE_KING_INITIAL_POSITION] -
-     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::WHITE_KING_INITIAL_POSITION - 4],
-     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::BLACK_KING_INITIAL_POSITION - 2] +
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::BLACK_KING_INITIAL_POSITION - 1] -
-     PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::King)][q_core::BLACK_KING_INITIAL_POSITION] -
-         PSQ[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)][q_core::BLACK_KING_INITIAL_POSITION - 4]};
+constexpr std::array<ScorePair, 2> QUEENSIGE_CASTLING_PSQ_UPDATE = {
+    PSQ[MakeCell(Color::White, Piece::King)][WHITE_KING_INITIAL_POSITION - 2] +
+        PSQ[MakeCell(Color::White, Piece::Rook)][WHITE_KING_INITIAL_POSITION - 1] -
+        PSQ[MakeCell(Color::White, Piece::King)][WHITE_KING_INITIAL_POSITION] -
+        PSQ[MakeCell(Color::White, Piece::Rook)][WHITE_KING_INITIAL_POSITION - 4],
+    PSQ[MakeCell(Color::White, Piece::King)][BLACK_KING_INITIAL_POSITION - 2] +
+        PSQ[MakeCell(Color::White, Piece::Rook)][BLACK_KING_INITIAL_POSITION - 1] -
+        PSQ[MakeCell(Color::White, Piece::King)][BLACK_KING_INITIAL_POSITION] -
+        PSQ[MakeCell(Color::White, Piece::Rook)][BLACK_KING_INITIAL_POSITION - 4]};
 
 template <EvaluationType type>
-typename Evaluator<type>::Tag Evaluator<type>::Tag::UpdateTag(const q_core::Board& board, const q_core::Move move) {
+typename Evaluator<type>::Tag Evaluator<type>::Tag::UpdateTag(const Board& board, const Move move) {
     Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     if constexpr (type == EvaluationType::Value) {
         typename Evaluator<type>::Tag new_tag = (*this);
-        const q_core::cell_t src_cell = board.cells[move.src];
-        const q_core::cell_t dst_cell = board.cells[move.dst];
-        if (q_core::IsMoveCastling(move)) {
-            if (move.type == q_core::KINGSIDE_CASTLING_MOVE_TYPE) {
-                new_tag.score_ += KINGSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
+        const cell_t src_cell = board.cells[move.src];
+        const cell_t dst_cell = board.cells[move.dst];
+        if (IsMoveCastling(move)) {
+            if (move.type == KINGSIDE_CASTLING_MOVE_TYPE) {
+                new_tag.score_ +=
+                    KINGSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
             } else {
-                new_tag.score_ += QUEENSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
+                new_tag.score_ +=
+                    QUEENSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
             }
             return new_tag;
         }
         new_tag.score_ -= PSQ[src_cell][move.src] + PSQ[dst_cell][move.dst];
         new_tag.stage_ -= CELL_STAGE_EVAL[dst_cell];
-        if (q_core::IsMovePromotion(move)) {
-            q_core::cell_t promotion_cell =
-                q_core::MakeCell(board.move_side, q_core::GetPromotionPiece(move));
+        if (IsMovePromotion(move)) {
+            cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));
             new_tag.score_ += PSQ[promotion_cell][move.dst];
             new_tag.stage_ += CELL_STAGE_EVAL[promotion_cell];
             return new_tag;
         }
         new_tag.score_ += PSQ[src_cell][move.dst];
-        if (q_core::IsMoveEnPassant(move)) {
-            const q_core::coord_t taken_coord =
-                (board.move_side == q_core::Color::White ? move.dst - q_core::BOARD_SIDE
-                                                         : move.dst + q_core::BOARD_SIDE);
-            const q_core::cell_t enemy_pawn =
-                q_core::MakeCell(q_core::GetInvertedColor(board.move_side), q_core::Piece::Pawn);
+        if (IsMoveEnPassant(move)) {
+            const coord_t taken_coord =
+                (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
+            const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);
             new_tag.score_ -= PSQ[enemy_pawn][taken_coord];
             new_tag.stage_ -= CELL_STAGE_EVAL[enemy_pawn];
         }

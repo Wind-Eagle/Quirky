@@ -52,12 +52,12 @@ enum class Feature : uint16_t {
     Count = 43
 };
 
-constexpr q_core::coord_t PASSED_PAWN_FEATURE_FIRST = 4;
-constexpr q_core::coord_t PASSED_PAWN_FEATURE_LAST = 6;
-constexpr q_core::coord_t CONNECTED_PAWN_FEATURE_FIRST = 4;
-constexpr q_core::coord_t CONNECTED_PAWN_FEATURE_LAST = 7;
-constexpr q_core::coord_t DEFENDED_PAWN_FEATURE_FIRST = 4;
-constexpr q_core::coord_t DEFENDED_PAWN_FEATURE_LAST = 7;
+constexpr q_core::coord_t PASSED_PAWN_FEATURE_FIRST = 3;
+constexpr q_core::coord_t PASSED_PAWN_FEATURE_LAST = 5;
+constexpr q_core::coord_t CONNECTED_PAWN_FEATURE_FIRST = 3;
+constexpr q_core::coord_t CONNECTED_PAWN_FEATURE_LAST = 6;
+constexpr q_core::coord_t DEFENDED_PAWN_FEATURE_FIRST = 3;
+constexpr q_core::coord_t DEFENDED_PAWN_FEATURE_LAST = 6;
 constexpr q_core::coord_t QUEEN_KING_DISTANCE_FEATURE_FIRST = 1;
 constexpr q_core::coord_t QUEEN_KING_DISTANCE_FEATURE_LAST = 4;
 
