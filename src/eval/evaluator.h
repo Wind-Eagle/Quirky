@@ -3,6 +3,7 @@
 
 #include "../core/board/board.h"
 #include "../core/moves/move.h"
+#include "../core/util.h"
 #include "model.h"
 #include "psq.h"
 
@@ -84,6 +85,9 @@ struct Evaluator {
         }
 
         static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0, 0, 1, 1, 2, 4, 0};
+        Q_STATIC_ASSERT(CELL_STAGE_EVAL[q_core::EMPTY_CELL] == 0);
+        Q_STATIC_ASSERT(CELL_STAGE_EVAL[q_core::MakeCell(q_core::Color::White, q_core::Piece::Pawn)] == 0);
+        Q_STATIC_ASSERT(CELL_STAGE_EVAL[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Pawn)] == 0);
         static constexpr uint8_t STAGE_MAX = 24;
 
       private:

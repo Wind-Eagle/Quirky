@@ -8,13 +8,17 @@
 
 namespace q_eval {
 
+inline constexpr uint16_t PSQ_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_CELLS;
+
+inline constexpr std::array<ScorePair, PSQ_SIZE> PSQ = {};
+
 inline constexpr uint16_t GetPSQIndex(const q_core::cell_t cell, q_core::coord_t src) {
     return cell * q_core::BOARD_SIZE + src;
 }
 
-inline constexpr uint16_t PSQ_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_CELLS;
-
-inline constexpr std::array<std::array<ScorePair, q_core::BOARD_SIZE>, q_core::NUMBER_OF_CELLS> PSQ = {};
+inline constexpr ScorePair GetPSQValue(const q_core::cell_t cell, q_core::coord_t src) {
+    return PSQ[GetPSQIndex(cell, src)];
+}
 
 }  // namespace q_eval
 
