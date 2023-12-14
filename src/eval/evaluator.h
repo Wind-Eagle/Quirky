@@ -4,8 +4,10 @@
 #include "../core/board/board.h"
 #include "../core/moves/move.h"
 #include "../core/util.h"
+#include "feature.h"
 #include "model.h"
 #include "psq.h"
+#include "score.h"
 
 namespace q_eval {
 
@@ -70,7 +72,7 @@ struct Evaluator {
     struct Tag {
       public:
         void BuildTag(const q_core::Board& board);
-        Tag UpdateTag(const q_core::Board& board, const q_core::Move move);
+        Tag UpdateTag(const q_core::Board& board, q_core::Move move);
 
         typename EvaluationResultType<type>::type GetScore() const {
             return score_;
@@ -106,6 +108,10 @@ struct Evaluator {
     void ReplaceTag(const Tag new_tag) { tag_ = new_tag; }
 
     typename EvaluationResultType<type>::type Evaluate(const q_core::Board& board) const;
+
+    stage_t GetStage() const {
+        return tag_.GetStage();
+    }
 
     score_t GetEvaluationScore(typename EvaluationResultType<type>::type score) const;
 

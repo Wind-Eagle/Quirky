@@ -84,9 +84,9 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
 template <EvaluationType type, Color c>
 void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
                    const PawnHashTableEntry pawn_hash_table_entry) {
-    bitboard_t open_files = pawn_hash_table_entry.white_open_files_mask &
+    const bitboard_t open_files = pawn_hash_table_entry.white_open_files_mask &
                             pawn_hash_table_entry.black_open_files_mask;
-    bitboard_t half_open_files =
+    const bitboard_t half_open_files =
         (c == Color::White ? pawn_hash_table_entry.white_open_files_mask
                            : pawn_hash_table_entry.black_open_files_mask);
     if (board.bb_pieces[MakeCell(c, Piece::Bishop)]) {
@@ -221,9 +221,9 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::UpdateTag(const Board& board
             new_tag.score_ -= GetPSQValue(enemy_pawn, taken_coord);
         }
         return new_tag;
-    } else {
-        Q_ASSERT(false);
     }
+    Q_ASSERT(false);
+    return *this;
 }
 
 template class Evaluator<EvaluationType::Value>;

@@ -1,6 +1,7 @@
 #ifndef QUIRKY_SRC_UTIL_HASH_H
 #define QUIRKY_SRC_UTIL_HASH_H
 
+#include <cstddef>
 #include <cstdint>
 
 // The code here is derived from FarmHash64 by Google:

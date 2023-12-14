@@ -1,6 +1,7 @@
 #ifndef QUIRKY_SRC_EVAL_SCORE_H
 #define QUIRKY_SRC_EVAL_SCORE_H
 
+#include <cstdint>
 #include <limits>
 
 namespace q_eval {

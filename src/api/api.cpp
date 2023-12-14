@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "../util/io.h"
-#include "uci/uci_protocol.h"
-#include "xboard/xboard_protocol.h"
+#include "uci/protocol.h"
+#include "xboard/protocol.h"
 
 namespace q_api {
 

@@ -12,8 +12,25 @@ inline constexpr uint16_t PSQ_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_CELL
 
 inline constexpr std::array<ScorePair, PSQ_SIZE> PSQ = {};
 
+Q_STATIC_ASSERT([](){
+    for (size_t i = 0; i < q_core::BOARD_SIZE; i++) {
+        if (PSQ[i] != ScorePair(0, 0)) {
+            return false;
+        }
+    }
+    return true;
+});
+
 inline constexpr uint16_t GetPSQIndex(const q_core::cell_t cell, q_core::coord_t src) {
     return cell * q_core::BOARD_SIZE + src;
+}
+
+inline constexpr q_core::coord_t GetCoordFromPSQIndex(uint16_t index) {
+    return index % q_core::BOARD_SIZE;
+}
+
+inline constexpr q_core::cell_t GetCellFromPSQIndex(uint16_t index) {
+    return index / q_core::BOARD_SIZE;
 }
 
 inline constexpr ScorePair GetPSQValue(const q_core::cell_t cell, q_core::coord_t src) {

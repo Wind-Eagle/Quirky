@@ -14,11 +14,20 @@ target_link_libraries(core util)
 add_library(eval src/eval/feature.h src/eval/evaluator.cpp src/eval/model.h src/eval/pawns.h src/eval/score.h src/eval/eval_features.cpp src/eval/psq.h)
 target_link_libraries(eval core util)
 
-add_library(api src/api/api.cpp src/api/uci/uci_protocol.cpp src/api/xboard/xboard_protocol.cpp)
+add_library(api src/api/api.cpp src/api/uci/protocol.cpp src/api/xboard/protocol.cpp)
 target_link_libraries(api util)
 
 add_executable(Quirky src/main.cpp)
 target_link_libraries(Quirky core api util eval)
+
+add_executable(eval_model_sampler
+    tools/eval/model/sampler/main.cpp
+    tools/eval/model/sampler/reader.cpp
+    tools/eval/model/sampler/calcer.cpp
+    tools/eval/model/sampler/filter.cpp
+    tools/eval/model/sampler/writer.cpp
+)
+target_link_libraries(eval_model_sampler eval)
 
 find_package(GTest)
 if(GTest_FOUND)
