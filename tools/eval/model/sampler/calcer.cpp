@@ -40,7 +40,7 @@ BoardSetWithFeatures CalcFeatures(GameSet&& game_set_ref) {
             evaluator.StartTrackingBoard(board);
             const auto& features = evaluator.Evaluate(board).GetFeatures();
             std::array<int8_t, q_eval::FEATURE_COUNT> feature_storage = {};
-            std::array<int8_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES> psq_storage= {};
+            std::array<int8_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES> psq_storage = {};
             for (size_t j = 0; j < features.size(); j++) {
                 if (j < q_eval::FEATURE_COUNT) {
                     AddToInnerFeatureStorage(feature_storage, j, features[j]);

@@ -74,6 +74,7 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
     typename EvaluationResultType<type>::type score{};
     EvaluatePawns<type, Color::White>(board, score, white_open_files_mask);
     EvaluatePawns<type, Color::Black>(board, score, black_open_files_mask);
+    res += score;
     if constexpr (type == EvaluationType::Vector) {
         return PawnHashTableEntry{ScorePair(), white_open_files_mask, black_open_files_mask};
     } else {
@@ -83,7 +84,7 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
 
 template <EvaluationType type, Color c>
 void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
-                   const PawnHashTableEntry pawn_hash_table_entry) {
+                   const PawnHashTableEntry& pawn_hash_table_entry) {
     const bitboard_t open_files = pawn_hash_table_entry.white_open_files_mask &
                             pawn_hash_table_entry.black_open_files_mask;
     const bitboard_t half_open_files =
