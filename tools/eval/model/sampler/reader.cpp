@@ -80,11 +80,10 @@ GameWithResult ReadGameWithResult(std::ifstream& in) {
     return GameWithResult{.header = game_startpos.header, .boards = boards};
 }
 
-GameSet ReadGames(const std::string_view path) {
-    std::ifstream in(path.data());
+GameSet ReadGames(const std::string_view& path, std::ifstream& in, size_t batch_size) {
     GameSet game_set;
     std::string tmp;
-    while (true) {
+    while (game_set.games.size() < batch_size) {
         if (in.peek() == '\n') {
             std::getline(in, tmp);
             continue;

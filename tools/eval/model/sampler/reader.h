@@ -3,6 +3,7 @@
 
 #include "../../../../src/core/board/board.h"
 
+#include <fstream>
 #include <vector>
 
 enum class Result: int8_t {
@@ -31,6 +32,6 @@ struct GameSet {
     std::string file_path;
 };
 
-GameSet ReadGames(std::string_view path);
+GameSet ReadGames(const std::string_view& path, std::ifstream& in, size_t batch_size);
 
 #endif  // QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_READER_H

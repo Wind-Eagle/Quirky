@@ -14,7 +14,7 @@ inline constexpr const char* GetErrorMessage(const QuirkyError error) {
         case QuirkyError::UnexpectedArgument:
             return "Unexpected argument";
         case QuirkyError::ParseError:
-            return "Unexpected argument";
+            return "Parse error";
         default:
             return "Can't get error message";
     }

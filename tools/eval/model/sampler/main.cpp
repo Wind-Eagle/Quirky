@@ -1,7 +1,7 @@
 #include "../../../../src/util/io.h"
 #include "../../../../src/util/error.h"
 #include "calcer.h"
-#include "filter.h"
+#include "weighter.h"
 #include "reader.h"
 #include "writer.h"
 
@@ -11,20 +11,30 @@ void PrintHelp() {
         "into a dataset for Quirky eval model learner. Usage:\n",
         "--help: print help\n",
         "-i [path to file] - path to the SGS file\n",
-        "-o [path to file] - path to the dataset csv file"
+        "-o [path to file] - path to the dataset csv file\n"
+        "-s [positive integer] - size of file batch (default is 2048)"
     );
 }
 
 struct SamplerArguments {
     std::string_view input_file;
     std::string_view output_file;
+    size_t batch_size = 2048;
 };
 
 void Make(const SamplerArguments& args) {
-    GameSet game_set = ReadGames(args.input_file);
-    BoardSetWithFeatures raw_boards = CalcFeatures(std::move(game_set));
-    BoardSetWithFeatures boards = FilterBoards(std::move(raw_boards));
-    WriteBoardsToCSV(std::move(boards), args.output_file);
+    std::ifstream in(args.input_file.data());
+    size_t pos = 1;
+    while (true) {
+        GameSet game_set = ReadGames(args.input_file, in, args.batch_size);
+        if (game_set.games.empty()) {
+            break;
+        }
+        BoardSetWithFeatures raw_boards = CalcFeatures(std::move(game_set));
+        BoardSetWithFeatures boards = AddWeightsToBoards(std::move(raw_boards));
+        std::ofstream out(std::string(args.output_file) + "/" + std::to_string(pos++) + ".csv");
+        WriteBoardsToCSV(std::move(boards), out);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -42,9 +52,14 @@ int main(int argc, char *argv[]) {
             sampler_arguments.input_file = std::string_view(argv[i + 1]);
         } else if (std::string(argv[i]) == "-o") {
             sampler_arguments.output_file = std::string_view(argv[i + 1]);
+        } else if (std::string(argv[i]) == "-s") {
+            sampler_arguments.batch_size = std::stoi(argv[i + 1]);
         } else {
             q_util::ExitWithError(QuirkyError::UnexpectedArgument);
         }
+    }
+    if (sampler_arguments.input_file.empty() || sampler_arguments.output_file.empty()) {
+        q_util::ExitWithError(QuirkyError::ParseError);
     }
     Make(sampler_arguments);
 }

@@ -8,11 +8,16 @@
 
 constexpr uint16_t PSQ_FEATURES_COUNT = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES;
 
+using weight_t = float;
+
 struct FeatureStorageWithInfo {
+    std::array<int8_t, q_core::NUMBER_OF_PIECES> piece_count_storage;
     std::array<int8_t, q_eval::FEATURE_COUNT> feature_storage;
     std::array<int8_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES> psq_storage;
     q_eval::stage_t stage;
     size_t game_index;
+    Result result;
+    weight_t weight = 1;
 };
 
 struct BoardWithFeatures {

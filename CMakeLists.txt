@@ -24,7 +24,7 @@ add_executable(eval_model_sampler
     tools/eval/model/sampler/main.cpp
     tools/eval/model/sampler/reader.cpp
     tools/eval/model/sampler/calcer.cpp
-    tools/eval/model/sampler/filter.cpp
+    tools/eval/model/sampler/weighter.cpp
     tools/eval/model/sampler/writer.cpp
 )
 target_link_libraries(eval_model_sampler eval)
