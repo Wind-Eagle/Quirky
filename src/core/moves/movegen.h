@@ -6,7 +6,9 @@
 
 namespace q_core {
 
-void GenerateAllMoves(const Board& board, MoveList& list);
+struct SimpleMovegen {
+    static void GenerateAllMoves(const Board& board, MoveList& list);
+};
 
 }  // namespace q_core
 

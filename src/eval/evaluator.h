@@ -72,7 +72,7 @@ struct Evaluator {
     struct Tag {
       public:
         void BuildTag(const q_core::Board& board);
-        Tag UpdateTag(const q_core::Board& board, q_core::Move move);
+        Tag GetUpdatedTag(const q_core::Board& board, q_core::Move move) const;
 
         typename EvaluationResultType<type>::type GetScore() const {
             return score_;
@@ -101,11 +101,13 @@ struct Evaluator {
         tag_.BuildTag(board);
     }
 
-    void UpdateOnMove(const q_core::Board& board, const q_core::Move move) {
-        tag_.UpdateTag(board, move);
+    Tag UpdateOnMove(const q_core::Board& board, const q_core::Move move) {
+        return tag_.GetUpdatedTag(board, move);
     }
 
-    void ReplaceTag(const Tag new_tag) { tag_ = new_tag; }
+    void ExchangeTags(Tag& tag) {
+        std::swap(tag_, tag);
+    }
 
     typename EvaluationResultType<type>::type Evaluate(const q_core::Board& board) const;
 

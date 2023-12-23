@@ -190,7 +190,7 @@ constexpr std::array<ScorePair, 2> QUEENSIGE_CASTLING_PSQ_UPDATE = {
         GetPSQValue(MakeCell(Color::Black, Piece::Rook), BLACK_KING_INITIAL_POSITION - 4)};
 
 template <EvaluationType type>
-typename Evaluator<type>::Tag Evaluator<type>::Tag::UpdateTag(const Board& board, const Move move) {
+typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& board, const Move move) const {
     Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     if constexpr (type == EvaluationType::Value) {
         typename Evaluator<type>::Tag new_tag = (*this);

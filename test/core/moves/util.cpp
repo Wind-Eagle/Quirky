@@ -23,11 +23,12 @@ std::string GetSortedMovesList(q_core::MoveList& move_list) {
     return res;
 }
 
-void TestMovesInPosition(const std::string_view& fen, const std::string_view& ans) {
+void TestSimpleMovegen(const std::string_view& fen, const std::string_view& ans) {
     q_core::Board board;
     board.MakeFromFEN(fen);
+    q_core::SimpleMovegen simple_movegen;
     q_core::MoveList move_list;
-    q_core::GenerateAllMoves(board, move_list);
+    simple_movegen.GenerateAllMoves(board, move_list);
     std::string res = GetSortedMovesList(move_list);
     EXPECT_EQ(res, ans);
 }
@@ -63,5 +64,5 @@ void TestMakeMoveFunction(const std::string_view& fen, const std::string_view& m
         q_core::MakeMove(board, moves[i], info);
         EXPECT_TRUE(board.IsValid());
     }
-    TestMovesInPosition(board.GetFEN(), move_string_final);
+    TestSimpleMovegen(board.GetFEN(), move_string_final);
 }

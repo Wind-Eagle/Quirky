@@ -36,7 +36,7 @@ if(GTest_FOUND)
     target_link_libraries(core_board_test core)
     target_link_libraries(core_board_test GTest::GTest GTest::Main)
 
-    add_executable(core_moves_test test/core/moves/pseudolegal_movegen_test.cpp test/core/moves/util.h test/core/moves/util.cpp test/core/moves/pseudolegal_board_manipulation_test.cpp)
+    add_executable(core_moves_test test/core/moves/simple_movegen_test.cpp test/core/moves/util.h test/core/moves/util.cpp test/core/moves/board_manipulation_test.cpp)
     target_link_libraries(core_moves_test core)
     target_link_libraries(core_moves_test GTest::GTest GTest::Main)
 

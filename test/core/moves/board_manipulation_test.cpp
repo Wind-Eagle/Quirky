@@ -97,7 +97,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, TrickyPos) {
     std::string moves_new =
         "a7a5 a7a6 a7b6 b8a6 b8d7 c6c5 c8a6 c8b7 c8d7 d6d5 d8c7 d8d7 d8e8 e6c4 e6d5 e6d7 e6e4 e6e5 "
         "e6f5 e6f6 e6f7 e6g4 e7f6 g5f4 g5h4 g7f6 g7f8 g7h8 g8e8 g8f8 g8h8 h6f5 h6f7 h6g4";
-    TestMovesInPosition(board.GetFEN(), moves_new);
+    TestSimpleMovegen(board.GetFEN(), moves_new);
     q_core::UnmakeMove(board, move, info);
     move = q_core::TranslateStringToMove(board, "e1g1");
     MakeMove(board, move, info);
@@ -106,7 +106,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, TrickyPos) {
     moves_new =
         "a7a6 b5b4 b5c4 b8a6 b8d7 c6c5 c8a6 c8b7 c8d7 d6d5 d8c7 d8d7 d8e8 e6c4 e6d5 e6d7 e6e4 e6e5 "
         "e6f5 e6f6 e6f7 e6g4 e7f6 g5f4 g5h4 g7f6 g7f8 g7h8 g8e8 g8f8 g8h8 h6f5 h6f7 h6g4";
-    TestMovesInPosition(board.GetFEN(), moves_new);
+    TestSimpleMovegen(board.GetFEN(), moves_new);
 }
 
 TEST(CoreMovesPseudolegalBoardManipulation, Game) {

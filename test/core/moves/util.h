@@ -6,7 +6,7 @@
 
 std::string GetSortedMovesList(q_core::MoveList& move_list);
 
-void TestMovesInPosition(const std::string_view& fen, const std::string_view& ans);
+void TestSimpleMovegen(const std::string_view& fen, const std::string_view& ans);
 
 void TestMakeMoveFunctionSimple(const std::string_view& fen, const std::string_view& move_string);
 

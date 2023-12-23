@@ -269,7 +269,7 @@ void GenerateAllKNBRQMoves(const Board& board, Move* list, size_t& size) {
     }
 }
 
-void GenerateAllMoves(const Board& board, MoveList& list) {
+void SimpleMovegen::GenerateAllMoves(const Board& board, MoveList& list) {
     Q_ASSERT(board.IsValid());
     size_t size = 0;
     if (board.move_side == q_core::Color::White) {
