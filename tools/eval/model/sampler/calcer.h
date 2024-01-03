@@ -15,6 +15,7 @@ struct FeatureStorageWithInfo {
     std::array<int8_t, q_eval::FEATURE_COUNT> feature_storage;
     std::array<int8_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES> psq_storage;
     q_eval::stage_t stage;
+    uint16_t last_move_number;
     size_t game_index;
     Result result;
     weight_t weight = 1;

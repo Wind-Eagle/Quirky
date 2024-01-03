@@ -5,6 +5,9 @@
 #include "reader.h"
 #include "writer.h"
 
+#include <cstddef>
+#include <map>
+
 void PrintHelp() {
     q_util::Print(
         "Quirky eval model sampler is a tool that can transform SGS games set"
@@ -32,7 +35,11 @@ void Make(const SamplerArguments& args) {
         }
         BoardSetWithFeatures raw_boards = CalcFeatures(std::move(game_set));
         BoardSetWithFeatures boards = AddWeightsToBoards(std::move(raw_boards));
-        std::ofstream out(std::string(args.output_file) + "/" + std::to_string(pos++) + ".csv");
+        std::string out_file_name = std::to_string(pos++);
+        if (out_file_name.size() == 1) {
+            out_file_name = "0" + out_file_name;
+        }
+        std::ofstream out(std::string(args.output_file) + "/" + out_file_name + ".csv");
         WriteBoardsToCSV(std::move(boards), out);
     }
 }

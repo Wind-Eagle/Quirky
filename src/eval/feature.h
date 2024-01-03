@@ -8,12 +8,11 @@ namespace q_eval {
 enum class Feature : uint16_t {
     IsolatedPawn = 0,
     DoubledPawn = 1,
-    PawnIslands = 2,
-    NoPawns = 3,
-    BishopPair = 4,
-    RookOnOpenFile = 5,
-    RookOnHalfOpenFile = 6,
-    Count = 7
+    NoPawns = 2,
+    BishopPair = 3,
+    RookOnOpenFile = 4,
+    RookOnHalfOpenFile = 5,
+    Count = 6
 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);

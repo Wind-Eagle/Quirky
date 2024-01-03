@@ -44,6 +44,8 @@ GameHeader ReadGameHeader(std::ifstream& in) {
         q_util::PrintError("Expected \"game\" word");
         q_util::ExitWithError(QuirkyError::ParseError);
     }
+    // Title is currently unused
+    const std::string title = ReadLine(in);
     return GameHeader{.result = CastStringToResult(words[1]), .name = words[2]};
 }
 

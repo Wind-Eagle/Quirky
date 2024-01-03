@@ -14,13 +14,12 @@ inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_C
 
 inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> GetModelWeights() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> res{};
-    AssignFeatureValue(res, Feature::IsolatedPawn, -16, -16);
-    AssignFeatureValue(res, Feature::DoubledPawn, -17, -17);
-    AssignFeatureValue(res, Feature::PawnIslands, 0, -25);
+    AssignFeatureValue(res, Feature::IsolatedPawn, -5, -5);
+    AssignFeatureValue(res, Feature::DoubledPawn, -30, -30);
     AssignFeatureValue(res, Feature::NoPawns, -50, -50);
-    AssignFeatureValue(res, Feature::BishopPair, 0, 20);
-    AssignFeatureValue(res, Feature::RookOnOpenFile, 35, 0);
-    AssignFeatureValue(res, Feature::RookOnHalfOpenFile, 17, 0);
+    AssignFeatureValue(res, Feature::BishopPair, 32, 32);
+    AssignFeatureValue(res, Feature::RookOnOpenFile, 2, 2);
+    AssignFeatureValue(res, Feature::RookOnHalfOpenFile, 21, 21);
     return res;
 }
 

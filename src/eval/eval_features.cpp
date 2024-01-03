@@ -49,28 +49,10 @@ constexpr std::array<bitboard_t, BOARD_SIDE> GetPawnNeighboursBitboard() {
     return res;
 }
 
-constexpr std::array<uint8_t, 1 << BOARD_SIDE> GetPawnIslandsCount() {
-    std::array<uint8_t, 1 << BOARD_SIDE> res{};
-    for (uint16_t mask = 0; mask < (1 << BOARD_SIDE); mask++) {
-        uint8_t ans = 0;
-        bool prev = false;
-        for (uint8_t file = 0; file < BOARD_SIDE; file++) {
-            bool cur = mask & (1 << file);
-            if (!prev && cur) {
-                ans++;
-            }
-            prev = cur;
-        }
-        res[mask] = ans;
-    }
-    return res;
-};
-
 constexpr std::array<bitboard_t, BOARD_SIZE> WHITE_PAWN_FRONTSPAN_BITBOARD =
     GetWhitePawnFrontspanBitboard();
 constexpr std::array<bitboard_t, BOARD_SIZE> BLACK_PAWN_FRONTSPAN_BITBOARD =
     GetBlackPawnFrontspanBitboard();
 constexpr std::array<bitboard_t, BOARD_SIDE> PAWN_NEIGHBOURS_BITBOARD = GetPawnNeighboursBitboard();
-constexpr std::array<uint8_t, 1 << BOARD_SIDE> PAWN_ISLANDS_COUNT = GetPawnIslandsCount();
 
 }  // namespace q_eval

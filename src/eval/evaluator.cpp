@@ -59,7 +59,6 @@ void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type
             AddFeature<type, c>(score, Feature::DoubledPawn, 1);
         }
     }
-    AddFeature<type, c>(score, Feature::PawnIslands, PAWN_ISLANDS_COUNT[pawn_islands_mask]);
     if (!our_pawns) {
         AddFeature<type, c>(score, Feature::NoPawns, 1);
     }
