@@ -9,7 +9,14 @@
 namespace q_search {
 
 struct Position {
+    q_core::Board board;
+    q_core::SimpleMovegen movegen;
+    q_eval::Evaluator<q_eval::EvaluationType::Value> evaluator;
 
+    bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
+                  q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);
+    void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
+                    const q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);
 };
 
 }  // namespace q_search

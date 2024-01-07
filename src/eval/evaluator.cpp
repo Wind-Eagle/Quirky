@@ -195,7 +195,7 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
         typename Evaluator<type>::Tag new_tag = (*this);
         const cell_t src_cell = board.cells[move.src];
         const cell_t dst_cell = board.cells[move.dst];
-        if (IsMoveCastling(move)) {
+        if (Q_UNLIKELY(IsMoveCastling(move))) {
             if (move.type == KINGSIDE_CASTLING_MOVE_TYPE) {
                 new_tag.score_ +=
                     KINGSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
@@ -207,14 +207,14 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
         }
         new_tag.score_ -= GetPSQValue(src_cell, move.src) + GetPSQValue(dst_cell, move.dst);
         new_tag.stage_ -= CELL_STAGE_EVAL[dst_cell];
-        if (IsMovePromotion(move)) {
+        if (Q_UNLIKELY(IsMovePromotion(move))) {
             cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));
             new_tag.score_ += GetPSQValue(promotion_cell, move.dst);
             new_tag.stage_ += CELL_STAGE_EVAL[promotion_cell];
             return new_tag;
         }
         new_tag.score_ += GetPSQValue(src_cell, move.dst);
-        if (IsMoveEnPassant(move)) {
+        if (Q_UNLIKELY(IsMoveEnPassant(move))) {
             const coord_t taken_coord =
                 (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
             const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);

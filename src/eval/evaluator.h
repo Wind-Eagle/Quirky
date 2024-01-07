@@ -102,11 +102,13 @@ struct Evaluator {
     }
 
     Tag UpdateOnMove(const q_core::Board& board, const q_core::Move move) {
-        return tag_.GetUpdatedTag(board, move);
+        Tag old_tag = tag_;
+        tag_ = tag_.GetUpdatedTag(board, move);
+        return old_tag;
     }
 
-    void ExchangeTags(Tag& tag) {
-        std::swap(tag_, tag);
+    void SetTag(const Tag& tag) {
+        tag_ = tag;
     }
 
     typename EvaluationResultType<type>::type Evaluate(const q_core::Board& board) const;

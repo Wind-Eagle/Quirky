@@ -41,36 +41,41 @@ struct MoveList {
     std::size_t size = 0;
 };
 
+inline constexpr bool IsMoveSimple(const Move move) {
+    return (move.type & (PAWN_DOUBLE_MOVE_BIT | EN_PASSANT_MOVE_BIT |
+                                           CASTLING_MOVE_BIT | PROMOTION_MOVE_BIT)) == 0;
+}
+
 inline constexpr bool IsMoveCapture(const Move move) {
-    return static_cast<uint8_t>(move.type) & CAPTURE_MOVE_BIT;
+    return move.type & CAPTURE_MOVE_BIT;
 }
 
 inline constexpr bool IsMovePawnDoubleMove(const Move move) {
-    return static_cast<uint8_t>(move.type) & PAWN_DOUBLE_MOVE_BIT;
+    return move.type & PAWN_DOUBLE_MOVE_BIT;
 }
 
 inline constexpr bool IsMoveFiftyRuleMove(const Move move) {
-    return static_cast<uint8_t>(move.type) & FIFTY_RULE_MOVE_BIT;
+    return move.type & FIFTY_RULE_MOVE_BIT;
 }
 
 inline constexpr bool IsMoveEnPassant(const Move move) {
-    return static_cast<uint8_t>(move.type) & EN_PASSANT_MOVE_BIT;
+    return move.type & EN_PASSANT_MOVE_BIT;
 }
 
 inline constexpr bool IsMoveCastling(const Move move) {
-    return static_cast<uint8_t>(move.type) & CASTLING_MOVE_BIT;
+    return move.type & CASTLING_MOVE_BIT;
 }
 
 inline constexpr bool IsMovePromotion(const Move move) {
-    return static_cast<uint8_t>(move.type) & PROMOTION_MOVE_BIT;
+    return move.type & PROMOTION_MOVE_BIT;
 }
 
 inline constexpr bool IsMoveNull(const Move move) {
-    return static_cast<uint8_t>(move.type) == NULL_MOVE_TYPE;
+    return move.type == NULL_MOVE_TYPE;
 }
 
 inline constexpr bool IsMoveUndefined(const Move move) {
-    return static_cast<uint8_t>(move.type) == UNDEFINED_MOVE_TYPE;
+    return move.type == UNDEFINED_MOVE_TYPE;
 }
 
 inline Piece GetPromotionPiece(const Move move) {
