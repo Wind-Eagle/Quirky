@@ -62,11 +62,11 @@ Move TranslateStringToMove(const Board& board, const std::string_view& str) {
     if (q_core::GetCellPiece(board.cells[src]) == Piece::Pawn) {
         type |= FIFTY_RULE_MOVE_BIT;
         if (dst - src == GetPawnMoveDelta<Color::White>() * 2 || dst - src == GetPawnMoveDelta<Color::Black>() * 2) {
-            return Move{.src = src, .dst = dst, .type = PAWN_DOUBLE_MOVE_BIT};
+            return Move{.src = src, .dst = dst, .type = PAWN_DOUBLE_MOVE_TYPE};
         }
         if (dst - src != GetPawnMoveDelta<Color::White>() && dst - src != GetPawnMoveDelta<Color::Black>()) {
             if (board.cells[dst] == EMPTY_CELL) {
-                return Move{.src = src, .dst = dst, .type = EN_PASSANT_MOVE_BIT | CAPTURE_MOVE_BIT | FIFTY_RULE_MOVE_BIT};
+                return Move{.src = src, .dst = dst, .type = EN_PASSANT_MOVE_TYPE | CAPTURE_MOVE_BIT | FIFTY_RULE_MOVE_BIT};
             }
         }
         if (str.size() == 5) {

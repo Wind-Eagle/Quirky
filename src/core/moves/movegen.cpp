@@ -45,8 +45,8 @@ void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size
     constexpr bool D = (type & PAWN_MOVE_DOUBLE_BIT);
     constexpr bool E = (type & PAWN_MOVE_EN_PASSANT_BIT);
     Q_STATIC_ASSERT(!(C & D) && !(E && !C) && !(D && E) && !(D && P) && !(E && P));
-    constexpr uint8_t MAIN_MOVE_BITS = (C ? CAPTURE_MOVE_BIT : 0) | (D ? PAWN_DOUBLE_MOVE_BIT : 0) |
-                                       FIFTY_RULE_MOVE_BIT | (E ? EN_PASSANT_MOVE_BIT : 0);
+    constexpr uint8_t MAIN_MOVE_BITS = (C ? CAPTURE_MOVE_BIT : 0) | (D ? PAWN_DOUBLE_MOVE_TYPE : 0) |
+                                       FIFTY_RULE_MOVE_BIT | (E ? EN_PASSANT_MOVE_TYPE : 0);
     if constexpr (P) {
         list[size++] = Move{.src = src, .dst = dst, .type = KNIGHT_PROMOTION_MOVE_TYPE | MAIN_MOVE_BITS};
         list[size++] = Move{.src = src, .dst = dst, .type = BISHOP_PROMOTION_MOVE_TYPE | MAIN_MOVE_BITS};

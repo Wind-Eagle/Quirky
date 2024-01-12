@@ -36,7 +36,7 @@ inline constexpr std::array<ScorePair, PSQ_SIZE> GetPSQ(
     return res;
 }
 
-static inline constexpr std::array<ScorePair, PSQ_SIZE> PSQ =
+inline constexpr std::array<ScorePair, PSQ_SIZE> PSQ =
     GetPSQ({(0, 0),     (0, 0),       (0, 0),     (0, 0),     (0, 0),     (0, 0),     (0, 0),
             (0, 0),     (-5, -5),     (0, 0),     (-10, -10), (-21, -21), (1, 1),     (8, 8),
             (11, 11),   (-18, -18),   (-6, -6),   (-6, -6),   (-12, -12), (-21, -21), (-9, -9),

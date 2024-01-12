@@ -3,6 +3,7 @@
 #include "../board/hash.h"
 #include "../util.h"
 #include "attack.h"
+#include "move.h"
 
 namespace q_core {
 
@@ -410,27 +411,26 @@ bool MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     Q_ASSERT(c == board.move_side);
-    const uint8_t move_type = move.type & (PAWN_DOUBLE_MOVE_BIT | EN_PASSANT_MOVE_BIT |
-                                           CASTLING_MOVE_BIT | PROMOTION_MOVE_BIT);
+    const MoveBasicType move_basic_type = GetMoveBasicType(move);
     bool legal;
-    switch (move_type) {
-        [[likely]] case 0 : {
+    switch (move_basic_type) {
+        [[likely]] case MoveBasicType::Simple : {
             legal = MakeMoveSimple<c>(board, move, info);
             break;
         }
-        case PAWN_DOUBLE_MOVE_BIT: {
+        case MoveBasicType::PawnDouble: {
             legal = MakeMovePawnDouble<c>(board, move, info);
             break;
         }
-            [[unlikely]] case EN_PASSANT_MOVE_BIT : {
+            [[unlikely]] case MoveBasicType::EnPassant : {
                 legal = MakeMoveEnPassant<c>(board, move, info);
                 break;
             }
-            [[unlikely]] case CASTLING_MOVE_BIT : {
+            [[unlikely]] case MoveBasicType::Castling : {
                 legal = MakeMoveCastling<c>(board, move, info);
                 break;
             }
-            [[unlikely]] case PROMOTION_MOVE_BIT : {
+            [[unlikely]] case MoveBasicType::Promotion : {
                 legal = MakeMovePromotion<c>(board, move, info);
                 break;
             }
@@ -452,32 +452,31 @@ bool UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     Q_ASSERT(c != board.move_side);
-    const uint8_t move_type = move.type & (PAWN_DOUBLE_MOVE_BIT | EN_PASSANT_MOVE_BIT |
-                                           CASTLING_MOVE_BIT | PROMOTION_MOVE_BIT);
+    const MoveBasicType move_basic_type = GetMoveBasicType(move);
     board.move_count--;
     board.move_side = GetInvertedColor(board.move_side);
     board.hash = info.hash;
     board.en_passant_coord = info.en_passant;
     board.castling = info.castling;
     board.fifty_rule_move_count = info.fifty_rule_move_counter;
-    switch (move_type) {
-        [[likely]] case 0 : {
+    switch (move_basic_type) {
+        [[likely]] case MoveBasicType::Simple : {
             UnmakeMoveSimple<c, true>(board, move, board.cells[move.dst], info.dst_cell);
             break;
         }
-        case PAWN_DOUBLE_MOVE_BIT: {
+        case MoveBasicType::PawnDouble: {
             UnmakeMovePawnDouble<c, true>(board, move);
             break;
         }
-            [[unlikely]] case EN_PASSANT_MOVE_BIT : {
+            [[unlikely]] case MoveBasicType::EnPassant : {
                 UnmakeMoveEnPassant<c, true>(board, move);
                 break;
             }
-            [[unlikely]] case CASTLING_MOVE_BIT : {
+            [[unlikely]] case MoveBasicType::Castling : {
                 UnmakeMoveCastling<c, true>(board, move);
                 break;
             }
-            [[unlikely]] case PROMOTION_MOVE_BIT : {
+            [[unlikely]] case MoveBasicType::Promotion : {
                 UnmakeMovePromotion<c, true>(board, move, info.dst_cell);
                 break;
             }
