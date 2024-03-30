@@ -102,8 +102,7 @@ void UnmakeMovePawnDouble(Board &board, const Move move) {
 
 template <Color c, bool revert_cells>
 void UnmakeMoveEnPassant(Board &board, const Move move) {
-    const coord_t taken_coord =
-        (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
+    const coord_t taken_coord = (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t taken_bitboard = MakeBitboardFromCoord(taken_coord);
@@ -124,7 +123,7 @@ template <Color c, bool revert_cells>
 void UnmakeMoveCastling(Board &board, const Move move) {
     constexpr coord_t INITIAL_KING_POSITION =
         (c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION);
-    if (move.type == KINGSIDE_CASTLING_MOVE_TYPE) {
+    if (GetCastlingSide(move) == CastlingSide::Kingside) {
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 2);
@@ -136,11 +135,10 @@ void UnmakeMoveCastling(Board &board, const Move move) {
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
-        board.bb_pieces[EMPTY_CELL] ^=
-            MakeBitboardFromCoord(INITIAL_KING_POSITION) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
+        board.bb_pieces[EMPTY_CELL] ^= MakeBitboardFromCoord(INITIAL_KING_POSITION) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
         if constexpr (revert_cells) {
             board.cells[INITIAL_KING_POSITION] = MakeCell(c, Piece::King);
             board.cells[INITIAL_KING_POSITION + 1] = EMPTY_CELL;
@@ -159,11 +157,10 @@ void UnmakeMoveCastling(Board &board, const Move move) {
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
-        board.bb_pieces[EMPTY_CELL] ^=
-            MakeBitboardFromCoord(INITIAL_KING_POSITION) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
+        board.bb_pieces[EMPTY_CELL] ^= MakeBitboardFromCoord(INITIAL_KING_POSITION) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
         if constexpr (revert_cells) {
             board.cells[INITIAL_KING_POSITION] = MakeCell(c, Piece::King);
             board.cells[INITIAL_KING_POSITION - 2] = EMPTY_CELL;
@@ -255,8 +252,7 @@ bool MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
 
 template <Color c>
 bool MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
-    const coord_t taken_coord =
-        (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
+    const coord_t taken_coord = (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t taken_bitboard = MakeBitboardFromCoord(taken_coord);
@@ -273,8 +269,7 @@ bool MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
     BuildMakeMoveInfo(board, move, info);
     board.hash ^= MakeZobristHashFromCell(move.src, MakeCell(c, Piece::Pawn)) ^
                   MakeZobristHashFromCell(move.dst, MakeCell(c, Piece::Pawn)) ^
-                  MakeZobristHashFromCell(taken_coord,
-                                          MakeCell(GetInvertedColor(c), Piece::Pawn)) ^
+                  MakeZobristHashFromCell(taken_coord, MakeCell(GetInvertedColor(c), Piece::Pawn)) ^
                   MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
                   MakeZobristHashFromEnPassantCoord(NO_ENPASSANT_COORD);
     board.cells[move.src] = EMPTY_CELL;
@@ -289,7 +284,7 @@ template <Color c>
 bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
     constexpr coord_t INITIAL_KING_POSITION =
         (c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION);
-    if (move.type == KINGSIDE_CASTLING_MOVE_TYPE) {
+    if (GetCastlingSide(move) == CastlingSide::Kingside) {
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 2);
@@ -301,30 +296,24 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
-        board.bb_pieces[EMPTY_CELL] ^=
-            MakeBitboardFromCoord(INITIAL_KING_POSITION) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
+        board.bb_pieces[EMPTY_CELL] ^= MakeBitboardFromCoord(INITIAL_KING_POSITION) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
         if (IsKingInCheck<c>(board)) {
             UnmakeMoveCastling<c, false>(board, move);
             return false;
         }
         BuildMakeMoveInfo(board, move, info);
         board.hash ^= MakeZobristHashFromCastling(board.castling);
-        board.castling &=
-            (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));
+        board.castling &= (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));
         board.hash ^= MakeZobristHashFromCastling(board.castling);
-        board.hash ^=
-            MakeZobristHashFromCell(INITIAL_KING_POSITION, MakeCell(c, Piece::King)) ^
-            MakeZobristHashFromCell(INITIAL_KING_POSITION + 3,
-                                    MakeCell(c, Piece::Rook)) ^
-            MakeZobristHashFromCell(INITIAL_KING_POSITION + 2,
-                                    MakeCell(c, Piece::King)) ^
-            MakeZobristHashFromCell(INITIAL_KING_POSITION + 1,
-                                    MakeCell(c, Piece::Rook)) ^
-            MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
-            MakeZobristHashFromEnPassantCoord(NO_ENPASSANT_COORD);
+        board.hash ^= MakeZobristHashFromCell(INITIAL_KING_POSITION, MakeCell(c, Piece::King)) ^
+                      MakeZobristHashFromCell(INITIAL_KING_POSITION + 3, MakeCell(c, Piece::Rook)) ^
+                      MakeZobristHashFromCell(INITIAL_KING_POSITION + 2, MakeCell(c, Piece::King)) ^
+                      MakeZobristHashFromCell(INITIAL_KING_POSITION + 1, MakeCell(c, Piece::Rook)) ^
+                      MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
+                      MakeZobristHashFromEnPassantCoord(NO_ENPASSANT_COORD);
         board.cells[INITIAL_KING_POSITION] = EMPTY_CELL;
         board.cells[INITIAL_KING_POSITION + 2] = MakeCell(c, Piece::King);
         board.cells[INITIAL_KING_POSITION + 1] = MakeCell(c, Piece::Rook);
@@ -341,30 +330,24 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
-        board.bb_pieces[EMPTY_CELL] ^=
-            MakeBitboardFromCoord(INITIAL_KING_POSITION) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
-            MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
+        board.bb_pieces[EMPTY_CELL] ^= MakeBitboardFromCoord(INITIAL_KING_POSITION) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
+                                       MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
         if (IsKingInCheck<c>(board)) {
             UnmakeMoveCastling<c, false>(board, move);
             return false;
         }
         BuildMakeMoveInfo(board, move, info);
         board.hash ^= MakeZobristHashFromCastling(board.castling);
-        board.castling &=
-            (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));
+        board.castling &= (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));
         board.hash ^= MakeZobristHashFromCastling(board.castling);
-        board.hash ^=
-            MakeZobristHashFromCell(INITIAL_KING_POSITION, MakeCell(c, Piece::King)) ^
-            MakeZobristHashFromCell(INITIAL_KING_POSITION - 4,
-                                    MakeCell(c, Piece::Rook)) ^
-            MakeZobristHashFromCell(INITIAL_KING_POSITION - 2,
-                                    MakeCell(c, Piece::King)) ^
-            MakeZobristHashFromCell(INITIAL_KING_POSITION - 1,
-                                    MakeCell(c, Piece::Rook)) ^
-            MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
-            MakeZobristHashFromEnPassantCoord(NO_ENPASSANT_COORD);
+        board.hash ^= MakeZobristHashFromCell(INITIAL_KING_POSITION, MakeCell(c, Piece::King)) ^
+                      MakeZobristHashFromCell(INITIAL_KING_POSITION - 4, MakeCell(c, Piece::Rook)) ^
+                      MakeZobristHashFromCell(INITIAL_KING_POSITION - 2, MakeCell(c, Piece::King)) ^
+                      MakeZobristHashFromCell(INITIAL_KING_POSITION - 1, MakeCell(c, Piece::Rook)) ^
+                      MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
+                      MakeZobristHashFromEnPassantCoord(NO_ENPASSANT_COORD);
         board.cells[INITIAL_KING_POSITION] = EMPTY_CELL;
         board.cells[INITIAL_KING_POSITION - 2] = MakeCell(c, Piece::King);
         board.cells[INITIAL_KING_POSITION - 1] = MakeCell(c, Piece::Rook);
@@ -414,7 +397,7 @@ bool MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
     bool legal;
     switch (move_basic_type) {
-        [[likely]] case MoveBasicType::Simple : {
+        case MoveBasicType::Simple: {
             legal = MakeMoveSimple<c>(board, move, info);
             break;
         }
@@ -422,18 +405,21 @@ bool MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
             legal = MakeMovePawnDouble<c>(board, move, info);
             break;
         }
-            [[unlikely]] case MoveBasicType::EnPassant : {
-                legal = MakeMoveEnPassant<c>(board, move, info);
-                break;
-            }
-            [[unlikely]] case MoveBasicType::Castling : {
-                legal = MakeMoveCastling<c>(board, move, info);
-                break;
-            }
-            [[unlikely]] case MoveBasicType::Promotion : {
-                legal = MakeMovePromotion<c>(board, move, info);
-                break;
-            }
+        case MoveBasicType::EnPassant: {
+            legal = MakeMoveEnPassant<c>(board, move, info);
+            break;
+        }
+        case MoveBasicType::Castling: {
+            legal = MakeMoveCastling<c>(board, move, info);
+            break;
+        }
+        case MoveBasicType::KnightPromotion:
+        case MoveBasicType::BishopPromotion:
+        case MoveBasicType::RookPromotion:
+        case MoveBasicType::QueenPromotion: {
+            legal = MakeMovePromotion<c>(board, move, info);
+            break;
+        }
         default:
             Q_UNREACHABLE();
     }
@@ -468,18 +454,21 @@ bool UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
             UnmakeMovePawnDouble<c, true>(board, move);
             break;
         }
-            [[unlikely]] case MoveBasicType::EnPassant : {
-                UnmakeMoveEnPassant<c, true>(board, move);
-                break;
-            }
-            [[unlikely]] case MoveBasicType::Castling : {
-                UnmakeMoveCastling<c, true>(board, move);
-                break;
-            }
-            [[unlikely]] case MoveBasicType::Promotion : {
-                UnmakeMovePromotion<c, true>(board, move, info.dst_cell);
-                break;
-            }
+        [[unlikely]] case MoveBasicType::EnPassant : {
+            UnmakeMoveEnPassant<c, true>(board, move);
+            break;
+        }
+        [[unlikely]] case MoveBasicType::Castling : {
+            UnmakeMoveCastling<c, true>(board, move);
+            break;
+        }
+        [[unlikely]] case MoveBasicType::KnightPromotion:
+        [[unlikely]] case MoveBasicType::BishopPromotion:
+        [[unlikely]] case MoveBasicType::RookPromotion:
+        [[unlikely]] case MoveBasicType::QueenPromotion : {
+            UnmakeMovePromotion<c, true>(board, move, info.dst_cell);
+            break;
+        }
         default:
             Q_UNREACHABLE();
     }

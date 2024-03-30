@@ -17,6 +17,9 @@ struct Position {
                   q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);
     void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
                     const q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);
+
+    q_eval::score_t GetEvaluatorScore() const;
+    q_eval::ScorePair GetEvaluatorScorePair() const;
 };
 
 }  // namespace q_search

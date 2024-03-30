@@ -6,4 +6,3 @@ namespace q_search {
 }  // namespace q_search
 
 #endif  // QUIRKY_SRC_SEARCH_POSITION_TRANSPOSITION_TABLE_H
- 

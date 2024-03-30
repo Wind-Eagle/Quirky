@@ -143,8 +143,8 @@ score_t Evaluator<type>::GetEvaluationScore(
     } else {
         ans = score;
     }
-    stage_t stage = std::max(tag_.GetStage(), Tag::STAGE_MAX);
-    return (ans.GetFirst() * stage + ans.GetSecond() * (Tag::STAGE_MAX - stage)) / Tag::STAGE_MAX;
+    stage_t stage = std::min(tag_.GetStage(), Tag::STAGE_MAX);
+    return (static_cast<int32_t>(ans.GetFirst()) * stage + static_cast<int32_t>(ans.GetSecond()) * (Tag::STAGE_MAX - stage)) / Tag::STAGE_MAX;
 }
 
 template <EvaluationType type>
@@ -200,7 +200,7 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
             new_tag.stage_ -= CELL_STAGE_EVAL[dst_cell];
         };
         switch (move_basic_type) {
-            [[likely]] case MoveBasicType::Simple: {
+            case MoveBasicType::Simple: {
                 basic_update(board.cells[move.src], board.cells[move.dst]);
                 new_tag.score_ += GetPSQValue(board.cells[move.src], move.dst);
                 break;
@@ -215,7 +215,7 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
                 new_tag.score_ -= GetPSQValue(enemy_pawn, taken_coord);
                 break;
             }
-            [[unlikely]] case MoveBasicType::EnPassant: {
+            case MoveBasicType::EnPassant: {
                 const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
                 basic_update(pawn, EMPTY_CELL);
                 const coord_t taken_coord =
@@ -224,8 +224,8 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
                 new_tag.score_ -= GetPSQValue(enemy_pawn, taken_coord);
                 break;
             }
-            [[unlikely]] case MoveBasicType::Castling: {
-                if (move.type == KINGSIDE_CASTLING_MOVE_TYPE) {
+            case MoveBasicType::Castling: {
+                if (GetCastlingSide(move) == CastlingSide::Kingside) {
                     new_tag.score_ +=
                         KINGSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
                 } else {
@@ -234,7 +234,10 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
                 }
                 return new_tag;
             }
-            [[unlikely]] case MoveBasicType::Promotion: {
+            case MoveBasicType::KnightPromotion:
+            case MoveBasicType::BishopPromotion:
+            case MoveBasicType::RookPromotion:
+            case MoveBasicType::QueenPromotion: {
                 const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
                 basic_update(pawn, board.cells[move.dst]);
                 cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));

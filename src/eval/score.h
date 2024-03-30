@@ -31,10 +31,6 @@ struct ScorePair {
         return ans;
     }
 
-    constexpr score_t GetEvaluationInStage(const stage_t stage) const {
-        return GetFirst() * stage + GetSecond() * (std::numeric_limits<stage_t>::max() - stage);
-    }
-
     constexpr ScorePair& operator += (const ScorePair& rhs) {
         value_ += rhs.value_;
         return *this;
