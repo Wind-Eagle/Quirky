@@ -14,11 +14,14 @@ target_link_libraries(core util)
 add_library(eval src/eval/feature.h src/eval/evaluator.cpp src/eval/model.h src/eval/pawns.h src/eval/score.h src/eval/eval_features.cpp src/eval/psq.h)
 target_link_libraries(eval core util)
 
+add_library(search src/search/control/control.cpp src/search/control/time.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp)
+target_link_libraries(search core eval util)
+
 add_library(api src/api/api.cpp src/api/uci/protocol.cpp src/api/xboard/protocol.cpp)
-target_link_libraries(api util)
+target_link_libraries(api core eval search util)
 
 add_executable(Quirky src/main.cpp)
-target_link_libraries(Quirky core api util eval)
+target_link_libraries(Quirky core api util eval search)
 
 add_executable(eval_model_sampler
     tools/eval/model/sampler/main.cpp

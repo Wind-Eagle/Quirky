@@ -170,10 +170,12 @@ template <Color c>
 void GenerateCastling(const Board& board, Move* list, size_t& size) {
     if constexpr (c == Color::White) {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::WhiteAll))) {
+            // This condition may be unnessesary
             if (!((~board.bb_pieces[EMPTY_CELL]) & WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD) &&
                 IsCastlingAllowed(board.castling, Castling::WhiteKingside)) {
                 list[size++] = WHITE_KINGSIDE_CASTLING_MOVE;
             }
+            // This condition may be unnessesary
             if (!((~board.bb_pieces[EMPTY_CELL]) & WHITE_QUEENSIDE_CASTLING_MOVE_BITBOARD) &&
                 IsCastlingAllowed(board.castling, Castling::WhiteQueenside)) {
                 list[size++] = WHITE_QUEENSIDE_CASTLING_MOVE;
@@ -181,10 +183,12 @@ void GenerateCastling(const Board& board, Move* list, size_t& size) {
         }
     } else {
         if (Q_UNLIKELY(IsCastlingAllowed(board.castling, Castling::BlackAll))) {
+            // This condition may be unnessesary
             if (!((~board.bb_pieces[EMPTY_CELL]) & BLACK_KINGSIDE_CASTLING_MOVE_BITBOARD) &&
                 IsCastlingAllowed(board.castling, Castling::BlackKingside)) {
                 list[size++] = BLACK_KINGSIDE_CASTLING_MOVE;
             }
+            // This condition may be unnessesary
             if (!((~board.bb_pieces[EMPTY_CELL]) & BLACK_QUEENSIDE_CASTLING_MOVE_BITBOARD) &&
                 IsCastlingAllowed(board.castling, Castling::BlackQueenside)) {
                 list[size++] = BLACK_QUEENSIDE_CASTLING_MOVE;

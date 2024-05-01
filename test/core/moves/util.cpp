@@ -26,9 +26,8 @@ std::string GetSortedMovesList(q_core::MoveList& move_list) {
 void TestSimpleMovegen(const std::string_view& fen, const std::string_view& ans) {
     q_core::Board board;
     board.MakeFromFEN(fen);
-    q_core::SimpleMovegen simple_movegen;
     q_core::MoveList move_list;
-    simple_movegen.GenerateAllMoves(board, move_list);
+    q_core::SimpleMovegen::GenerateAllMoves(board, move_list);
     std::string res = GetSortedMovesList(move_list);
     EXPECT_EQ(res, ans);
 }

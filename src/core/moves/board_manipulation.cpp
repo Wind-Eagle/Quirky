@@ -285,6 +285,16 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
     constexpr coord_t INITIAL_KING_POSITION =
         (c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION);
     if (GetCastlingSide(move) == CastlingSide::Kingside) {
+        // maybe it can be optimized
+        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION)) {
+            return false;
+        }
+        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION + 1)) {
+            return false;
+        }
+        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION + 2)) {
+            return false;
+        }
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 2);
@@ -319,6 +329,16 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
         board.cells[INITIAL_KING_POSITION + 1] = MakeCell(c, Piece::Rook);
         board.cells[INITIAL_KING_POSITION + 3] = EMPTY_CELL;
     } else {
+        // maybe it can be optimized
+        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION)) {
+            return false;
+        }
+        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION - 1)) {
+            return false;
+        }
+        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION - 2)) {
+            return false;
+        }
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 2);
@@ -334,10 +354,6 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
-        if (IsKingInCheck<c>(board)) {
-            UnmakeMoveCastling<c, false>(board, move);
-            return false;
-        }
         BuildMakeMoveInfo(board, move, info);
         board.hash ^= MakeZobristHashFromCastling(board.castling);
         board.castling &= (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));

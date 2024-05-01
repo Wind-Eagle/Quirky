@@ -123,16 +123,16 @@ MagicBitboard::MagicBitboard() {
             LEFT_DIAGONAL_BITBOARD[x + y] ^ RIGHT_DIAGONAL_BITBOARD[x - y + BOARD_SIDE - 1];
         rook_entry[i].mask = (RANK_BITBOARD[x] ^ FILE_BITBOARD[y]);
         if (GetRank(i) != 0) {
-            rook_entry[i].mask &= (~RANK_BITBOARD[0]);
+            q_util::ClearBits(rook_entry[i].mask, RANK_BITBOARD[0]);
         }
         if (GetFile(i) != 0) {
-            rook_entry[i].mask &= (~FILE_BITBOARD[0]);
+            q_util::ClearBits(rook_entry[i].mask, FILE_BITBOARD[0]);
         }
         if (GetRank(i) != BOARD_SIDE - 1) {
-            rook_entry[i].mask &= (~RANK_BITBOARD[BOARD_SIDE - 1]);
+            q_util::ClearBits(rook_entry[i].mask, RANK_BITBOARD[BOARD_SIDE - 1]);
         }
         if (GetFile(i) != BOARD_SIDE - 1) {
-            rook_entry[i].mask &= (~FILE_BITBOARD[BOARD_SIDE - 1]);
+            q_util::ClearBits(rook_entry[i].mask, FILE_BITBOARD[BOARD_SIDE - 1]);
         }
         rook_entry[i].postmask = RANK_BITBOARD[x] ^ FILE_BITBOARD[y];
     }

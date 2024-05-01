@@ -4,68 +4,68 @@
 #include <immintrin.h>
 
 #include <bit>
+#include <concepts>
+#include <limits>
 
 #include "macro.h"
 
 namespace q_util {
 
-inline constexpr void SetBit(uint64_t& num, const uint8_t bit) {
-    Q_ASSERT(bit < 64);
+inline constexpr void SetBit(std::unsigned_integral auto& num, const uint8_t bit) {
+    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
     num |= (1ULL << bit);
 }
 
-inline constexpr void SetBit(uint8_t& num, const uint8_t bit) {
-    Q_ASSERT(bit < 8);
-    num |= (1ULL << bit);
-}
-
-inline constexpr void FlipBit(uint64_t& num, const uint8_t bit) {
-    Q_ASSERT(bit < 64);
+inline constexpr void FlipBit(std::unsigned_integral auto& num, const uint8_t bit) {
+    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
     num ^= (1ULL << bit);
 }
 
-inline constexpr void ClearBit(uint64_t& num, const uint8_t bit) {
-    Q_ASSERT(bit < 64);
+inline constexpr void ClearBit(std::unsigned_integral auto& num, const uint8_t bit) {
+    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
     num &= ~(1ULL << bit);
 }
 
-inline constexpr bool CheckBit(const uint64_t num, const uint8_t bit) {
-    Q_ASSERT(bit < 64);
+inline constexpr bool CheckBit(const std::unsigned_integral auto num, const uint8_t bit) {
+    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
     return num & (1ULL << bit);
 }
 
-inline constexpr uint8_t GetLowestBit(const uint64_t num) {
+inline constexpr uint8_t GetLowestBit(const std::unsigned_integral auto num) {
     Q_ASSERT(num > 0);
     return __builtin_ctzll(num);
 }
 
-inline constexpr uint8_t GetHighestBit(const uint64_t num) {
+inline constexpr uint8_t GetHighestBit(const std::unsigned_integral auto num) {
     Q_ASSERT(num + 1 > 0);
     return 63 - __builtin_clzll(num);
 }
 
-inline constexpr uint8_t ExtractLowestBit(uint64_t& num) {
+inline constexpr uint8_t ExtractLowestBit(std::unsigned_integral auto& num) {
     Q_ASSERT(num > 0);
     uint8_t ans = GetLowestBit(num);
     num &= (num - 1);
     return ans;
 }
 
-inline constexpr uint8_t GetBitCount(const uint64_t num) { return __builtin_popcountll(num); }
+inline constexpr void ClearBits(std::unsigned_integral auto& num, const uint64_t bits) {
+    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
+    num &= ~(bits);
+}
 
-template <int8_t delta>
-inline constexpr uint64_t MoveAllBitsByDelta(const uint64_t num) {
+inline constexpr uint8_t GetBitCount(const std::unsigned_integral auto num) {\
+    return __builtin_popcountll(num);
+}
+
+template <int8_t delta, std::unsigned_integral T>
+inline constexpr T MoveAllBitsByDelta(const T num) {
     if constexpr (delta > 0) {
-        Q_ASSERT(num == 0 || q_util::GetHighestBit(num) + delta < 64);
+        Q_ASSERT(num == 0 || q_util::GetHighestBit(num) + delta < std::numeric_limits<decltype(num)>::digits);
         return num << delta;
     } else {
         Q_ASSERT(num == 0 || q_util::GetLowestBit(num) + delta >= 0);
         return num >> (-delta);
     }
-}
-
-inline constexpr bool ContainsBits(uint64_t num, uint64_t mask) {
-    return (num & mask) == num;
 }
 
 inline constexpr uint64_t ScatterByte(const uint8_t num) {

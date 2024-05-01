@@ -10,7 +10,7 @@ namespace q_core {
 using see_score_t = int16_t;
 
 template <Color c>
-bool IsCellAttacked(const Board& board, coord_t dst);
+bool IsCellAttacked(const Board& board, coord_t src);
 
 template <Color c>
 bool IsKingInCheck(const Board& board);

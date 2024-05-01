@@ -46,7 +46,8 @@ inline constexpr MoveBasicType GetMoveBasicType(const Move move) {
 template <MoveBasicType move_basic_type>
 inline constexpr uint8_t GetMoveType() {
     Q_STATIC_ASSERT(move_basic_type != MoveBasicType::Simple);
-    return static_cast<uint8_t>(move_basic_type) + (move_basic_type != MoveBasicType::Castling ? FIFTY_RULE_MOVE_BIT : 0);
+    return static_cast<uint8_t>(move_basic_type) +
+           (move_basic_type != MoveBasicType::Castling ? FIFTY_RULE_MOVE_BIT : 0);
 }
 
 template <MoveBasicType move_basic_type>
@@ -57,7 +58,8 @@ inline constexpr uint8_t GetMoveType(bool is_move_fifty_rule) {
 
 inline constexpr uint8_t GetPromotionMoveType(const Piece piece) {
     Q_ASSERT(!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King);
-    return static_cast<uint8_t>(piece) - static_cast<uint8_t>(Piece::Knight) + GetMoveType<MoveBasicType::KnightPromotion>();
+    return static_cast<uint8_t>(piece) - static_cast<uint8_t>(Piece::Knight) +
+           GetMoveType<MoveBasicType::KnightPromotion>();
 }
 
 inline constexpr bool IsMoveFiftyRuleMove(const Move move) {
@@ -119,6 +121,19 @@ inline constexpr int8_t GetPawnMoveDelta() {
 std::string CastMoveToString(Move move);
 
 Move TranslateStringToMove(const Board& board, const std::string_view& str);
+
+using compressed_move_t = uint16_t;
+
+inline constexpr Move DecompressMove(const compressed_move_t compressed_move) {
+    return Move{.src = static_cast<coord_t>(compressed_move & (BOARD_SIZE - 1)),
+                .dst = static_cast<coord_t>((compressed_move >> BOARD_SIZE_LOG) & (BOARD_SIZE - 1)),
+                .type = static_cast<uint8_t>((compressed_move >> (BOARD_SIZE_LOG * 2)))};
+}
+
+inline constexpr compressed_move_t CompressMove(const Move move) {
+    return static_cast<uint16_t>(move.src) | (static_cast<uint16_t>(move.dst) << 6) |
+           (static_cast<uint16_t>(move.type) << 12);
+}
 
 }  // namespace q_core
 
