@@ -1,6 +1,8 @@
 #ifndef QUIRKY_SRC_UTIL_RANDOM_H
 #define QUIRKY_SRC_UTIL_RANDOM_H
 
+#include <iostream>
+
 namespace q_util {
 
 inline uint64_t GetRandom64() {

@@ -4,8 +4,8 @@
 
 #include <vector>
 
-#include "../../../src/core/moves/board_manipulation.h"
-#include "../../../src/util/string.h"
+#include "../../src/core/moves/board_manipulation.h"
+#include "../../src/util/string.h"
 
 std::string GetSortedMovesList(q_core::MoveList& move_list) {
     std::vector<std::string> moves;

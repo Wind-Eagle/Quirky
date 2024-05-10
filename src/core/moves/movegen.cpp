@@ -255,33 +255,50 @@ void GenerateAllKNBRQMoves(const Board& board, Move* list, size_t& size) {
     }
 }
 
-void SimpleMovegen::GenerateAllMoves(const Board& board, MoveList& list) {
+template <CapturePolicy cp, PromotionPolicy pp>
+void GenerateMoves(const Board& board, MoveList& list) {
     Q_ASSERT(board.IsValid());
     size_t size = 0;
     if (board.move_side == q_core::Color::White) {
-        q_core::GenerateAllPawnMoves<q_core::Color::White, q_core::CapturePolicy::All,
-                                     q_core::PromotionPolicy::All>(board, list.moves, size);
+        q_core::GenerateAllPawnMoves<q_core::Color::White, cp,
+                                     pp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Knight,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Bishop,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Rook,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::King,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
     } else {
-        q_core::GenerateAllPawnMoves<q_core::Color::Black, q_core::CapturePolicy::All,
-                                     q_core::PromotionPolicy::All>(board, list.moves, size);
+        q_core::GenerateAllPawnMoves<q_core::Color::Black, cp,
+                                     pp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Knight,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Bishop,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Rook,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
         q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::King,
-                                      q_core::CapturePolicy::All>(board, list.moves, size);
+                                      cp>(board, list.moves, size);
     }
     list.size = size;
+}
+
+void SimpleMovegen::GenerateAllMoves(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::All, PromotionPolicy::All>(board, list);
+}
+
+void SimpleMovegen::GenerateAllCaptures(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::OnlyCaptures, PromotionPolicy::All>(board, list);
+}
+
+void SimpleMovegen::GenerateAllPromotions(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::None, PromotionPolicy::OnlyPromotions>(board, list);
+}
+
+void SimpleMovegen::GenerateAllSimpleMoves(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::None, PromotionPolicy::None>(board, list);
 }
 
 }  // namespace q_core

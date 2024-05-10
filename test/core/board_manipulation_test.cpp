@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "../../../src/core/moves/board_manipulation.h"
-#include "../../../src/core/moves/movegen.h"
-#include "../../../src/core/util.h"
+#include "../../src/core/moves/board_manipulation.h"
+#include "../../src/core/moves/movegen.h"
+#include "../../src/core/util.h"
 #include "util.h"
 
 TEST(CoreMovesPseudolegalBoardManipulation, Startpos) {
@@ -109,7 +109,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, TrickyPos) {
     TestSimpleMovegen(board.GetFEN(), moves_new);
 }
 
-TEST(CoreMovesPseudolegalBoardManipulation, Game) {
+TEST(CoreBoardManipulation, Game) {
     std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     std::string moves =
         "e2e4 d7d6 d2d4 g8f6 b1c3 g7g6 c1e3 f8g7 d1d2 c7c6 f2f3 b7b5 g1e2 b8d7 e3h6 g7h6 d2h6 c8b7 "
@@ -120,7 +120,7 @@ TEST(CoreMovesPseudolegalBoardManipulation, Game) {
     TestMakeMoveFunction(fen, moves, moves_final);
 }
 
-TEST(CoreMovesPseudolegalBoardManipulation, PawnMarch) {
+TEST(CoreBoardManipulation, PawnMarch) {
     std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     std::string moves =
         "e2e4 g8h6 e4e5 f7f5 e5f6 e7e6 d2d4 f8d6 d4d5 e8g8 f6g7 d8f6 g7f8r g8g7 d5e6 f6e6 g1e2 "

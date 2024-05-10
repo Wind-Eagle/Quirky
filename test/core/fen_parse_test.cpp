@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "../../../src/core/board/board.h"
-#include "../../../src/core/util.h"
+#include "../../src/core/board/board.h"
+#include "../../src/core/util.h"
 
 template <class T>
 void CompareArrays(const T* lhs, const T* rhs, size_t size) {
@@ -148,15 +148,15 @@ void TestErrors() {
     EXPECT_EQ(parse_status, q_core::Board::FENParseStatus::InvalidMoveCount);
 }
 
-TEST(CoreBoardMakeFromFEN, Startpos) { TestStartpos(); }
+TEST(CoreMakeFromFEN, Startpos) { TestStartpos(); }
 
-TEST(CoreBoardMakeFromFEN, TrickyPos) { TestTrickyPos(); }
+TEST(CoreMakeFromFEN, TrickyPos) { TestTrickyPos(); }
 
-TEST(CoreBoardMakeFromFEN, MoveCount) { TestMoveCount(); }
+TEST(CoreMakeFromFEN, MoveCount) { TestMoveCount(); }
 
-TEST(CoreBoardMakeFromFEN, Errors) { TestErrors(); }
+TEST(CoreMakeFromFEN, Errors) { TestErrors(); }
 
-TEST(CoreBoardMakeFromFEN, Rewrite) {
+TEST(CoreMakeFromFEN, Rewrite) {
     TestStartpos();
     TestErrors();
     TestStartpos();
