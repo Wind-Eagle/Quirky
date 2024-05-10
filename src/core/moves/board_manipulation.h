@@ -15,6 +15,7 @@ struct MakeMoveInfo {
 };
 
 bool MakeMove(Board& board, Move move, MakeMoveInfo& info);
+bool TryMakeMove(Board& board, Move move, MakeMoveInfo& info);
 void UnmakeMove(Board& board, Move move, const MakeMoveInfo& info);
 
 }  // namespace q_core

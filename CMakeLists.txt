@@ -50,6 +50,10 @@ if(benchmark_FOUND)
     target_link_libraries(bench_core_movegen core)
     target_link_libraries(bench_core_movegen benchmark::benchmark)
 
+    add_executable(bench_core_board_manipulation bench/core/bench_board_manipulation.cpp)
+    target_link_libraries(bench_core_board_manipulation core)
+    target_link_libraries(bench_core_board_manipulation benchmark::benchmark)
+
     add_executable(bench_core_mock_search bench/core/bench_mock_search.cpp)
     target_link_libraries(bench_core_mock_search core)
     target_link_libraries(bench_core_mock_search benchmark::benchmark)

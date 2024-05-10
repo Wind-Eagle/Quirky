@@ -27,7 +27,7 @@ void TestSimpleMovegen(const std::string_view& fen, const std::string_view& ans)
     q_core::Board board;
     board.MakeFromFEN(fen);
     q_core::MoveList move_list;
-    q_core::SimpleMovegen::GenerateAllMoves(board, move_list);
+    q_core::GenerateAllMoves(board, move_list);
     std::string res = GetSortedMovesList(move_list);
     EXPECT_EQ(res, ans);
 }
@@ -60,7 +60,8 @@ void TestMakeMoveFunction(const std::string_view& fen, const std::string_view& m
     for (size_t i = 0; i < parsed_move_string.size(); i++) {
         moves[i] = q_core::TranslateStringToMove(board, parsed_move_string[i]);
         q_core::MakeMoveInfo info;
-        q_core::MakeMove(board, moves[i], info);
+        bool legal = q_core::MakeMove(board, moves[i], info);
+        EXPECT_TRUE(legal);
         EXPECT_TRUE(board.IsValid());
     }
     TestSimpleMovegen(board.GetFEN(), move_string_final);

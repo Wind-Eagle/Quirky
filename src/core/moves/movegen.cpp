@@ -285,19 +285,19 @@ void GenerateMoves(const Board& board, MoveList& list) {
     list.size = size;
 }
 
-void SimpleMovegen::GenerateAllMoves(const Board& board, MoveList& list) {
+void GenerateAllMoves(const Board& board, MoveList& list) {
     GenerateMoves<CapturePolicy::All, PromotionPolicy::All>(board, list);
 }
 
-void SimpleMovegen::GenerateAllCaptures(const Board& board, MoveList& list) {
+void GenerateAllCaptures(const Board& board, MoveList& list) {
     GenerateMoves<CapturePolicy::OnlyCaptures, PromotionPolicy::All>(board, list);
 }
 
-void SimpleMovegen::GenerateAllPromotions(const Board& board, MoveList& list) {
+void GenerateAllPromotions(const Board& board, MoveList& list) {
     GenerateMoves<CapturePolicy::None, PromotionPolicy::OnlyPromotions>(board, list);
 }
 
-void SimpleMovegen::GenerateAllSimpleMoves(const Board& board, MoveList& list) {
+void GenerateAllSimpleMoves(const Board& board, MoveList& list) {
     GenerateMoves<CapturePolicy::None, PromotionPolicy::None>(board, list);
 }
 

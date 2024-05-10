@@ -499,6 +499,10 @@ bool MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     return MakeMove<Color::Black>(board, move, info);
 }
 
+bool TryMakeMove(Board &board, const Move move, MakeMoveInfo &info) {
+    return MakeMove(board, move, info);
+}
+
 void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     if (board.move_side == Color::White) {
         UnmakeMove<Color::Black>(board, move, info);
