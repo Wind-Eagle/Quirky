@@ -14,9 +14,9 @@ struct MakeMoveInfo {
     uint8_t fifty_rule_move_counter;
 };
 
-bool MakeMove(Board& board, Move move, MakeMoveInfo& info);
-bool TryMakeMove(Board& board, Move move, MakeMoveInfo& info);
+void MakeMove(Board& board, Move move, MakeMoveInfo& info);
 void UnmakeMove(Board& board, Move move, const MakeMoveInfo& info);
+bool WasMoveLegal(const Board& board, Move move);
 
 }  // namespace q_core
 

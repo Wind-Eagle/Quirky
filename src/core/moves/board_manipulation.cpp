@@ -191,7 +191,7 @@ void UnmakeMovePromotion(Board &board, const Move move, const cell_t dst_cell) {
 }
 
 template <Color c>
-bool MakeMoveSimple(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMoveSimple(Board &board, const Move move, MakeMoveInfo &info) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t change_bitboard = src_bitboard | dst_bitboard;
@@ -202,11 +202,6 @@ bool MakeMoveSimple(Board &board, const Move move, MakeMoveInfo &info) {
     board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))] &= ~dst_bitboard;
     board.bb_pieces[dst_cell] &= ~dst_bitboard;
     board.bb_pieces[EMPTY_CELL] |= src_bitboard;
-    if (IsKingInCheck<c>(board)) {
-        UnmakeMoveSimple<c, false>(board, move, src_cell, dst_cell);
-        return false;
-    }
-    BuildMakeMoveInfo(board, move, info);
     board.hash ^= MakeZobristHashFromCell(move.src, src_cell) ^
                   MakeZobristHashFromCell(move.dst, src_cell) ^
                   MakeZobristHashFromCell(move.dst, dst_cell) ^
@@ -221,11 +216,10 @@ bool MakeMoveSimple(Board &board, const Move move, MakeMoveInfo &info) {
     board.en_passant_coord = NO_ENPASSANT_COORD;
     board.cells[move.src] = EMPTY_CELL;
     board.cells[move.dst] = src_cell;
-    return true;
 }
 
 template <Color c>
-bool MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t change_bitboard = src_bitboard | dst_bitboard;
@@ -234,11 +228,6 @@ bool MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
     board.bb_colors[static_cast<uint8_t>(c)] ^= change_bitboard;
     board.bb_pieces[MakeCell(c, Piece::Pawn)] ^= change_bitboard;
     board.bb_pieces[EMPTY_CELL] ^= change_bitboard;
-    if (IsKingInCheck<c>(board)) {
-        UnmakeMovePawnDouble<c, false>(board, move);
-        return false;
-    }
-    BuildMakeMoveInfo(board, move, info);
     board.hash ^= MakeZobristHashFromCell(move.src, MakeCell(c, Piece::Pawn)) ^
                   MakeZobristHashFromCell(move.dst, MakeCell(c, Piece::Pawn)) ^
                   MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
@@ -247,11 +236,10 @@ bool MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
     board.en_passant_coord = new_en_passant_coord;
     board.cells[move.src] = EMPTY_CELL;
     board.cells[move.dst] = MakeCell(c, Piece::Pawn);
-    return true;
 }
 
 template <Color c>
-bool MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
     const coord_t taken_coord = (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
@@ -262,11 +250,6 @@ bool MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
     board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))] ^= taken_bitboard;
     board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)] ^= taken_bitboard;
     board.bb_pieces[EMPTY_CELL] ^= src_bitboard | dst_bitboard | taken_bitboard;
-    if (IsKingInCheck<c>(board)) {
-        UnmakeMoveEnPassant<c, false>(board, move);
-        return false;
-    }
-    BuildMakeMoveInfo(board, move, info);
     board.hash ^= MakeZobristHashFromCell(move.src, MakeCell(c, Piece::Pawn)) ^
                   MakeZobristHashFromCell(move.dst, MakeCell(c, Piece::Pawn)) ^
                   MakeZobristHashFromCell(taken_coord, MakeCell(GetInvertedColor(c), Piece::Pawn)) ^
@@ -277,24 +260,13 @@ bool MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
     board.cells[taken_coord] = EMPTY_CELL;
     board.fifty_rule_move_count = 0;
     board.en_passant_coord = NO_ENPASSANT_COORD;
-    return true;
 }
 
 template <Color c>
-bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
     constexpr coord_t INITIAL_KING_POSITION =
         (c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION);
     if (GetCastlingSide(move) == CastlingSide::Kingside) {
-        // maybe it can be optimized
-        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION)) {
-            return false;
-        }
-        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION + 1)) {
-            return false;
-        }
-        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION + 2)) {
-            return false;
-        }
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION + 2);
@@ -310,11 +282,6 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
-        if (IsKingInCheck<c>(board)) {
-            UnmakeMoveCastling<c, false>(board, move);
-            return false;
-        }
-        BuildMakeMoveInfo(board, move, info);
         board.hash ^= MakeZobristHashFromCastling(board.castling);
         board.castling &= (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));
         board.hash ^= MakeZobristHashFromCastling(board.castling);
@@ -329,16 +296,6 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
         board.cells[INITIAL_KING_POSITION + 1] = MakeCell(c, Piece::Rook);
         board.cells[INITIAL_KING_POSITION + 3] = EMPTY_CELL;
     } else {
-        // maybe it can be optimized
-        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION)) {
-            return false;
-        }
-        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION - 1)) {
-            return false;
-        }
-        if (IsCellAttacked<GetInvertedColor(c)>(board, INITIAL_KING_POSITION - 2)) {
-            return false;
-        }
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
             MakeBitboardFromCoord(INITIAL_KING_POSITION - 2);
@@ -354,7 +311,6 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
-        BuildMakeMoveInfo(board, move, info);
         board.hash ^= MakeZobristHashFromCastling(board.castling);
         board.castling &= (~(c == Color::White ? Castling::WhiteAll : Castling::BlackAll));
         board.hash ^= MakeZobristHashFromCastling(board.castling);
@@ -371,11 +327,10 @@ bool MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
     }
     board.fifty_rule_move_count++;
     board.en_passant_coord = NO_ENPASSANT_COORD;
-    return true;
 }
 
 template <Color c>
-bool MakeMovePromotion(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMovePromotion(Board &board, const Move move, MakeMoveInfo &info) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t change_bitboard = src_bitboard | dst_bitboard;
@@ -387,11 +342,6 @@ bool MakeMovePromotion(Board &board, const Move move, MakeMoveInfo &info) {
     board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))] &= ~dst_bitboard;
     board.bb_pieces[dst_cell] &= ~dst_bitboard;
     board.bb_pieces[EMPTY_CELL] |= src_bitboard;
-    if (IsKingInCheck<c>(board)) {
-        UnmakeMovePromotion<c, false>(board, move, dst_cell);
-        return false;
-    }
-    BuildMakeMoveInfo(board, move, info);
     board.hash ^= MakeZobristHashFromCell(move.src, MakeCell(c, Piece::Pawn)) ^
                   MakeZobristHashFromCell(move.dst, promote_cell) ^
                   MakeZobristHashFromCell(move.dst, dst_cell) ^
@@ -402,55 +352,51 @@ bool MakeMovePromotion(Board &board, const Move move, MakeMoveInfo &info) {
     board.en_passant_coord = NO_ENPASSANT_COORD;
     board.cells[move.src] = EMPTY_CELL;
     board.cells[move.dst] = promote_cell;
-    return true;
 }
 
 template <Color c>
-bool MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     Q_ASSERT(c == board.move_side);
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
+    BuildMakeMoveInfo(board, move, info);
     bool legal;
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
-            legal = MakeMoveSimple<c>(board, move, info);
+            MakeMoveSimple<c>(board, move, info);
             break;
         }
         case MoveBasicType::PawnDouble: {
-            legal = MakeMovePawnDouble<c>(board, move, info);
+            MakeMovePawnDouble<c>(board, move, info);
             break;
         }
         case MoveBasicType::EnPassant: {
-            legal = MakeMoveEnPassant<c>(board, move, info);
+            MakeMoveEnPassant<c>(board, move, info);
             break;
         }
         case MoveBasicType::Castling: {
-            legal = MakeMoveCastling<c>(board, move, info);
+            MakeMoveCastling<c>(board, move, info);
             break;
         }
         case MoveBasicType::KnightPromotion:
         case MoveBasicType::BishopPromotion:
         case MoveBasicType::RookPromotion:
         case MoveBasicType::QueenPromotion: {
-            legal = MakeMovePromotion<c>(board, move, info);
+            MakeMovePromotion<c>(board, move, info);
             break;
         }
         default:
             Q_UNREACHABLE();
     }
-    if (!legal) {
-        return false;
-    }
     board.move_count++;
     board.move_side = GetInvertedColor(board.move_side);
     board.hash ^= ZOBRIST_HASH_MOVE_SIDE[0] ^ ZOBRIST_HASH_MOVE_SIDE[1];
     Q_ASSERT(board.IsValid());
-    return true;
 }
 
 template <Color c>
-bool UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
+void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     Q_ASSERT(c != board.move_side);
@@ -489,18 +435,14 @@ bool UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
             Q_UNREACHABLE();
     }
     Q_ASSERT(board.IsValid());
-    return true;
 }
 
-bool MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     if (board.move_side == Color::White) {
-        return MakeMove<Color::White>(board, move, info);
+        MakeMove<Color::White>(board, move, info);
+    } else {
+        return MakeMove<Color::Black>(board, move, info);
     }
-    return MakeMove<Color::Black>(board, move, info);
-}
-
-bool TryMakeMove(Board &board, const Move move, MakeMoveInfo &info) {
-    return MakeMove(board, move, info);
 }
 
 void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
@@ -509,6 +451,29 @@ void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     } else {
         UnmakeMove<Color::White>(board, move, info);
     }
+}
+
+template<Color c>
+bool WasMoveLegal(const Board& board, const Move move) {
+    if (Q_UNLIKELY(IsMoveCastling(move))) {
+        if (GetCastlingSide(move) == CastlingSide::Kingside) {
+            if (IsCellAttacked<c>(board, move.src) || IsCellAttacked<c>(board, move.src + 1)) {
+                return false;
+            }
+        } else {
+            if (IsCellAttacked<c>(board, move.src) || IsCellAttacked<c>(board, move.src - 1)) {
+                return false;
+            }
+        }
+    }
+    return !IsKingInCheck<GetInvertedColor(c)>(board);
+}
+
+bool WasMoveLegal(const Board& board, const Move move) {
+    if (board.move_side == Color::White) {
+        return WasMoveLegal<Color::White>(board, move);
+    }
+    return WasMoveLegal<Color::Black>(board, move);
 }
 
 }  // namespace q_core

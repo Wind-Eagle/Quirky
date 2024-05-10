@@ -53,11 +53,11 @@ void RunMockSearch(q_core::Board& board, uint8_t depth, FixedSeedRandom8 rnd8) {
             q_core::MakeMoveInfo info;
             uint8_t index = seq ? i : rnd8.Get() % move_list.size;
             q_core::Move move = move_list.moves[index];
-            bool legal = q_core::MakeMove(board, move, info);
-            if (legal) {
+            q_core::MakeMove(board, move, info);
+            if (q_core::WasMoveLegal(board, move)) {
                 RunMockSearch(board, depth - 1, rnd8);
-                q_core::UnmakeMove(board, move, info);
             }
+            q_core::UnmakeMove(board, move, info);
         }
     };
 
@@ -91,6 +91,16 @@ static void BenchmarkMockSearch(benchmark::State& state, const std::string_view&
     }
 }
 
+static void BenchmarkMockSearchNoisy(benchmark::State& state, const std::string_view& fen) {
+    q_core::Board board;
+    board.MakeFromFEN(fen);
+    FixedSeedRandom8 rnd8;
+    for (auto _ : state) {
+        rnd8.SetParams(q_util::GetRandom64(), q_util::GetRandom64(), q_util::GetRandom64());
+        RunMockSearch(board, 3, rnd8);
+    }
+}
+
 void RunRecurse(q_core::Board& board, uint8_t depth, FixedSeedRandom8 rnd8) {
     if (depth == 0) {
         return;
@@ -105,11 +115,11 @@ void RunRecurse(q_core::Board& board, uint8_t depth, FixedSeedRandom8 rnd8) {
         q_core::MakeMoveInfo info;
         uint8_t index = rnd8.Get() % move_list.size;
         q_core::Move move = move_list.moves[index];
-        bool legal = q_core::MakeMove(board, move, info);
-        if (legal) {
+        q_core::MakeMove(board, move, info);
+        if (q_core::WasMoveLegal(board, move)) {
             RunMockSearch(board, depth - 1, rnd8);
-            q_core::UnmakeMove(board, move, info);
         }
+        q_core::UnmakeMove(board, move, info);
     }
 }
 
@@ -146,6 +156,8 @@ CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_NOISY_RECURSE)
 #undef BENCHMARK_NOISY_RECURSE
 
 static void BM_MockSearch(benchmark::State &state) { BenchmarkMockSearch(state, "r1b1k2r/2qnbppp/p2ppn2/1p4B1/3NPPP1/2N2Q2/PPP4P/2KR1B1R w kq - 0 11"); } \
-BENCHMARK(BM_MockSearch)->Unit(benchmark::kMillisecond); \
+BENCHMARK(BM_MockSearch)->Unit(benchmark::kMillisecond);
+static void BM_MockSearchNoisy(benchmark::State &state) { BenchmarkMockSearchNoisy(state, "r1b1k2r/2qnbppp/p2ppn2/1p4B1/3NPPP1/2N2Q2/PPP4P/2KR1B1R w kq - 0 11"); } \
+BENCHMARK(BM_MockSearchNoisy)->Unit(benchmark::kMicrosecond); \
 
 BENCHMARK_MAIN();

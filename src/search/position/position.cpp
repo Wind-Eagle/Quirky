@@ -6,8 +6,9 @@ bool Position::MakeMove(const q_core::Move move, q_core::MakeMoveInfo& make_move
                         q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag) {
     // TODO: maybe it will be faster to make evaluator update after board make move
     evaluator_tag = evaluator.UpdateOnMove(board, move);
-    bool is_move_legal = q_core::MakeMove(board, move, make_move_info);
-    if (!is_move_legal) {
+    q_core::MakeMove(board, move, make_move_info);
+    if (!q_core::WasMoveLegal(board, move)) {
+        q_core::UnmakeMove(board, move, make_move_info);
         evaluator.SetTag(evaluator_tag);
         return false;
     }
