@@ -57,7 +57,7 @@ inline constexpr uint8_t GetMoveType(bool is_move_fifty_rule) {
 }
 
 inline constexpr uint8_t GetPromotionMoveType(const Piece piece) {
-    Q_ASSERT(!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King);
+    Q_ASSERT(IsPieceValid(piece) && piece != Piece::Pawn & piece != Piece::King);
     return static_cast<uint8_t>(piece) - static_cast<uint8_t>(Piece::Knight) +
            GetMoveType<MoveBasicType::KnightPromotion>();
 }

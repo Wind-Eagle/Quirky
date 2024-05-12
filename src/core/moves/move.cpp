@@ -16,7 +16,6 @@ std::string CastMoveToString(const Move move) {
 Move TranslatePromotionStringToMove(const Board& board, const std::string_view& str,
                                     const coord_t src, const coord_t dst) {
     Piece piece = CastCharToPiece(str[4]);
-    Q_ASSERT(!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King);
     return Move{.src = src,
                 .dst = dst,
                 .type = GetPromotionMoveType(piece)};
@@ -27,10 +26,10 @@ Move TranslateStringToMove(const Board& board, const std::string_view& str) {
     Q_ASSERT(str.size() >= 4);
     Q_ASSERT(str.size() <= 5);
     coord_t src = CastStringToCoord(str.substr(0, 2));
-    Q_ASSERT(!IsCoordValidAndDefined(src));
+    Q_ASSERT(IsCoordValidAndDefined(src));
     coord_t dst = CastStringToCoord(str.substr(2, 2));
-    Q_ASSERT(!IsCoordValidAndDefined(dst));
-    Q_ASSERT(board.cells[src] == EMPTY_CELL);
+    Q_ASSERT(IsCoordValidAndDefined(dst));
+    Q_ASSERT(board.cells[src] != EMPTY_CELL);
     bool is_move_fifty_rule = false;
     if (q_core::GetCellPiece(board.cells[src]) == Piece::Pawn) {
         is_move_fifty_rule = true;

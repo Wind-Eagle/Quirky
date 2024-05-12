@@ -12,17 +12,17 @@
 namespace q_util {
 
 inline constexpr void SetBit(std::unsigned_integral auto& num, const uint8_t bit) {
-    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
+    Q_ASSERT(bit < std::numeric_limits<std::decay_t<decltype(num)>>::digits);
     num |= (1ULL << bit);
 }
 
 inline constexpr void FlipBit(std::unsigned_integral auto& num, const uint8_t bit) {
-    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
+    Q_ASSERT(bit < std::numeric_limits<std::decay_t<decltype(num)>>::digits);
     num ^= (1ULL << bit);
 }
 
 inline constexpr void ClearBit(std::unsigned_integral auto& num, const uint8_t bit) {
-    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
+    Q_ASSERT(bit < std::numeric_limits<std::decay_t<decltype(num)>>::digits);
     num &= ~(1ULL << bit);
 }
 
@@ -49,7 +49,6 @@ inline constexpr uint8_t ExtractLowestBit(std::unsigned_integral auto& num) {
 }
 
 inline constexpr void ClearBits(std::unsigned_integral auto& num, const uint64_t bits) {
-    Q_ASSERT(bit < std::numeric_limits<decltype(num)>::digits);
     num &= ~(bits);
 }
 

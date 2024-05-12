@@ -357,13 +357,12 @@ void MakeMovePromotion(Board &board, const Move move, MakeMoveInfo &info) {
 template <Color c>
 void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
-    Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     Q_ASSERT(c == board.move_side);
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
     BuildMakeMoveInfo(board, move, info);
     bool legal;
     switch (move_basic_type) {
-        case MoveBasicType::Simple: {
+        [[likely]] case MoveBasicType::Simple: {
             MakeMoveSimple<c>(board, move, info);
             break;
         }
@@ -371,18 +370,18 @@ void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
             MakeMovePawnDouble<c>(board, move, info);
             break;
         }
-        case MoveBasicType::EnPassant: {
+        [[unlikely]] case MoveBasicType::EnPassant: {
             MakeMoveEnPassant<c>(board, move, info);
             break;
         }
-        case MoveBasicType::Castling: {
+        [[unlikely]] case MoveBasicType::Castling: {
             MakeMoveCastling<c>(board, move, info);
             break;
         }
-        case MoveBasicType::KnightPromotion:
-        case MoveBasicType::BishopPromotion:
-        case MoveBasicType::RookPromotion:
-        case MoveBasicType::QueenPromotion: {
+        [[unlikely]] case MoveBasicType::KnightPromotion:
+        [[unlikely]] case MoveBasicType::BishopPromotion:
+        [[unlikely]] case MoveBasicType::RookPromotion:
+        [[unlikely]] case MoveBasicType::QueenPromotion: {
             MakeMovePromotion<c>(board, move, info);
             break;
         }
@@ -398,7 +397,6 @@ void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
 template <Color c>
 void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
-    Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     Q_ASSERT(c != board.move_side);
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
     board.move_count--;

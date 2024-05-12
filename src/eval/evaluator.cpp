@@ -191,7 +191,6 @@ constexpr std::array<ScorePair, 2> QUEENSIGE_CASTLING_PSQ_UPDATE = {
 
 template <EvaluationType type>
 typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& board, const Move move) const {
-    Q_ASSERT(!IsMoveNull(move) && !IsMoveUndefined(move));
     if constexpr (type == EvaluationType::Value) {
         typename Evaluator<type>::Tag new_tag = (*this);
         const MoveBasicType move_basic_type = GetMoveBasicType(move);
