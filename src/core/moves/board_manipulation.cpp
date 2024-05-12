@@ -24,7 +24,7 @@ constexpr bitboard_t TOTAL_CASTLING_CHANGE_BITBOARD =
     WHITE_KINGSIDE_CASTLING_BITBOARD | WHITE_QUEENSIDE_CASTLING_BITBOARD |
     BLACK_KINGSIDE_CASTLING_BITBOARD | BLACK_QUEENSIDE_CASTLING_BITBOARD;
 
-inline std::array<Castling, 1ULL << q_util::GetBitCount(TOTAL_CASTLING_CHANGE_BITBOARD)>
+std::array<Castling, 1ULL << q_util::GetBitCount(TOTAL_CASTLING_CHANGE_BITBOARD)>
 GetCastlingChange() {
     std::array<Castling, 1ULL << q_util::GetBitCount(TOTAL_CASTLING_CHANGE_BITBOARD)> ans{};
     for (uint8_t submask = 0; submask < (1 << q_util::GetBitCount(TOTAL_CASTLING_CHANGE_BITBOARD));
@@ -53,9 +53,9 @@ GetCastlingChange() {
 const std::array<Castling, 1ULL << q_util::GetBitCount(TOTAL_CASTLING_CHANGE_BITBOARD)>
     CASTLING_CHANGE = GetCastlingChange();
 
-inline void UpdateCastling(Board &board, const bitboard_t change_bitboard) {
-    if (Q_UNLIKELY(IsAnyCastlingAllowed(board.castling) &&
-                   (change_bitboard & TOTAL_CASTLING_CHANGE_BITBOARD))) {
+void UpdateCastling(Board &board, const bitboard_t change_bitboard) {
+    if (IsAnyCastlingAllowed(board.castling) &&
+                   (change_bitboard & TOTAL_CASTLING_CHANGE_BITBOARD)) {
         board.hash ^= MakeZobristHashFromCastling(board.castling);
         uint8_t mask = q_util::ExtractBits(change_bitboard, TOTAL_CASTLING_CHANGE_BITBOARD);
         board.castling = CASTLING_CHANGE[mask] & board.castling;
@@ -63,12 +63,7 @@ inline void UpdateCastling(Board &board, const bitboard_t change_bitboard) {
     }
 }
 
-inline void BuildMakeMoveInfo(Board &board, const Move move, MakeMoveInfo &info) {
-    info = MakeMoveInfo{board.cells[move.dst], board.hash, board.en_passant_coord, board.castling,
-                        board.fifty_rule_move_count};
-}
-
-template <Color c, bool revert_cells>
+template <Color c>
 void UnmakeMoveSimple(Board &board, const Move move, const cell_t src_cell, const cell_t dst_cell) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
@@ -80,13 +75,11 @@ void UnmakeMoveSimple(Board &board, const Move move, const cell_t src_cell, cons
     }
     board.bb_pieces[dst_cell] |= dst_bitboard;
     board.bb_pieces[EMPTY_CELL] ^= src_bitboard;
-    if constexpr (revert_cells) {
-        board.cells[move.src] = src_cell;
-        board.cells[move.dst] = dst_cell;
-    }
+    board.cells[move.src] = src_cell;
+    board.cells[move.dst] = dst_cell;
 }
 
-template <Color c, bool revert_cells>
+template <Color c>
 void UnmakeMovePawnDouble(Board &board, const Move move) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
@@ -94,13 +87,11 @@ void UnmakeMovePawnDouble(Board &board, const Move move) {
     board.bb_colors[static_cast<uint8_t>(c)] ^= change_bitboard;
     board.bb_pieces[MakeCell(c, Piece::Pawn)] ^= change_bitboard;
     board.bb_pieces[EMPTY_CELL] ^= change_bitboard;
-    if constexpr (revert_cells) {
-        board.cells[move.src] = MakeCell(c, Piece::Pawn);
-        board.cells[move.dst] = EMPTY_CELL;
-    }
+    board.cells[move.src] = MakeCell(c, Piece::Pawn);
+    board.cells[move.dst] = EMPTY_CELL;
 }
 
-template <Color c, bool revert_cells>
+template <Color c>
 void UnmakeMoveEnPassant(Board &board, const Move move) {
     const coord_t taken_coord = (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
@@ -112,14 +103,12 @@ void UnmakeMoveEnPassant(Board &board, const Move move) {
     board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))] ^= taken_bitboard;
     board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)] ^= taken_bitboard;
     board.bb_pieces[EMPTY_CELL] ^= src_bitboard | dst_bitboard | taken_bitboard;
-    if constexpr (revert_cells) {
-        board.cells[move.src] = MakeCell(c, Piece::Pawn);
-        board.cells[move.dst] = EMPTY_CELL;
-        board.cells[taken_coord] = MakeCell(GetInvertedColor(c), Piece::Pawn);
-    }
+    board.cells[move.src] = MakeCell(c, Piece::Pawn);
+    board.cells[move.dst] = EMPTY_CELL;
+    board.cells[taken_coord] = MakeCell(GetInvertedColor(c), Piece::Pawn);
 }
 
-template <Color c, bool revert_cells>
+template <Color c>
 void UnmakeMoveCastling(Board &board, const Move move) {
     constexpr coord_t INITIAL_KING_POSITION =
         (c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION);
@@ -139,12 +128,10 @@ void UnmakeMoveCastling(Board &board, const Move move) {
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION + 1) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION + 2) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION + 3);
-        if constexpr (revert_cells) {
-            board.cells[INITIAL_KING_POSITION] = MakeCell(c, Piece::King);
-            board.cells[INITIAL_KING_POSITION + 1] = EMPTY_CELL;
-            board.cells[INITIAL_KING_POSITION + 2] = EMPTY_CELL;
-            board.cells[INITIAL_KING_POSITION + 3] = MakeCell(c, Piece::Rook);
-        }
+        board.cells[INITIAL_KING_POSITION] = MakeCell(c, Piece::King);
+        board.cells[INITIAL_KING_POSITION + 1] = EMPTY_CELL;
+        board.cells[INITIAL_KING_POSITION + 2] = EMPTY_CELL;
+        board.cells[INITIAL_KING_POSITION + 3] = MakeCell(c, Piece::Rook);
     } else {
         board.bb_pieces[MakeCell(c, Piece::King)] ^=
             MakeBitboardFromCoord(INITIAL_KING_POSITION) |
@@ -161,16 +148,14 @@ void UnmakeMoveCastling(Board &board, const Move move) {
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 1) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 2) |
                                        MakeBitboardFromCoord(INITIAL_KING_POSITION - 4);
-        if constexpr (revert_cells) {
-            board.cells[INITIAL_KING_POSITION] = MakeCell(c, Piece::King);
-            board.cells[INITIAL_KING_POSITION - 2] = EMPTY_CELL;
-            board.cells[INITIAL_KING_POSITION - 1] = EMPTY_CELL;
-            board.cells[INITIAL_KING_POSITION - 4] = MakeCell(c, Piece::Rook);
-        }
+        board.cells[INITIAL_KING_POSITION] = MakeCell(c, Piece::King);
+        board.cells[INITIAL_KING_POSITION - 2] = EMPTY_CELL;
+        board.cells[INITIAL_KING_POSITION - 1] = EMPTY_CELL;
+        board.cells[INITIAL_KING_POSITION - 4] = MakeCell(c, Piece::Rook);
     }
 }
 
-template <Color c, bool revert_cells>
+template <Color c>
 void UnmakeMovePromotion(Board &board, const Move move, const cell_t dst_cell) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
@@ -184,14 +169,12 @@ void UnmakeMovePromotion(Board &board, const Move move, const cell_t dst_cell) {
     }
     board.bb_pieces[dst_cell] |= dst_bitboard;
     board.bb_pieces[EMPTY_CELL] ^= src_bitboard;
-    if constexpr (revert_cells) {
-        board.cells[move.src] = MakeCell(c, Piece::Pawn);
-        board.cells[move.dst] = dst_cell;
-    }
+    board.cells[move.src] = MakeCell(c, Piece::Pawn);
+    board.cells[move.dst] = dst_cell;
 }
 
 template <Color c>
-void MakeMoveSimple(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMoveSimple(Board &board, const Move move) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t change_bitboard = src_bitboard | dst_bitboard;
@@ -219,7 +202,7 @@ void MakeMoveSimple(Board &board, const Move move, MakeMoveInfo &info) {
 }
 
 template <Color c>
-void MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMovePawnDouble(Board &board, const Move move) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t change_bitboard = src_bitboard | dst_bitboard;
@@ -239,7 +222,7 @@ void MakeMovePawnDouble(Board &board, const Move move, MakeMoveInfo &info) {
 }
 
 template <Color c>
-void MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMoveEnPassant(Board &board, const Move move) {
     const coord_t taken_coord = (c == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
@@ -263,7 +246,7 @@ void MakeMoveEnPassant(Board &board, const Move move, MakeMoveInfo &info) {
 }
 
 template <Color c>
-void MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMoveCastling(Board &board, const Move move) {
     constexpr coord_t INITIAL_KING_POSITION =
         (c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION);
     if (GetCastlingSide(move) == CastlingSide::Kingside) {
@@ -330,7 +313,7 @@ void MakeMoveCastling(Board &board, const Move move, MakeMoveInfo &info) {
 }
 
 template <Color c>
-void MakeMovePromotion(Board &board, const Move move, MakeMoveInfo &info) {
+void MakeMovePromotion(Board &board, const Move move) {
     const bitboard_t src_bitboard = MakeBitboardFromCoord(move.src);
     const bitboard_t dst_bitboard = MakeBitboardFromCoord(move.dst);
     const bitboard_t change_bitboard = src_bitboard | dst_bitboard;
@@ -359,30 +342,30 @@ void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(c == board.move_side);
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
-    BuildMakeMoveInfo(board, move, info);
-    bool legal;
+    info = MakeMoveInfo{.hash = board.hash, .en_passant = board.en_passant_coord, .castling = board.castling,
+                        .fifty_rule_move_counter = board.fifty_rule_move_count, .dst_cell = board.cells[move.dst]};
     switch (move_basic_type) {
-        [[likely]] case MoveBasicType::Simple: {
-            MakeMoveSimple<c>(board, move, info);
+        case MoveBasicType::Simple: {
+            MakeMoveSimple<c>(board, move);
             break;
         }
         case MoveBasicType::PawnDouble: {
-            MakeMovePawnDouble<c>(board, move, info);
+            MakeMovePawnDouble<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::EnPassant: {
-            MakeMoveEnPassant<c>(board, move, info);
+            MakeMoveEnPassant<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::Castling: {
-            MakeMoveCastling<c>(board, move, info);
+            MakeMoveCastling<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::KnightPromotion:
         [[unlikely]] case MoveBasicType::BishopPromotion:
         [[unlikely]] case MoveBasicType::RookPromotion:
         [[unlikely]] case MoveBasicType::QueenPromotion: {
-            MakeMovePromotion<c>(board, move, info);
+            MakeMovePromotion<c>(board, move);
             break;
         }
         default:
@@ -406,27 +389,27 @@ void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     board.castling = info.castling;
     board.fifty_rule_move_count = info.fifty_rule_move_counter;
     switch (move_basic_type) {
-        [[likely]] case MoveBasicType::Simple : {
-            UnmakeMoveSimple<c, true>(board, move, board.cells[move.dst], info.dst_cell);
+        case MoveBasicType::Simple : {
+            UnmakeMoveSimple<c>(board, move, board.cells[move.dst], info.dst_cell);
             break;
         }
         case MoveBasicType::PawnDouble: {
-            UnmakeMovePawnDouble<c, true>(board, move);
+            UnmakeMovePawnDouble<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::EnPassant : {
-            UnmakeMoveEnPassant<c, true>(board, move);
+            UnmakeMoveEnPassant<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::Castling : {
-            UnmakeMoveCastling<c, true>(board, move);
+            UnmakeMoveCastling<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::KnightPromotion:
         [[unlikely]] case MoveBasicType::BishopPromotion:
         [[unlikely]] case MoveBasicType::RookPromotion:
         [[unlikely]] case MoveBasicType::QueenPromotion : {
-            UnmakeMovePromotion<c, true>(board, move, info.dst_cell);
+            UnmakeMovePromotion<c>(board, move, info.dst_cell);
             break;
         }
         default:
