@@ -13,7 +13,9 @@ uint16_t GetEntryImportance(const auto entry, uint16_t generation) {
 }
 
 bool IsEntryBetter(const auto lhs, const auto rhs) {
-    uint8_t generation_diff = lhs.info.GetGeneration() - rhs.info.GetGeneration();
+    uint8_t generation_diff =
+        static_cast<int>(std::numeric_limits<decltype(lhs.info.GetGeneration())>::max()) + 1 +
+        lhs.info.GetGeneration() - rhs.info.GetGeneration();
     return GetEntryImportance(lhs, generation_diff) > GetEntryImportance(rhs, generation_diff);
 }
 
