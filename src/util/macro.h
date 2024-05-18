@@ -43,6 +43,9 @@
         }                    \
     } while (false)
 
+#define Q_PREFETCH(addr, ...)          \
+    __builtin_prefetch(addr __VA_OPT__(,) __VA_ARGS__)
+
 #define Q_ASSERT(condition) assert(Q_UNLIKELY(condition))
 
 #define Q_STATIC_ASSERT(condition) static_assert(condition)

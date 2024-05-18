@@ -124,13 +124,13 @@ Move TranslateStringToMove(const Board& board, const std::string_view& str);
 
 using compressed_move_t = uint16_t;
 
-inline constexpr Move DecompressMove(const compressed_move_t compressed_move) {
+inline constexpr Move GetDecompressedMove(const compressed_move_t compressed_move) {
     return Move{.src = static_cast<coord_t>(compressed_move & (BOARD_SIZE - 1)),
                 .dst = static_cast<coord_t>((compressed_move >> BOARD_SIZE_LOG) & (BOARD_SIZE - 1)),
                 .type = static_cast<uint8_t>((compressed_move >> (BOARD_SIZE_LOG * 2)))};
 }
 
-inline constexpr compressed_move_t CompressMove(const Move move) {
+inline constexpr compressed_move_t GetCompressedMove(const Move move) {
     return static_cast<uint16_t>(move.src) | (static_cast<uint16_t>(move.dst) << 6) |
            (static_cast<uint16_t>(move.type) << 12);
 }
