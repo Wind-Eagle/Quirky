@@ -119,7 +119,6 @@ inline constexpr int8_t GetPawnMoveDelta() {
 }
 
 std::string CastMoveToString(Move move);
-
 Move TranslateStringToMove(const Board& board, const std::string_view& str);
 
 using compressed_move_t = uint16_t;

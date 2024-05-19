@@ -30,6 +30,9 @@ void TestSimpleMovegen(const std::string_view& fen, const std::string_view& ans)
     q_core::GenerateAllMoves(board, move_list);
     std::string res = GetSortedMovesList(move_list);
     EXPECT_EQ(res, ans);
+    for (size_t i = 0; i < move_list.size; i++) {
+        EXPECT_TRUE(q_core::IsMovePseudolegal(board, move_list.moves[i]));
+    }
 }
 
 void TestMakeMoveFunctionSimple(const std::string_view& fen, const std::string_view& move_string) {

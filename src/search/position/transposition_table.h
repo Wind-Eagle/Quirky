@@ -13,7 +13,7 @@ class TranspositionTable {
   public:
     enum class NodeType : uint8_t { Invalid = 0, ExactValue = 1, LowerBound = 2, UpperBound = 3 };
     struct EntryInfo {
-        EntryInfo() = default;
+        EntryInfo() {}
         EntryInfo(uint8_t generation, NodeType type, bool is_pv) {
             data_ = (generation << 3) + static_cast<uint8_t>(type) + (is_pv ? 1 : 0);
         }
