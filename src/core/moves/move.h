@@ -89,8 +89,8 @@ inline constexpr bool IsMoveCastling(const Move move) {
 
 inline constexpr bool IsMovePromotion(const Move move) {
     Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
-    return static_cast<uint8_t>(move.type) >=
-           static_cast<uint8_t>(GetMoveType<MoveBasicType::KnightPromotion>());
+    return static_cast<uint8_t>(GetMoveBasicType(move)) >=
+           static_cast<uint8_t>(MoveBasicType::KnightPromotion);
 }
 
 inline constexpr bitboard_t KINGSIDE_CASTLING_DST_BITBOARD =
@@ -113,13 +113,26 @@ inline constexpr Piece GetPromotionPiece(const Move move) {
 
 inline constexpr uint8_t PAWN_MOVE_DELTA = BOARD_SIDE;
 
-template <Color c>
-inline constexpr int8_t GetPawnMoveDelta() {
+inline constexpr int8_t GetPawnMoveDelta(Color c) {
     return c == Color::White ? PAWN_MOVE_DELTA : -PAWN_MOVE_DELTA;
+}
+
+inline constexpr uint8_t GetPawnPromotionRank(const Color c) {
+    return c == Color::White ? BOARD_SIDE - 2 : 1;
+}
+
+inline constexpr bitboard_t GetPawnDoubleMoveRank(const Color c) {
+    return c == Color::White ? 1 : BOARD_SIDE - 2;
+}
+
+inline constexpr uint8_t GetCastlingRank(const Color c) {
+    return c == Color::White ? 0 : BOARD_SIDE - 1;
 }
 
 std::string CastMoveToString(Move move);
 Move TranslateStringToMove(const Board& board, const std::string_view& str);
+
+bool IsMoveWellFormed(Move move, Color c);
 
 using compressed_move_t = uint16_t;
 
