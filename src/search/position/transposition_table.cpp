@@ -2,7 +2,7 @@
 
 namespace q_search {
 
-uint64_t GetKeyHash(const q_core::hash_t hash, uint8_t size_log) {
+uint64_t GetKeyHash(const q_core::hash_t hash, const uint8_t size_log) {
     return hash & ((1ULL << size_log) - 1);
 }
 
@@ -19,13 +19,13 @@ bool IsEntryBetter(const auto lhs, const auto rhs) {
     return GetEntryImportance(lhs, generation_diff) > GetEntryImportance(rhs, generation_diff);
 }
 
-TranspositionTable::TranspositionTable(uint8_t byte_size_log)
+TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
     : size_log_(byte_size_log - CLUSTER_SIZE_LOG),
-      data_(new TranspositionTable::Cluster[(1ULL << CLUSTER_SIZE_LOG)]) {}
+      data_(new TranspositionTable::Cluster[(1ULL << (byte_size_log - CLUSTER_SIZE_LOG))]) {}
 
-void TranspositionTable::Store(TranspositionTable::Entry& old_entry, q_core::hash_t hash,
-                               q_core::Move move, q_eval::score_t score, uint8_t depth,
-                               NodeType node_type, bool is_pv) {
+void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_core::hash_t hash,
+                               const q_core::Move move, const q_eval::score_t score, const uint8_t depth,
+                               const NodeType node_type, const bool is_pv) {
     const auto value_hash = GetValueHash(hash);
     Entry new_entry{.hash_low = static_cast<uint16_t>(value_hash & ((1ULL << 16) - 1)),
                     .hash_high = static_cast<uint16_t>(value_hash >> 16),
@@ -38,7 +38,7 @@ void TranspositionTable::Store(TranspositionTable::Entry& old_entry, q_core::has
     }
 }
 
-TranspositionTable::Entry& TranspositionTable::GetEntry(q_core::hash_t hash, bool& found) {
+TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t hash, bool& found) const  {
     const auto key_hash = GetKeyHash(hash, size_log_);
     const auto value_hash = GetValueHash(hash);
     auto& entry = data_[key_hash];
@@ -53,7 +53,7 @@ TranspositionTable::Entry& TranspositionTable::GetEntry(q_core::hash_t hash, boo
     return entry.data[0];
 }
 
-void TranspositionTable::Prefetch(q_core::hash_t hash) {
+void TranspositionTable::Prefetch(const q_core::hash_t hash) const {
     const auto key_hash = GetKeyHash(hash, size_log_);
     Q_PREFETCH(&data_[key_hash]);
 }
@@ -61,10 +61,6 @@ void TranspositionTable::Prefetch(q_core::hash_t hash) {
 void TranspositionTable::Clear() {
     data_ = nullptr;
     generation_ = 0;
-}
-
-void TranspositionTable::Resize(uint8_t byte_size_log) {
-    (*this) = std::move(TranspositionTable(byte_size_log));
 }
 
 void TranspositionTable::NextPosition() { generation_ += EntryInfo::GENERATION_DELTA; }

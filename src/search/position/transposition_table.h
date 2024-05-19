@@ -11,9 +11,9 @@ namespace q_search {
 
 class TranspositionTable {
   public:
-    enum class NodeType : uint8_t { ExactValue = 0, LowerBound = 1, UpperBound = 2, Invalid = 3 };
+    enum class NodeType : uint8_t { Invalid = 0, ExactValue = 1, LowerBound = 2, UpperBound = 3 };
     struct EntryInfo {
-        EntryInfo() {}
+        EntryInfo() = default;
         EntryInfo(uint8_t generation, NodeType type, bool is_pv) {
             data_ = (generation << 3) + static_cast<uint8_t>(type) + (is_pv ? 1 : 0);
         }
@@ -58,14 +58,13 @@ class TranspositionTable {
     void NextGame();
 
     void Clear();
-    void Resize(uint8_t byte_size_log);
 
     explicit TranspositionTable(uint8_t byte_size_log);
 
     void Store(TranspositionTable::Entry& old_entry, q_core::hash_t hash, q_core::Move move, q_eval::score_t score, uint8_t depth,
                NodeType node_type, bool is_pv);
-    Entry& GetEntry(q_core::hash_t hash, bool& found);
-    void Prefetch(q_core::hash_t hash);
+    Entry& GetEntry(q_core::hash_t hash, bool& found) const ;
+    void Prefetch(q_core::hash_t hash) const ;
 
   private:
     std::unique_ptr<Cluster[]> data_;
