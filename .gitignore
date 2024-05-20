@@ -1,6 +1,13 @@
 # CMake directories
+build/*
 cmake-build-debug/*
 cmake-build-release/*
 
+# Make
+.cache/*
+
 # IDE
 .idea/*
+
+# Jupyter notebook
+**/.ipynb_checkpoints/**
