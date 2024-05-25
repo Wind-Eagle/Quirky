@@ -1,13 +1,21 @@
 #include "protocol.h"
+#include <memory>
 
-#include "../../util/io.h"
+#include "interactor.h"
+#include "logger.h"
+#include "parser.h"
 
 namespace q_api {
 
+constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 void StartUciProtocol() {
-    q_util::Print(
-        "Hi! I'm Quirky, a chess engine. Currently I'm under construction, so I'm unable to play "
-        "yet.");
+    UciInteractor interactor;
+    do {
+        auto command = ParseUciCommand("");
+        auto response = interactor.ProcessCommand(command);
+        LogUciResponse(response);
+    } while (!interactor.ShouldStop());
 }
 
 }  // namespace q_api

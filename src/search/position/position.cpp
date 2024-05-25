@@ -22,6 +22,11 @@ void Position::UnmakeMove(
     evaluator.SetTag(evaluator_tag);
 }
 
+void Position::MakeFromFEN(const std::string_view& fen) {
+    board.MakeFromFEN(fen);
+    evaluator.StartTrackingBoard(board);
+}
+
 q_eval::score_t Position::GetEvaluatorScore() const {
     return evaluator.GetEvaluationScore(evaluator.Evaluate(board));
 }

@@ -25,7 +25,7 @@ TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
 
 void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_core::hash_t hash,
                                const q_core::Move move, const q_eval::score_t score, const uint8_t depth,
-                               const NodeType node_type, const bool is_pv) {
+                               const NodeType node_type, const bool is_pv) const {
     const auto value_hash = GetValueHash(hash);
     Entry new_entry{.hash_low = static_cast<uint16_t>(value_hash & ((1ULL << 16) - 1)),
                     .hash_high = static_cast<uint16_t>(value_hash >> 16),
@@ -38,7 +38,7 @@ void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_cor
     }
 }
 
-TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t hash, bool& found) const  {
+TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t hash, bool& found) const {
     const auto key_hash = GetKeyHash(hash, size_log_);
     const auto value_hash = GetValueHash(hash);
     auto& entry = data_[key_hash];
@@ -60,6 +60,11 @@ void TranspositionTable::Prefetch(const q_core::hash_t hash) const {
 
 void TranspositionTable::Clear() {
     data_ = nullptr;
+    generation_ = 0;
+}
+
+void TranspositionTable::ClearAndResize(uint8_t new_byte_size_log) {
+    data_.reset(new TranspositionTable::Cluster[(1ULL << (new_byte_size_log - CLUSTER_SIZE_LOG))]);
     generation_ = 0;
 }
 

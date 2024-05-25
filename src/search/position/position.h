@@ -1,6 +1,7 @@
 #ifndef QUIRKY_SRC_SEARCH_POSITION_POSITION_H
 #define QUIRKY_SRC_SEARCH_POSITION_POSITION_H
 
+#include <string_view>
 #include "../../core/board/board.h"
 #include "../../core/moves/board_manipulation.h"
 #include "../../core/moves/movegen.h"
@@ -11,6 +12,8 @@ namespace q_search {
 struct Position {
     q_core::Board board;
     q_eval::Evaluator<q_eval::EvaluationType::Value> evaluator;
+
+    void MakeFromFEN(const std::string_view& fen);
 
     bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
                   q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);
