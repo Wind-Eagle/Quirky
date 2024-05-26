@@ -4,48 +4,52 @@
 namespace q_api {
 
 #define LOG_UCI_RESPONSE_FUNCTION(type)  \
-    void Log##type(std::shared_ptr<type> response)
+void Log##type(const type& response)
 
-LOG_UCI_RESPONSE_FUNCTION(UciReadyResponse) {
-    q_util::Print("id name Quirky");
-    q_util::Print("id author Wind_Eagle");
-    q_util::Print("uciok");
-}
-
-LOG_UCI_RESPONSE_FUNCTION(UciNewGameResponse) {
-    q_util::Print("readyok");
-}
-
-LOG_UCI_RESPONSE_FUNCTION(UciSetOptionResponse) {
+LOG_UCI_RESPONSE_FUNCTION(UciReadyCommand) {
 
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciPositionResponse) {
+LOG_UCI_RESPONSE_FUNCTION(UciNewGameCommand) {
 
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciGoResponse) {
+LOG_UCI_RESPONSE_FUNCTION(UciSetOptionCommand) {
 
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciStopResponse) {
+LOG_UCI_RESPONSE_FUNCTION(UciPositionCommand) {
 
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciQuitResponse) {
+LOG_UCI_RESPONSE_FUNCTION(UciGoCommand) {
 
 }
 
-#define LOG_UCI_RESPONSE(type, response_interface)  \
-    if (auto response = std::static_pointer_cast<type>(response_interface)) {  \
-        Log##type(response);  \
-        return;  \
+LOG_UCI_RESPONSE_FUNCTION(UciStopCommand) {
+
+}
+
+LOG_UCI_RESPONSE_FUNCTION(UciQuitCommand) {
+
+}
+
+#define LOG_UCI_RESPONSE(type, response)  \
+    if constexpr (std::is_same_v<std::decay_t<decltype(response)>, type>) {  \
+        return Log##type(command);  \
     }
 
-void LogUciResponse(std::shared_ptr<UciResponse> response_interface) {
-    LOG_UCI_RESPONSE(UciReadyResponse, response_interface);
-    q_util::PrintError("Unknown uci response type");
-    q_util::ExitWithError(QuirkyError::UnexpectedValue);
+void LogUciResponse(const uci_command_t& response) {
+    std::visit([](auto&& command)
+        {
+            LOG_UCI_RESPONSE(UciReadyResponse, command);
+            LOG_UCI_RESPONSE(UciNewGameResponse, command);
+            LOG_UCI_RESPONSE(UciSetOptionResponse, command);
+            LOG_UCI_RESPONSE(UciPositionResponse, command);
+            LOG_UCI_RESPONSE(UciGoResponse, command);
+            LOG_UCI_RESPONSE(UciStopResponse, command);
+            LOG_UCI_RESPONSE(UciQuitResponse, command);
+        }, response);
 }
 
 }  // namespace q_api

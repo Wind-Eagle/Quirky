@@ -1,56 +1,60 @@
 #ifndef QUIRKY_SRC_API_UCI_INTERACTOR_H
 #define QUIRKY_SRC_API_UCI_INTERACTOR_H
 
-#include "../../search/control/time.h"
-#include "../../search/searcher/searcher.h"
-#include "../../search/searcher/launcher.h"
-
 #include <optional>
+#include <variant>
 #include <vector>
+
+#include "../../search/control/time.h"
+#include "../../search/searcher/launcher.h"
+#include "../../search/searcher/searcher.h"
 
 namespace q_api {
 
-enum class OptionType : uint8_t {
-    HashTableSize = 0
-};
+enum class OptionType : uint8_t { HashTableSize = 0 };
 
-struct UciCommand{};
-
-struct UciReadyCommand : public UciCommand {};
-struct UciNewGameCommand : public UciCommand {};
-struct UciSetOptionCommand : public UciCommand {
+struct UciReadyCommand {};
+struct UciNewGameCommand {};
+struct UciSetOptionCommand {
     OptionType type;
     std::string value;
 };
-struct UciPositionCommand : public UciCommand {
+struct UciPositionCommand {
     std::string fen;
     std::optional<std::vector<std::string>> moves;
 };
-struct UciGoCommand : public UciCommand {
+struct UciGoCommand {
     q_search::TimeControl time_control;
     uint8_t max_depth;
 };
-struct UciStopCommand : public UciCommand {};
-struct UciQuitCommand : public UciCommand {};
+struct UciStopCommand {};
+struct UciQuitCommand {};
 
-struct UciResponse{};
+using uci_command_t =
+    std::variant<UciReadyCommand, UciNewGameCommand, UciSetOptionCommand, UciPositionCommand,
+                 UciGoCommand, UciStopCommand, UciQuitCommand>;
 
-struct UciReadyResponse : public UciResponse{};
-struct UciNewGameResponse : public UciResponse {};
-struct UciSetOptionResponse : public UciResponse {};
-struct UciPositionResponse : public UciCommand {};
-struct UciGoResponse : public UciCommand {};
-struct UciStopResponse : public UciCommand {};
-struct UciQuitResponse : public UciCommand {};
+struct UciReadyResponse {};
+struct UciNewGameResponse {};
+struct UciSetOptionResponse {};
+struct UciPositionResponse {};
+struct UciGoResponse {};
+struct UciStopResponse {};
+struct UciQuitResponse {};
+
+using uci_response_t =
+    std::variant<UciReadyResponse, UciNewGameResponse, UciSetOptionResponse, UciPositionResponse,
+                 UciGoResponse, UciStopResponse, UciQuitResponse>;
 
 class UciInteractor {
-    public:
-        std::shared_ptr<UciResponse> ProcessUciCommand(std::shared_ptr<UciCommand> command);
-        bool ShouldStop() const;
-    private:
-        q_search::Position position_;
-        q_search::SearchLauncher launcher_;
-        bool should_stop_;
+  public:
+    uci_response_t ProcessUciCommand(const uci_command_t& command);
+    bool ShouldStop() const;
+
+  private:
+    q_search::Position position_;
+    q_search::SearchLauncher launcher_;
+    bool should_stop_;
 };
 
 }  // namespace q_api

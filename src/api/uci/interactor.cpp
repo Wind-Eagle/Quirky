@@ -4,7 +4,7 @@
 namespace q_api {
 
 #define PROCESS_UCI_COMMAND_FUNCTION(type)  \
-    std::shared_ptr<UciResponse> Process##type(std::shared_ptr<type> command)
+uci_response_t Process##type(const type& command)
 
 PROCESS_UCI_COMMAND_FUNCTION(UciReadyCommand) {
 
@@ -34,15 +34,22 @@ PROCESS_UCI_COMMAND_FUNCTION(UciQuitCommand) {
 
 }
 
-#define PROCESS_UCI_COMMAND(type, command_interface)  \
-    if (auto command = std::static_pointer_cast<type>(command_interface)) {  \
+#define PROCESS_UCI_COMMAND(type, command)  \
+    if constexpr (std::is_same_v<std::decay_t<decltype(command)>, type>) {  \
         return Process##type(command);  \
     }
 
-std::shared_ptr<UciResponse> UciInteractor::ProcessUciCommand(std::shared_ptr<UciCommand> command_interface) {
-    PROCESS_UCI_COMMAND(UciReadyCommand, command_interface);
-    q_util::PrintError("Unknown uci command type");
-    q_util::ExitWithError(QuirkyError::UnexpectedValue);
+uci_response_t UciInteractor::ProcessUciCommand(const uci_command_t& command) {
+    std::visit([](auto&& command)
+        {
+            PROCESS_UCI_COMMAND(UciReadyCommand, command);
+            PROCESS_UCI_COMMAND(UciNewGameCommand, command);
+            PROCESS_UCI_COMMAND(UciSetOptionCommand, command);
+            PROCESS_UCI_COMMAND(UciPositionCommand, command);
+            PROCESS_UCI_COMMAND(UciGoCommand, command);
+            PROCESS_UCI_COMMAND(UciStopCommand, command);
+            PROCESS_UCI_COMMAND(UciQuitCommand, command);
+        }, command);
 }
 
 bool UciInteractor::ShouldStop() const {
