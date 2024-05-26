@@ -45,7 +45,7 @@ struct UciQuitResponse : public UciCommand {};
 
 class UciInteractor {
     public:
-        std::shared_ptr<UciResponse> ProcessCommand(std::shared_ptr<UciCommand> command);
+        std::shared_ptr<UciResponse> ProcessUciCommand(std::shared_ptr<UciCommand> command);
         bool ShouldStop() const;
     private:
         q_search::Position position_;

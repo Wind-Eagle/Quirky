@@ -5,6 +5,7 @@
 
 namespace q_api {
 
+void LogStart();
 void LogUciResponse(std::shared_ptr<UciResponse> response_interface);
 
 }  // namespace q_api

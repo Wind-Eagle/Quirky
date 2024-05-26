@@ -7,11 +7,13 @@ namespace q_api {
     void Log##type(std::shared_ptr<type> response)
 
 LOG_UCI_RESPONSE_FUNCTION(UciReadyResponse) {
-
+    q_util::Print("id name Quirky");
+    q_util::Print("id author Wind_Eagle");
+    q_util::Print("uciok");
 }
 
 LOG_UCI_RESPONSE_FUNCTION(UciNewGameResponse) {
-
+    q_util::Print("readyok");
 }
 
 LOG_UCI_RESPONSE_FUNCTION(UciSetOptionResponse) {

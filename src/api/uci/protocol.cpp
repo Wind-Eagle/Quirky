@@ -13,7 +13,7 @@ void StartUciProtocol() {
     UciInteractor interactor;
     do {
         auto command = ParseUciCommand("");
-        auto response = interactor.ProcessCommand(command);
+        auto response = interactor.ProcessUciCommand(command);
         LogUciResponse(response);
     } while (!interactor.ShouldStop());
 }
