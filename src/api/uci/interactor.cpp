@@ -3,53 +3,68 @@
 
 namespace q_api {
 
-#define PROCESS_UCI_COMMAND_FUNCTION(type)  \
-uci_response_t Process##type(const type& command)
+constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-PROCESS_UCI_COMMAND_FUNCTION(UciReadyCommand) {
-
+uci_response_t ProcessUciCommandInner(UciContext&, const UciInitCommand& command) {
+    return UciInitResponse{};
 }
 
-PROCESS_UCI_COMMAND_FUNCTION(UciNewGameCommand) {
-
+uci_response_t ProcessUciCommandInner(UciContext&, const UciReadyCommand& command) {
+    return UciReadyResponse{};
 }
 
-PROCESS_UCI_COMMAND_FUNCTION(UciSetOptionCommand) {
-
+uci_response_t ProcessUciCommandInner(UciContext&, const UciNewGameCommand& command) {
+    return UciEmptyResponse{};
 }
 
-PROCESS_UCI_COMMAND_FUNCTION(UciPositionCommand) {
-
+uci_response_t ProcessUciCommandInner(UciContext&, const UciSetOptionCommand& command) {
+    return UciEmptyResponse{};
 }
 
-PROCESS_UCI_COMMAND_FUNCTION(UciGoCommand) {
-
-}
-
-PROCESS_UCI_COMMAND_FUNCTION(UciStopCommand) {
-
-}
-
-PROCESS_UCI_COMMAND_FUNCTION(UciQuitCommand) {
-
-}
-
-#define PROCESS_UCI_COMMAND(type, command)  \
-    if constexpr (std::is_same_v<std::decay_t<decltype(command)>, type>) {  \
-        return Process##type(command);  \
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionCommand& command) {
+    auto res = context.position.MakeFromFEN(command.fen);
+    if (res != q_core::Board::FENParseStatus::Ok) {
+        context.position.MakeFromFEN(STARTPOS_FEN);
+        return UciErrorResponse{.error_message = "Invalid FEN", .fatal_error = std::nullopt};
     }
+    context.moves.clear();
+    if (command.moves != std::nullopt) {
+        for (const auto& move_str : *command.moves) {
+            if (!q_core::IsStringMoveWellFormated(context.position.board, move_str)) {
+                return UciErrorResponse{.error_message = "Invalid move string", .fatal_error = std::nullopt};
+            }
+            context.moves.push_back(q_core::TranslateStringToMove(context.position.board, move_str));
+        }
+    }
+    return UciEmptyResponse{};
+}
+
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& command) {
+    return UciEmptyResponse{};
+}
+
+uci_response_t ProcessUciCommandInner(UciContext&, const UciStopCommand& command) {
+    return UciEmptyResponse{};
+}
+
+uci_response_t ProcessUciCommandInner(UciContext&, const UciQuitCommand& command) {
+    return UciEmptyResponse{};
+}
+
+uci_response_t ProcessUciCommandInner(UciContext&, const UciUnparsedCommand& command) {
+    return UciErrorResponse{.error_message = command.parse_error, .fatal_error = std::nullopt};
+}
 
 uci_response_t UciInteractor::ProcessUciCommand(const uci_command_t& command) {
-    std::visit([](auto&& command)
+    return std::visit([this](const auto& command)
         {
-            PROCESS_UCI_COMMAND(UciReadyCommand, command);
-            PROCESS_UCI_COMMAND(UciNewGameCommand, command);
-            PROCESS_UCI_COMMAND(UciSetOptionCommand, command);
-            PROCESS_UCI_COMMAND(UciPositionCommand, command);
-            PROCESS_UCI_COMMAND(UciGoCommand, command);
-            PROCESS_UCI_COMMAND(UciStopCommand, command);
-            PROCESS_UCI_COMMAND(UciQuitCommand, command);
+            return ProcessUciCommandInner(context_, command);
         }, command);
+}
+
+UciInteractor::UciInteractor() {
+    context_.position.MakeFromFEN(STARTPOS_FEN);
+    should_stop_ = false;
 }
 
 bool UciInteractor::ShouldStop() const {

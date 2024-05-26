@@ -13,7 +13,7 @@ struct Position {
     q_core::Board board;
     q_eval::Evaluator<q_eval::EvaluationType::Value> evaluator;
 
-    void MakeFromFEN(const std::string_view& fen);
+    q_core::Board::FENParseStatus MakeFromFEN(const std::string_view& fen);
 
     bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
                   q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);

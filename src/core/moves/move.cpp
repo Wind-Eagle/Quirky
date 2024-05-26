@@ -19,15 +19,29 @@ Move TranslatePromotionStringToMove(const Board& board, const std::string_view& 
     return Move{.src = src, .dst = dst, .type = GetPromotionMoveType(piece)};
 }
 
+bool IsStringMoveWellFormated(const Board& board, const std::string_view& str) {
+    if (str.size() < 4 || str.size() > 5) {
+        return false;
+    }
+    coord_t src = CastStringToCoord(str.substr(0, 2));
+    coord_t dst = CastStringToCoord(str.substr(2, 2));
+    if (!IsCoordValidAndDefined(src) || !IsCoordValidAndDefined(dst) || board.cells[src] == EMPTY_CELL) {
+        return false;
+    }
+    if (str.size() == 5) {
+        Piece piece = CastCharToPiece(str[4]);
+        if (!IsPieceValid(piece) || piece == Piece::Pawn || piece == Piece::King) {
+            return false;
+        }
+    }
+    return true;
+}
+
 Move TranslateStringToMove(const Board& board, const std::string_view& str) {
     Q_ASSERT(board.IsValid());
-    Q_ASSERT(str.size() >= 4);
-    Q_ASSERT(str.size() <= 5);
+    Q_ASSERT(IsStringMoveWellFormated(board, str));
     coord_t src = CastStringToCoord(str.substr(0, 2));
-    Q_ASSERT(IsCoordValidAndDefined(src));
     coord_t dst = CastStringToCoord(str.substr(2, 2));
-    Q_ASSERT(IsCoordValidAndDefined(dst));
-    Q_ASSERT(board.cells[src] != EMPTY_CELL);
     bool is_move_fifty_rule = false;
     if (q_core::GetCellPiece(board.cells[src]) == Piece::Pawn) {
         is_move_fifty_rule = true;

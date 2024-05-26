@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 // The code here is derived from FarmHash64 by Google:
 // https://github.com/google/farmhash/blob/master/src/farmhash.cc.

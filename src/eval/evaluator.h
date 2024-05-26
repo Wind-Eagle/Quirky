@@ -73,6 +73,10 @@ struct Evaluator {
       public:
         void BuildTag(const q_core::Board& board);
         Tag GetUpdatedTag(const q_core::Board& board, q_core::Move move) const;
+        void ClearTag() {
+            score_ = typename EvaluationResultType<type>::type{};
+            stage_ = stage_t{};
+        }
 
         typename EvaluationResultType<type>::type GetScore() const {
             return score_;
@@ -98,6 +102,7 @@ struct Evaluator {
     };
 
     void StartTrackingBoard(const q_core::Board& board) {
+        tag_.ClearTag();
         tag_.BuildTag(board);
     }
 

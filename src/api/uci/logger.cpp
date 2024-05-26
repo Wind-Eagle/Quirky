@@ -1,54 +1,40 @@
 #include "logger.h"
+#include <optional>
 #include "interactor.h"
 
 namespace q_api {
 
-#define LOG_UCI_RESPONSE_FUNCTION(type)  \
-void Log##type(const type& response)
-
-LOG_UCI_RESPONSE_FUNCTION(UciReadyCommand) {
-
+void LogStart() {
+    q_util::Print("Hello! I'm Quirky, a chess engine. Use UCI protocol to communicate with me.");
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciNewGameCommand) {
-
+void LogUciResponseInner(const UciInitResponse& response) {
+    q_util::Print("id name Quirky");
+    q_util::Print("id author Wind_Eagle");
+    q_util::Print("uciok");
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciSetOptionCommand) {
-
+void LogUciResponseInner(const UciReadyResponse& response) {
+    q_util::Print("readyok");
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciPositionCommand) {
-
+void LogUciResponseInner(const UciGoResponse& response) {
+    q_util::PrintError("Go command will be supported soon");
 }
 
-LOG_UCI_RESPONSE_FUNCTION(UciGoCommand) {
+void LogUciResponseInner(const UciEmptyResponse& response) {}
 
-}
-
-LOG_UCI_RESPONSE_FUNCTION(UciStopCommand) {
-
-}
-
-LOG_UCI_RESPONSE_FUNCTION(UciQuitCommand) {
-
-}
-
-#define LOG_UCI_RESPONSE(type, response)  \
-    if constexpr (std::is_same_v<std::decay_t<decltype(response)>, type>) {  \
-        return Log##type(command);  \
+void LogUciResponseInner(const UciErrorResponse& response) {
+    q_util::PrintError(response.error_message);
+    if (response.fatal_error != std::nullopt) {
+        q_util::ExitWithError(*response.fatal_error);
     }
+}
 
-void LogUciResponse(const uci_command_t& response) {
-    std::visit([](auto&& command)
+void LogUciResponse(const uci_response_t& response) {
+    std::visit([](const auto& response)
         {
-            LOG_UCI_RESPONSE(UciReadyResponse, command);
-            LOG_UCI_RESPONSE(UciNewGameResponse, command);
-            LOG_UCI_RESPONSE(UciSetOptionResponse, command);
-            LOG_UCI_RESPONSE(UciPositionResponse, command);
-            LOG_UCI_RESPONSE(UciGoResponse, command);
-            LOG_UCI_RESPONSE(UciStopResponse, command);
-            LOG_UCI_RESPONSE(UciQuitResponse, command);
+            LogUciResponseInner(response);
         }, response);
 }
 

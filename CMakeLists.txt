@@ -17,7 +17,7 @@ target_link_libraries(eval core util)
 add_library(search src/search/control/control.cpp src/search/control/time.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp)
 target_link_libraries(search core eval util)
 
-add_library(api src/api/api.cpp src/api/uci/protocol.cpp src/api/uci/parser.cpp src/api/uci/logger.cpp src/api/uci/interactor.cpp src/api/xboard/protocol.cpp)
+add_library(api src/api/api.cpp src/api/uci/protocol.cpp src/api/uci/parser.cpp src/api/uci/logger.cpp src/api/uci/interactor.cpp)
 target_link_libraries(api core eval search util)
 
 add_executable(Quirky src/main.cpp)

@@ -11,9 +11,11 @@ constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RN
 
 void StartUciProtocol() {
     UciInteractor interactor;
+    LogStart();
     do {
-        auto command = ParseUciCommand("");
-        auto response = interactor.ProcessUciCommand(command);
+        const std::string line = q_util::ReadLine();
+        const auto command = ParseUciCommand(line);
+        const auto response = interactor.ProcessUciCommand(command);
         LogUciResponse(response);
     } while (!interactor.ShouldStop());
 }

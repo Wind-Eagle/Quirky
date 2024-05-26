@@ -22,6 +22,12 @@ inline void PrintToStream(std::ostream& stream, First first, Rest... rest) {
 
 namespace q_util {
 
+inline std::string ReadLine(std::istream& stream = std::cin) {
+    std::string line;
+    std::getline(stream, line);
+    return line;
+}
+
 template <class First, class... Rest>
 inline void Print(First first, Rest... rest) {
     PrintToStream(std::cout, first, rest...);
