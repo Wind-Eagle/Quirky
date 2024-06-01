@@ -38,6 +38,37 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         return command;
     } else if (command_name == "go") {
         UciGoCommand command;
+        command.time_control = q_search::InfiniteTimeControl{};
+        command.max_depth = q_search::Searcher::MAX_DEPTH;
+        for (size_t i = 1; i < args.size(); i += 2) {
+            if (args[i] == "infinite") {
+                if (i > 1) {
+                    return UciUnparsedCommand{.parse_error = "Infinite argument must be used alone"};
+                }
+            } else if (args[i] == "movetime") {
+                if (i + 1 == args.size()) {
+                    return UciUnparsedCommand{.parse_error = "Movetime argument must be used with amount of time as a next argument"};
+                }
+                if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
+                    return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
+                }
+                command.time_control = q_search::FixedTimeControl{.time = static_cast<q_search::time_t>(std::stoll(args[i + 1]))};
+            } else if (args[i] == "depth") {
+                if (i + 1 == args.size()) {
+                    return UciUnparsedCommand{.parse_error = "Movetime argument must be used with amount of time as a next argument"};
+                }
+                if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
+                    return UciUnparsedCommand{.parse_error = "Expected valid argument as depth"};
+                }
+                uint64_t depth_int = std::stoll(args[i + 1]);
+                if (depth_int > q_search::Searcher::MAX_DEPTH) {
+                    return UciUnparsedCommand{.parse_error = "Depth should be not more than " + std::to_string(q_search::Searcher::MAX_DEPTH)};
+                }
+                command.max_depth = std::stoll(args[i + 1]);
+            } else {
+                return UciUnparsedCommand{.parse_error = "Unsupported option"};
+            }
+        }
         return command;
     } else if (command_name == "stop") {
         return UciStopCommand{};

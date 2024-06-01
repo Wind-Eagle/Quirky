@@ -1,15 +1,15 @@
 #ifndef QUIRKY_SRC_UTIL_STRING_H
 #define QUIRKY_SRC_UTIL_STRING_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace q_util {
 
-template<class T>
+template <class T>
 concept StringLike = std::is_convertible_v<T, std::string_view>;
 
-template<StringLike T>
+template <StringLike T>
 inline std::vector<std::string> SplitString(const T& arg, const char delim = ' ') {
     std::vector<std::string> res;
     std::string_view str = static_cast<std::string_view>(arg);
@@ -23,7 +23,8 @@ inline std::vector<std::string> SplitString(const T& arg, const char delim = ' '
     return res;
 }
 
-inline std::string ConcatenateStrings(const auto& begin_iterator, const auto& end_iterator, const char delim = ' ') {
+inline std::string ConcatenateStrings(const auto& begin_iterator, const auto& end_iterator,
+                                      const char delim = ' ') {
     std::string res;
     for (auto i = begin_iterator; i != end_iterator; i++) {
         if (!res.empty()) {
@@ -32,6 +33,12 @@ inline std::string ConcatenateStrings(const auto& begin_iterator, const auto& en
         res += std::string(*i);
     }
     return res;
+}
+
+template <StringLike T>
+inline bool IsStringNonNegativeNumber(const T& s) {
+    return !s.empty() && std::find_if(s.begin(), s.end(),
+                                      [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }
 
 }  // namespace q_util

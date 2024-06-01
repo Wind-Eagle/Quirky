@@ -13,7 +13,8 @@ uci_response_t ProcessUciCommandInner(UciContext&, const UciReadyCommand& comman
     return UciReadyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciNewGameCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciNewGameCommand& command) {
+    context.launcher.NewGame();
     return UciEmptyResponse{};
 }
 
@@ -40,10 +41,12 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionComm
 }
 
 uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& command) {
+    context.launcher.Start(context.position, context.moves, command.time_control, command.max_depth);
     return UciEmptyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciStopCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciStopCommand& command) {
+    context.launcher.Stop();
     return UciEmptyResponse{};
 }
 

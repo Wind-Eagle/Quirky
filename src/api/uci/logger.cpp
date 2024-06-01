@@ -18,10 +18,6 @@ void LogUciResponseInner(const UciReadyResponse& response) {
     q_util::Print("readyok");
 }
 
-void LogUciResponseInner(const UciGoResponse& response) {
-    q_util::PrintError("Go command will be supported soon");
-}
-
 void LogUciResponseInner(const UciEmptyResponse& response) {}
 
 void LogUciResponseInner(const UciErrorResponse& response) {

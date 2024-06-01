@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(Quirky)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -mbmi2")
 
 add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h)
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
@@ -14,7 +14,7 @@ target_link_libraries(core util)
 add_library(eval src/eval/feature.h src/eval/evaluator.cpp src/eval/model.h src/eval/pawns.h src/eval/score.h src/eval/eval_features.cpp src/eval/psq.h)
 target_link_libraries(eval core util)
 
-add_library(search src/search/control/control.cpp src/search/control/time.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp)
+add_library(search src/search/control/control.cpp src/search/control/stat.cpp src/search/control/time.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp src/search/searcher/launcher.cpp src/search/searcher/searcher.cpp)
 target_link_libraries(search core eval util)
 
 add_library(api src/api/api.cpp src/api/uci/protocol.cpp src/api/uci/parser.cpp src/api/uci/logger.cpp src/api/uci/interactor.cpp)

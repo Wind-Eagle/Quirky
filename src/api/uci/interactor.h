@@ -7,7 +7,6 @@
 
 #include "../../search/control/time.h"
 #include "../../search/searcher/launcher.h"
-#include "../../search/searcher/searcher.h"
 
 namespace q_api {
 
@@ -25,8 +24,8 @@ struct UciPositionCommand {
     std::optional<std::vector<std::string>> moves;
 };
 struct UciGoCommand {
-    q_search::TimeControl time_control;
-    uint8_t max_depth;
+    q_search::time_control_t time_control;
+    q_search::depth_t max_depth;
 };
 struct UciStopCommand {};
 struct UciQuitCommand {};
@@ -40,7 +39,6 @@ using uci_command_t =
 
 struct UciInitResponse {};
 struct UciReadyResponse {};
-struct UciGoResponse {};
 struct UciEmptyResponse {};
 struct UciErrorResponse {
     std::string error_message;
@@ -48,7 +46,7 @@ struct UciErrorResponse {
 };
 
 using uci_response_t =
-    std::variant<UciInitResponse,UciReadyResponse, UciGoResponse, UciEmptyResponse, UciErrorResponse>;
+    std::variant<UciInitResponse, UciReadyResponse, UciEmptyResponse, UciErrorResponse>;
 
 struct UciContext {
     q_search::Position position;
