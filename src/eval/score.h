@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <limits>
 
+#include "../util/macro.h"
+
 namespace q_eval {
 
 using stage_t = uint8_t;
@@ -11,6 +13,8 @@ using score_t = int16_t;
 
 constexpr score_t SCORE_MIN = -30000;
 constexpr score_t SCORE_MAX = 30000;
+
+constexpr score_t SCORE_MATE = SCORE_MIN + 1;
 
 struct ScorePair {
   public:
@@ -41,7 +45,7 @@ struct ScorePair {
         return *this;
     }
 
-    bool operator == (const ScorePair rhs) const {
+    constexpr bool operator == (const ScorePair rhs) const {
         return value_ == rhs.value_;
     }
 

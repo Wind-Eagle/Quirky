@@ -10,12 +10,15 @@ RepetitionTable::RepetitionTable(const uint8_t byte_size_log)
         }
       }
 
-void RepetitionTable::Insert(const q_core::hash_t hash) {
+bool RepetitionTable::Insert(const q_core::hash_t hash) {
     uint64_t key = hash & size_mask_;
     for (uint64_t i = key; ; i = ((i + 1) & size_mask_)) {
         if (data_[i] == ABSENT_VALUE) {
             data_[i] = hash;
-            break;
+            return true;
+        }
+        if (data_[i] == hash) {
+            return false;
         }
     }
 }

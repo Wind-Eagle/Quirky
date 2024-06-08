@@ -5,6 +5,23 @@
 
 #include "io.h"
 
+class QDefer {
+    public:
+        template <class T>
+        auto operator| (T lambda) {
+            struct QDeferInner {
+                public:
+                    QDeferInner(T lambda) : lambda_(lambda) {}
+                    ~QDeferInner() {
+                        lambda_();
+                    }
+                private:
+                    T lambda_;
+            };
+            return QDeferInner(lambda);
+        };
+};
+
 #define ENUM_TO_INT_OP(type, base, op)                                          \
     inline constexpr type operator op(const type a, const type b) {             \
         return static_cast<type>(static_cast<base>(a) op static_cast<base>(b)); \
@@ -29,6 +46,8 @@
 #define Q_CONCAT_STRING_WITH_INT(prefix, a) Q_CONCAT_STRING_WITH_INT_HELPER(prefix, a)
 
 #define Q_UNIQUE_STRING(prefix) Q_CONCAT_STRING_WITH_INT(prefix, __COUNTER__)
+
+#define Q_DEFER auto NAME = QDefer{} | [&]()
 
 #define Q_LIKELY(x) __builtin_expect(!!(x), 1)
 

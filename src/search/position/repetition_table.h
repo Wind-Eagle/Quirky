@@ -12,7 +12,7 @@ class RepetitionTable {
   public:
     explicit RepetitionTable(uint8_t byte_size_log);
 
-    void Insert(q_core::hash_t hash);
+    bool Insert(q_core::hash_t hash);
     void Erase(q_core::hash_t hash);
     bool Has(q_core::hash_t hash) const;
   private:

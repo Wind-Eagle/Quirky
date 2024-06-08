@@ -5,7 +5,8 @@
 
 namespace q_search {
 
-using depth_t = uint8_t;
+using depth_t = int16_t;
+using idepth_t = uint16_t;
 
 class SearchStat {
     public:

@@ -46,7 +46,7 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& c
 }
 
 uci_response_t ProcessUciCommandInner(UciContext& context, const UciStopCommand& command) {
-    context.launcher.Stop();
+    context.launcher.Join();
     return UciEmptyResponse{};
 }
 

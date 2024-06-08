@@ -10,6 +10,7 @@ static void BenchmarkSimpleOnTestBoard(benchmark::State& state, const std::strin
     board.MakeFromFEN(fen);
     q_core::MoveList move_list;
     for (auto _ : state) {
+        move_list.size = 0;
         q_core::GenerateAllMoves(board, move_list);
     }
     benchmark::DoNotOptimize(move_list);

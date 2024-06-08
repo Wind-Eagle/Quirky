@@ -38,6 +38,8 @@ inline constexpr uint8_t BASIC_TYPE_MOVE_MASK = 7;
 inline constexpr uint8_t FIFTY_RULE_MOVE_BIT = 8;
 inline constexpr uint8_t MOVE_TYPE_BYTES_COUNT = 4;
 
+inline constexpr Move NULL_MOVE = Move{.src = 0, .dst = 0, .type = 0};
+
 inline constexpr MoveBasicType GetMoveBasicType(const Move move) {
     Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
     return static_cast<MoveBasicType>(move.type & BASIC_TYPE_MOVE_MASK);

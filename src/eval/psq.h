@@ -29,7 +29,7 @@ inline constexpr std::array<ScorePair, PSQ_SIZE> GetPSQ(
             if (q_core::GetCellColor(cell) == q_core::Color::White) {
                 res[GetPSQIndex(cell, coord)] = cur_value;
             } else {
-                res[GetPSQIndex(cell, q_core::FlipCoord(coord))] = cur_value;
+                res[GetPSQIndex(cell, q_core::FlipCoord(coord))] = cur_value * (-1);
             }
         }
     }

@@ -17,15 +17,22 @@ class Searcher {
         void Run(depth_t max_depth);
         static constexpr depth_t MAX_DEPTH = 127;
     private:
-        SearchResult GetSearchResult(depth_t depth);
-        void Search(depth_t depth);
+        enum class NodeType {
+            Root,
+            PV,
+            Simple
+        };
+        q_eval::score_t QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta);
+        template <NodeType node_type>
+        q_eval::score_t Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha, q_eval::score_t beta);
+        SearchResult GetSearchResult(depth_t depth, q_eval::score_t score);
+        bool ShouldStop();
         TranspositionTable& tt_;
         RepetitionTable& rt_;
         Position position_;
         SearchControl& control_;
         SearchStat& stat_;
         q_core::Move best_move_;
-        q_eval::score_t best_score_;
 };
 
 }  // namespace q_search

@@ -152,11 +152,7 @@ void Evaluator<type>::Tag::BuildTag(const Board& board) {
     for (coord_t i = 0; i < BOARD_SIZE; i++) {
         if constexpr (type == EvaluationType::Value) {
             if (board.cells[i] != EMPTY_CELL) {
-                if (GetCellColor(board.cells[i]) == Color::White) {
-                    score_ += GetPSQValue(board.cells[i], i);
-                } else {
-                    score_ -= GetPSQValue(board.cells[i], i);
-                }
+                score_ += GetPSQValue(board.cells[i], i);
                 stage_ += CELL_STAGE_EVAL[board.cells[i]];
             }
         } else {
@@ -208,15 +204,12 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
                 const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
                 basic_update(pawn, EMPTY_CELL);
                 new_tag.score_ += GetPSQValue(pawn, move.dst);
-                const coord_t taken_coord =
-                (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
-                const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);
-                new_tag.score_ -= GetPSQValue(enemy_pawn, taken_coord);
                 break;
             }
             case MoveBasicType::EnPassant: {
                 const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
                 basic_update(pawn, EMPTY_CELL);
+                new_tag.score_ += GetPSQValue(pawn, move.dst);
                 const coord_t taken_coord =
                     (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
                 const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);

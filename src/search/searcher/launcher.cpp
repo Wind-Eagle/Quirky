@@ -85,7 +85,11 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                     final_result = std::move(result);
                 }
             }
+            if (final_result.depth >= max_depth) {
+                control_.Stop();
+            }
         }
+
         if (time_left == std::chrono::milliseconds(0)) {
             control_.Stop();
         }

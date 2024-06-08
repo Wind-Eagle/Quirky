@@ -36,6 +36,13 @@ bool IsKingInCheck(const Board& board) {
         board, q_util::GetLowestBit(board.bb_pieces[MakeCell(c, Piece::King)]));
 }
 
+bool IsKingInCheck(const Board& board) {
+    if (board.move_side == Color::White) {
+        return IsKingInCheck<Color::White>(board);
+    }
+    return IsKingInCheck<Color::Black>(board);
+}
+
 template <Color c>
 bitboard_t GetPawnAttacks(const bitboard_t pawns) {
     constexpr int8_t PAWN_MOVE_DELTA = BOARD_SIDE;
