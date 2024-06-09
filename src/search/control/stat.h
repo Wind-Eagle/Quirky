@@ -13,7 +13,7 @@ class SearchStat {
         uint64_t GetNodesCount() const;
         void IncNodesCount();
     private:
-        uint64_t nodes_;
+        uint64_t nodes_ = 0;
 };
 
 }  // namespace q_search

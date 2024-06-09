@@ -131,7 +131,7 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board&
 template <EvaluationType type>
 score_t Evaluator<type>::GetEvaluationScore(
     const typename EvaluationResultType<type>::type score) const {
-    ScorePair ans = 0;
+    ScorePair ans{};
     if constexpr (type == EvaluationType::Vector) {
         const auto& features = score.GetFeatures();
         for (size_t i = 0; i < FEATURE_COUNT; i++) {

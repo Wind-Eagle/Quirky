@@ -20,9 +20,7 @@ struct ScorePair {
   public:
     constexpr ScorePair() {}
     constexpr ScorePair(const ScorePair& lhs) : value_(lhs.value_) {}
-    constexpr ScorePair(const int32_t lhs) : value_(lhs) {}
     constexpr ScorePair(const score_t first, const score_t second) : value_(first + second * (1 << 16)) {}
-    constexpr ScorePair(const score_t score) : ScorePair(score, score) {}
 
     constexpr score_t GetFirst() const {
         return static_cast<score_t>(value_);
@@ -63,6 +61,8 @@ struct ScorePair {
         return *this;
     }
   private:
+    constexpr ScorePair(const int32_t lhs) : value_(lhs) {}
+    constexpr ScorePair(const score_t score) : ScorePair(score, score) {}
     int32_t value_ = 0;
 };
 

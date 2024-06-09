@@ -59,7 +59,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
     MovePicker move_picker(position_);
     for (q_core::Move move = move_picker.GetNextMove(); move_picker.GetStage() <= MovePicker::Stage::Promotion; move = move_picker.GetNextMove()) {
         CHECK_STOP;
-        Q_ASSERT(q_core::IsMoveEnPassant(move) || q_core::IsMovePromotion(move) || position_.board.cells[move.dst] == q_core::EMPTY_CELL);
+        Q_ASSERT(q_core::IsMoveEnPassant(move) || q_core::IsMovePromotion(move) || position_.board.cells[move.dst] != q_core::EMPTY_CELL);
         MAKE_MOVE(position_, move);
         q_eval::score_t new_score = -QuiescenseSearch(-beta, -alpha);
         alpha = std::max(alpha, new_score);
