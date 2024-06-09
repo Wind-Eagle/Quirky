@@ -82,8 +82,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Performing quiescense search
     if (depth <= 0) {
-        q_eval::score_t score = QuiescenseSearch(alpha, beta);
-        return score;
+        return QuiescenseSearch(alpha, beta);
     }
 
     stat_.IncNodesCount();

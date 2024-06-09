@@ -1,12 +1,14 @@
 #include "parser.h"
+
 #include <string_view>
 
-#include "interactor.h"
 #include "../../util/string.h"
+#include "interactor.h"
 
 namespace q_api {
 
-constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr std::string_view STARTPOS_FEN =
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 uci_command_t ParseUciCommand(const std::string_view& command) {
     const std::vector<std::string> args = q_util::SplitString(command);
@@ -20,12 +22,17 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
     } else if (command_name == "setoption") {
         return UciSetOptionCommand{};
     } else if (command_name == "position") {
+        if (args.size() == 1) {
+            return UciUnparsedCommand{.parse_error = "Expected arguments"};
+        }
+        if (args[1] != "fen" && args[1] != "startpos") {
+            return UciUnparsedCommand{.parse_error = "Expected fen or startpos argument"};
+        }
         UciPositionCommand command;
         const auto move_word_pos = std::find(args.begin(), args.end(), "moves");
-        std::string fen = q_util::ConcatenateStrings(args.begin() + 1, move_word_pos);
-        if (fen == "startpos") {
-            fen = STARTPOS_FEN;
-        }
+        const std::string fen = args[1] == "startpos"
+                                    ? static_cast<std::string>(STARTPOS_FEN)
+                                    : q_util::ConcatenateStrings(args.begin() + 2, move_word_pos);
         command.fen = fen;
         if (move_word_pos == args.end()) {
             command.moves = std::nullopt;
@@ -43,26 +50,34 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         for (size_t i = 1; i < args.size(); i += 2) {
             if (args[i] == "infinite") {
                 if (i > 1) {
-                    return UciUnparsedCommand{.parse_error = "Infinite argument must be used alone"};
+                    return UciUnparsedCommand{.parse_error =
+                                                  "Infinite argument must be used alone"};
                 }
             } else if (args[i] == "movetime") {
                 if (i + 1 == args.size()) {
-                    return UciUnparsedCommand{.parse_error = "Movetime argument must be used with amount of time as a next argument"};
+                    return UciUnparsedCommand{.parse_error =
+                                                  "Movetime argument must be used with amount of "
+                                                  "time as a next argument"};
                 }
                 if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
                     return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
                 }
-                command.time_control = q_search::FixedTimeControl{.time = static_cast<q_search::time_t>(std::stoll(args[i + 1]))};
+                command.time_control = q_search::FixedTimeControl{
+                    .time = static_cast<q_search::time_t>(std::stoll(args[i + 1]))};
             } else if (args[i] == "depth") {
                 if (i + 1 == args.size()) {
-                    return UciUnparsedCommand{.parse_error = "Movetime argument must be used with amount of time as a next argument"};
+                    return UciUnparsedCommand{.parse_error =
+                                                  "Movetime argument must be used with amount of "
+                                                  "time as a next argument"};
                 }
                 if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
                     return UciUnparsedCommand{.parse_error = "Expected valid argument as depth"};
                 }
                 uint64_t depth_int = std::stoll(args[i + 1]);
                 if (depth_int > q_search::Searcher::MAX_DEPTH) {
-                    return UciUnparsedCommand{.parse_error = "Depth should be not more than " + std::to_string(q_search::Searcher::MAX_DEPTH)};
+                    return UciUnparsedCommand{.parse_error =
+                                                  "Depth should be not more than " +
+                                                  std::to_string(q_search::Searcher::MAX_DEPTH)};
                 }
                 command.max_depth = std::stoll(args[i + 1]);
             } else {

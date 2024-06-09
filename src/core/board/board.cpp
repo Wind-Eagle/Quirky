@@ -8,6 +8,7 @@
 #include "../util.h"
 #include "geometry.h"
 #include "hash.h"
+#include "types.h"
 
 namespace q_core {
 

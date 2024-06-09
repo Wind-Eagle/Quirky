@@ -10,7 +10,7 @@
 namespace q_search {
 
 uint8_t GetRTByteSizeLog(size_t moves_count) {
-    return q_util::GetHighestBit(moves_count * 4 + Searcher::MAX_DEPTH - 1) + 1;
+    return q_util::GetHighestBit((moves_count + Searcher::MAX_DEPTH) * 4) + 3;
 }
 
 void ProcessPositionMoves(Position& position, const std::vector<q_core::Move>& moves,

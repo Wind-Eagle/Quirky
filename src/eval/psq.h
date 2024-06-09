@@ -15,6 +15,8 @@ inline constexpr uint16_t GetPSQIndex(const q_core::cell_t cell, q_core::coord_t
     return cell * q_core::BOARD_SIZE + src;
 }
 
+inline constexpr std::array<ScorePair, q_core::NUMBER_OF_PIECES> PIECE_COST = {0, 260, 280, 450, 850, 0};
+
 inline constexpr std::array<ScorePair, PSQ_SIZE> GetPSQ(
     const std::array<ScorePair, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES>& psq) {
     std::array<ScorePair, PSQ_SIZE> res{};
@@ -27,9 +29,9 @@ inline constexpr std::array<ScorePair, PSQ_SIZE> GetPSQ(
             const ScorePair& cur_value =
                 psq[(static_cast<size_t>(piece) - 1) * q_core::BOARD_SIZE + coord];
             if (q_core::GetCellColor(cell) == q_core::Color::White) {
-                res[GetPSQIndex(cell, coord)] = cur_value;
+                res[GetPSQIndex(cell, coord)] = cur_value + PIECE_COST[static_cast<uint8_t>(piece) - 1];
             } else {
-                res[GetPSQIndex(cell, q_core::FlipCoord(coord))] = cur_value * (-1);
+                res[GetPSQIndex(cell, q_core::FlipCoord(coord))] = (cur_value + PIECE_COST[static_cast<uint8_t>(piece) - 1]) * (-1);
             }
         }
     }

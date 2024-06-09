@@ -30,11 +30,15 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionComm
     }
     context.moves.clear();
     if (command.moves != std::nullopt) {
+        q_core::Board check_board = context.position.board;
         for (const auto& move_str : *command.moves) {
-            if (!q_core::IsStringMoveWellFormated(context.position.board, move_str)) {
+            if (!q_core::IsStringMoveWellFormated(check_board, move_str)) {
                 return UciErrorResponse{.error_message = "Invalid move string", .fatal_error = std::nullopt};
             }
-            context.moves.push_back(q_core::TranslateStringToMove(context.position.board, move_str));
+            q_core::Move move = q_core::TranslateStringToMove(check_board, move_str);
+            context.moves.push_back(move);
+            q_core::MakeMoveInfo make_move_info;
+            q_core::MakeMove(check_board, move, make_move_info);
         }
     }
     return UciEmptyResponse{};

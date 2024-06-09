@@ -19,7 +19,7 @@ class RepetitionTable {
     static constexpr uint8_t ENTRY_SIZE_LOG = q_util::GetHighestBit(sizeof(q_core::hash_t));
     static constexpr q_core::hash_t ABSENT_VALUE = 0;
     std::unique_ptr<q_core::hash_t[]> data_;
-    uint8_t size_mask_;
+    size_t size_mask_;
 };
 
 }  // namespace q_search
