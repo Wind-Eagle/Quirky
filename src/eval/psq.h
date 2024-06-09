@@ -15,7 +15,7 @@ inline constexpr uint16_t GetPSQIndex(const q_core::cell_t cell, q_core::coord_t
     return cell * q_core::BOARD_SIZE + src;
 }
 
-inline constexpr std::array<ScorePair, q_core::NUMBER_OF_PIECES> PIECE_COST = {0, 260, 280, 450, 850, 0};
+inline constexpr std::array<ScorePair, q_core::NUMBER_OF_PIECES> PIECE_COST = {100, 260, 280, 450, 850, 0};
 
 inline constexpr std::array<ScorePair, PSQ_SIZE> GetPSQ(
     const std::array<ScorePair, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES>& psq) {
