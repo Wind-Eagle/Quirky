@@ -1,6 +1,7 @@
 #include "launcher.h"
 
 #include <utility>
+#include <fstream>
 
 #include "../../util/string.h"
 #include "../control/control.h"

@@ -15,6 +15,11 @@ constexpr score_t SCORE_MIN = -30000;
 constexpr score_t SCORE_MAX = 30000;
 
 constexpr score_t SCORE_MATE = SCORE_MIN + 1;
+constexpr score_t SCORE_ALMOST_MATE = -25000;
+
+inline constexpr bool IsScoreMate(const score_t score) {
+    return std::abs(score) > -SCORE_ALMOST_MATE;
+}
 
 struct ScorePair {
   public:

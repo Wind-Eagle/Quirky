@@ -6,7 +6,7 @@ MovePicker::Stage GetNextStage(MovePicker::Stage stage) {
     return static_cast<MovePicker::Stage>(static_cast<uint8_t>(stage) + 1);
 }
 
-MovePicker::MovePicker(const Position& position) : position_(position) {}
+MovePicker::MovePicker(const Position& position, const q_core::Move tt_move) : position_(position), tt_move_(tt_move) {}
 
 q_core::Move MovePicker::GetNextMove() {
     GetNewMoves();
@@ -22,6 +22,13 @@ void MovePicker::GetNewMoves() {
             stage_ = GetNextStage(stage_);
         }
         switch (stage_) {
+            case Stage::TTMove: {
+                if (!q_core::IsMoveNull(tt_move_)) {
+                    list_.moves[list_.size] = tt_move_;
+                    list_.size++;
+                }
+                break;
+            }
             case Stage::Capture: {
                 q_core::GenerateAllCaptures(position_.board, list_);
                 break;

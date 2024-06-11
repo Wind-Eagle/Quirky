@@ -64,6 +64,11 @@ inline constexpr uint8_t GetPromotionMoveType(const Piece piece) {
            GetMoveType<MoveBasicType::KnightPromotion>();
 }
 
+inline constexpr bool IsMoveNull(const Move move) {
+    Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
+    return move.src == 0 && move.dst == 0;
+}
+
 inline constexpr bool IsMoveFiftyRuleMove(const Move move) {
     Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
     return move.type > BASIC_TYPE_MOVE_MASK;

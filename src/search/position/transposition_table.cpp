@@ -43,14 +43,20 @@ TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t has
     const auto value_hash = GetValueHash(hash);
     auto& entry = data_[key_hash];
     for (uint8_t i = 0; i < Cluster::CLUSTER_ENTRY_COUNT; i++) {
-        const auto entry_hash = entry.data[i].hash_low + (entry.data[i].hash_high << 16);
+        const uint32_t entry_hash = static_cast<uint32_t>(entry.data[i].hash_low) + (static_cast<uint32_t>(entry.data[i].hash_high) << 16);
         if (entry_hash == value_hash) {
             found = true;
             return entry.data[i];
         }
     }
     found = false;
-    return entry.data[0];
+    auto& entry_to_replace = entry.data[0];
+    for (uint8_t i = 1; i < Cluster::CLUSTER_ENTRY_COUNT; i++) {
+        if (IsEntryBetter(entry_to_replace, entry.data[i])) {
+            entry_to_replace = entry.data[i];
+        }
+    }
+    return entry_to_replace;
 }
 
 void TranspositionTable::Prefetch(const q_core::hash_t hash) const {
@@ -68,8 +74,8 @@ void TranspositionTable::ClearAndResize(uint8_t new_byte_size_log) {
     generation_ = 0;
 }
 
-void TranspositionTable::NextPosition() { generation_ += EntryInfo::GENERATION_DELTA; }
+void TranspositionTable::NextPosition() { generation_ += (1ULL << EntryInfo::GENERATION_BIT_COUNT); }
 
-void TranspositionTable::NextGame() { generation_ -= EntryInfo::GENERATION_DELTA; }
+void TranspositionTable::NextGame() { generation_ = 0; }
 
 }  // namespace q_search

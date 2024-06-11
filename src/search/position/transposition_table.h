@@ -15,20 +15,20 @@ class TranspositionTable {
     struct EntryInfo {
         EntryInfo() {}
         EntryInfo(uint8_t generation, NodeType type, bool is_pv) {
-            data_ = (generation << 3) + static_cast<uint8_t>(type) + (is_pv ? 1 : 0);
+            data_ = (generation << 3) + (static_cast<uint8_t>(type) << 1) + (is_pv ? 1 : 0);
         }
-        uint8_t GetGeneration() const { return data_ >> GENERATION_DELTA; }
+        uint8_t GetGeneration() const { return data_ >> GENERATION_BIT_COUNT; }
         NodeType GetNodeType() const {
             return static_cast<NodeType>((data_ >> 1) & ((1 << NODE_TYPE_BIT_COUNT) - 1));
         }
         bool IsPV() const { return data_ & 1; }
 
       private:
-        uint8_t data_;
+        uint8_t data_ = 0;
         static constexpr uint8_t NODE_TYPE_BIT_COUNT = 2;
 
       public:
-        static constexpr uint8_t GENERATION_DELTA = NODE_TYPE_BIT_COUNT + 1;
+        static constexpr uint8_t GENERATION_BIT_COUNT = NODE_TYPE_BIT_COUNT + 1;
     };
     struct Entry {
         // actually, we can store 16 bit of hash, but it requires a number of experiments
@@ -37,7 +37,7 @@ class TranspositionTable {
         uint16_t hash_high;
         q_eval::score_t score;
         q_core::compressed_move_t move;
-        uint8_t depth;
+        uint8_t depth = 0;
         EntryInfo info;
     };
 
