@@ -52,6 +52,7 @@ struct UciContext {
     q_search::Position position;
     std::vector<q_core::Move> moves;
     q_search::SearchLauncher launcher;
+    bool should_stop;
 };
 
 class UciInteractor {
@@ -61,7 +62,6 @@ class UciInteractor {
     bool ShouldStop() const;
   private:
     UciContext context_;
-    bool should_stop_;
 };
 
 }  // namespace q_api

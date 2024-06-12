@@ -54,7 +54,8 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciStopCommand&
     return UciEmptyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciQuitCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciQuitCommand& command) {
+    context.should_stop = true;
     return UciEmptyResponse{};
 }
 
@@ -71,11 +72,11 @@ uci_response_t UciInteractor::ProcessUciCommand(const uci_command_t& command) {
 
 UciInteractor::UciInteractor() {
     context_.position.MakeFromFEN(STARTPOS_FEN);
-    should_stop_ = false;
+    context_.should_stop = false;
 }
 
 bool UciInteractor::ShouldStop() const {
-    return should_stop_;
+    return context_.should_stop;
 }
 
 }  // namespace q_api

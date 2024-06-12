@@ -31,9 +31,7 @@ void Searcher::Run(depth_t max_depth) {
 bool Searcher::ShouldStop() { return control_.IsStopped(); }
 
 #define CHECK_STOP      \
-    if (ShouldStop()) { \
-        return 0;       \
-    }
+    if (ShouldStop()) return 0 \
 
 #define MAKE_MOVE(position, move)                                           \
     q_core::MakeMoveInfo _make_move_info;                                   \
@@ -74,6 +72,9 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, idepth_t idepth) {
     }
     return score;
 }
+
+#define SAVE_ROOT_BEST_MOVE      \
+    if constexpr (node_type == NodeType::Root) best_move_ = best_move \
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -152,9 +153,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             best_move = move;
         }
         if (alpha >= beta) {
-            if constexpr (node_type == NodeType::Root) {
-                best_move_ = best_move;
-            }
+            SAVE_ROOT_BEST_MOVE;
             tt_store_move(beta, best_move);
             return beta;
         }
@@ -165,9 +164,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
         return 0;
     }
-    if constexpr (node_type == NodeType::Root) {
-        best_move_ = best_move;
-    }
+    SAVE_ROOT_BEST_MOVE;
     tt_store_move(alpha, best_move);
     return alpha;
 }
