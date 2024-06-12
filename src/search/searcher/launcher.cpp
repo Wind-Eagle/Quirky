@@ -68,7 +68,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     SearchTimer timer(time_control, control_, stat);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
-    SearchResult final_result{.depth = 0};
+    SearchResult final_result{.best_move = q_core::NULL_MOVE, .depth = 0};
     static constexpr time_t NODES_UPDATE_TICK = 3000;
     time_t nodes_update_timer = 0;
     for (;;) {
@@ -100,6 +100,11 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                 nodes_update_timer += NODES_UPDATE_TICK;
             }
         }
+    }
+    if (q_core::IsMoveNull(final_result.best_move)) {
+        q_core::MoveList move_list;
+        q_core::GenerateAllSimpleMoves(position.board, move_list);
+        final_result.best_move = move_list.moves[0];
     }
     PrintBestMove(final_result.best_move);
     search_thread.join();

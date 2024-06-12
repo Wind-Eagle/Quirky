@@ -151,6 +151,9 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         if (new_score > alpha) {
             alpha = new_score;
             best_move = move;
+            if (depth == 1) {
+                SAVE_ROOT_BEST_MOVE;
+            }
         }
         if (alpha >= beta) {
             SAVE_ROOT_BEST_MOVE;
