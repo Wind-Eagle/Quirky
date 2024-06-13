@@ -41,7 +41,7 @@ void MovePicker::GetNewMoves() {
         }
         switch (stage_) {
             case Stage::TTMove: {
-                if (!q_core::IsMoveNull(tt_move_)) {
+                if (q_core::IsMovePseudolegal(position_.board, tt_move_)) {
                     list_.moves[list_.size] = tt_move_;
                     list_.size++;
                 }
@@ -60,7 +60,7 @@ void MovePicker::GetNewMoves() {
             }
             case Stage::KillerMoves: {
                 for (size_t i = 0; i < KILLER_MOVES_COUNT; i++) {
-                    if (!q_core::IsMoveNull(killer_moves_[i]) && q_core::IsMovePseudolegal(position_.board, killer_moves_[i])) {
+                    if (q_core::IsMovePseudolegal(position_.board, killer_moves_[i])) {
                         list_.moves[list_.size] = killer_moves_[i];
                         list_.size++;
                     }
@@ -73,7 +73,7 @@ void MovePicker::GetNewMoves() {
                 for (size_t i = list_old_size; i < list_.size; i++) {
                     bool is_killer_move = false;
                     for (size_t j = 0; j < KILLER_MOVES_COUNT; j++) {
-                        if (q_core::GetCompressedMove(list_.moves[i]) == q_core::GetCompressedMove(killer_moves_[j])) {
+                        if (list_.moves[i] == killer_moves_[j]) {
                             is_killer_move = true;
                             break;
                         }

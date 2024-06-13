@@ -64,6 +64,10 @@ inline constexpr uint8_t GetPromotionMoveType(const Piece piece) {
            GetMoveType<MoveBasicType::KnightPromotion>();
 }
 
+inline constexpr bool operator == (const Move lhs, const Move rhs) {
+    return lhs.src + (lhs.dst << 8) + (lhs.type << 16) == rhs.src + (rhs.dst << 8) + (rhs.type << 16);
+}
+
 inline constexpr bool IsMoveNull(const Move move) {
     Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
     return move.src == 0 && move.dst == 0;

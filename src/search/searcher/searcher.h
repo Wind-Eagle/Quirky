@@ -31,7 +31,7 @@ class Searcher {
 
         static constexpr idepth_t MAX_IDEPTH = 255;
         struct Context {
-            std::array<q_core::Move, 2> killer_moves[MAX_IDEPTH];
+            std::array<q_core::Move, MovePicker::KILLER_MOVES_COUNT> killer_moves[MAX_IDEPTH];
             q_core::Move best_move;
         };
 
