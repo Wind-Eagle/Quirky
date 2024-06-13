@@ -302,7 +302,7 @@ void GenerateAllSimpleMoves(const Board& board, MoveList& list) {
 // with non-simple type can be dangerous. Doesn't check fifty move rule flag
 template <Color c>
 bool IsMovePseudolegal(const Board& board, const Move move) {
-    // for uninitialized moves
+    // for uninitialized and null moves
     if (move.src == move.dst) {
         return false;
     }

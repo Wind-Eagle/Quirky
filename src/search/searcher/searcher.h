@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../control/control.h"
+#include "../position/move_picker.h"
 #include "../position/transposition_table.h"
 #include "../position/position.h"
 #include "../position/repetition_table.h"
@@ -27,12 +28,19 @@ class Searcher {
         q_eval::score_t Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha, q_eval::score_t beta);
         SearchResult GetSearchResult(depth_t depth, q_eval::score_t score);
         bool ShouldStop();
+
+        static constexpr idepth_t MAX_IDEPTH = 255;
+        struct Context {
+            std::array<q_core::Move, 2> killer_moves[MAX_IDEPTH];
+            q_core::Move best_move;
+        };
+
         TranspositionTable& tt_;
         RepetitionTable& rt_;
         Position position_;
         SearchControl& control_;
         SearchStat& stat_;
-        q_core::Move best_move_;
+        Context context_;
 };
 
 }  // namespace q_search

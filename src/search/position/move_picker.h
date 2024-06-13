@@ -8,14 +8,16 @@ namespace q_search {
 
 class MovePicker {
     public:
-        MovePicker(const Position& position, q_core::Move tt_move);
+        static constexpr uint8_t KILLER_MOVES_COUNT = 2;
+        MovePicker(const Position& position, q_core::Move tt_move, const std::array<q_core::Move, KILLER_MOVES_COUNT>& killer_moves);
         enum class Stage: uint8_t {
             Start = 0,
             TTMove = 1,
             Capture = 2,
             Promotion = 3,
-            Simple = 4,
-            End = 5
+            KillerMoves = 4,
+            Simple = 5,
+            End = 6
         };
         q_core::Move GetNextMove();
         Stage GetStage() const;
@@ -24,6 +26,26 @@ class MovePicker {
         const Position& position_;
         q_core::MoveList list_;
         q_core::Move tt_move_;
+        std::array<q_core::Move, KILLER_MOVES_COUNT> killer_moves_;
+        size_t pos_ = 0;
+        Stage stage_ = Stage::Start;
+};
+
+class QuiescenseMovePicker {
+    public:
+        explicit QuiescenseMovePicker(const Position& position);
+        enum class Stage: uint8_t {
+            Start = 0,
+            Capture = 1,
+            Promotion = 2,
+            End = 3
+        };
+        q_core::Move GetNextMove();
+        Stage GetStage() const;
+    private:
+        void GetNewMoves();
+        const Position& position_;
+        q_core::MoveList list_;
         size_t pos_ = 0;
         Stage stage_ = Stage::Start;
 };
