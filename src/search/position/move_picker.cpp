@@ -23,19 +23,19 @@ q_core::Move KillerMoves::GetMove(const uint8_t index) const {
 }
 
 HistoryTable::HistoryTable() {
-    for (q_core::coord_t i = 0; i < q_core::BOARD_SIZE; i++) {
+    for (q_core::cell_t i = 0; i < q_core::NUMBER_OF_CELLS; i++) {
         for (q_core::coord_t j = 0; j < q_core::BOARD_SIZE; j++) {
             table_[i][j] = 0;
         }
     }
 }
 
-void HistoryTable::Update(const q_core::Move move, const depth_t depth) {
-    table_[move.src][move.dst] += depth * depth;
+void HistoryTable::Update(const q_core::cell_t cell, const q_core::Move move, const depth_t depth) {
+    table_[cell][move.dst] += depth * depth;
 }
 
-uint64_t HistoryTable::GetScore(const q_core::Move move) const {
-    return table_[move.src][move.dst];
+uint64_t HistoryTable::GetScore(const q_core::cell_t cell, const q_core::Move move) const {
+    return table_[cell][move.dst];
 }
 
 static constexpr uint8_t CAPTURE_VICTIM_COST[q_core::NUMBER_OF_CELLS] = {0, 8,  16, 24, 30, 36, 0,
@@ -53,9 +53,9 @@ inline static void SortByMVVLVA(const q_core::Board& board, q_core::Move* moves,
               [](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });
 }
 
-inline static void SortByHistoryTable(const HistoryTable& history_table, q_core::Move* moves, const size_t count) {
+inline static void SortByHistoryTable(const HistoryTable& history_table, const q_core::Board& board, q_core::Move* moves, const size_t count) {
     std::sort(moves, moves + count,
-              [&](const q_core::Move lhs, const q_core::Move rhs) { return history_table.GetScore(lhs) > history_table.GetScore(rhs); });
+              [&](const q_core::Move lhs, const q_core::Move rhs) { return history_table.GetScore(board.cells[lhs.src], lhs) > history_table.GetScore(board.cells[rhs.src], rhs); });
 }
 
 MovePicker::Stage GetNextStage(MovePicker::Stage stage) {
@@ -122,7 +122,7 @@ void MovePicker::GetNewMoves() {
                         list_.size--;
                     }
                 }
-                SortByHistoryTable(history_table_, list_.moves + list_old_size, list_.size - list_old_size);
+                SortByHistoryTable(history_table_, position_.board, list_.moves + list_old_size, list_.size - list_old_size);
                 break;
             }
             case Stage::End: {

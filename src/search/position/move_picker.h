@@ -19,10 +19,10 @@ class KillerMoves {
 class HistoryTable {
     public:
         HistoryTable();
-        void Update(q_core::Move move, depth_t depth);
-        uint64_t GetScore(q_core::Move move) const;
+        void Update(q_core::cell_t cell, q_core::Move move, depth_t depth);
+        uint64_t GetScore(q_core::cell_t cell, q_core::Move move) const;
     private:
-        std::array<std::array<uint64_t, q_core::BOARD_SIZE>, q_core::BOARD_SIZE> table_;
+        std::array<std::array<uint64_t, q_core::BOARD_SIZE>, q_core::NUMBER_OF_CELLS> table_;
 };
 
 class MovePicker {

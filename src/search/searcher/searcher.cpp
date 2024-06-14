@@ -149,6 +149,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         CHECK_STOP;
+        q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
         moves_done++;
         const q_eval::score_t new_score =
@@ -165,7 +166,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             tt_store_move(beta, best_move);
             if (move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
                 context_.killer_moves[idepth].Add(best_move);
-                context_.history_table.Update(best_move, depth);
+                context_.history_table.Update(src_cell, best_move, depth);
             }
             return beta;
         }

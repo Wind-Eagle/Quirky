@@ -104,11 +104,17 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     if (q_core::IsMoveNull(final_result.best_move)) {
         q_core::MoveList move_list;
         q_core::GenerateAllSimpleMoves(position.board, move_list);
-        final_result.best_move = move_list.moves[0];
-    }
-    if (!q_core::IsMovePseudolegal(position.board, final_result.best_move)) {
-        std::cerr << position.board.GetFEN() << " " << q_core::CastMoveToString(final_result.best_move) << std::endl;
-        exit(42);
+        for (size_t i = 0; i < move_list.size; i++) {
+            q_core::MakeMoveInfo make_move_info;
+            q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
+            bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_tag);
+            if (!legal) {
+                continue;
+            }
+            final_result.best_move = move_list.moves[i];
+            position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_tag);
+            break;
+        }
     }
     PrintBestMove(final_result.best_move);
     search_thread.join();
