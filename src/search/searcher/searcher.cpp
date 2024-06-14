@@ -7,12 +7,11 @@ namespace q_search {
 Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& position,
                    SearchControl& control, SearchStat& stat)
     : tt_(tt), rt_(rt), position_(position), control_(control), stat_(stat) {
-        context_.best_move = q_core::NULL_MOVE;
+        context_.history_table = HistoryTable();
         for (idepth_t i = 0; i < MAX_IDEPTH; i++) {
-            for (uint8_t j = 0; j < MovePicker::KILLER_MOVES_COUNT; j++) {
-                context_.killer_moves[i][j] = q_core::NULL_MOVE;
-            }
+            context_.killer_moves[i] = KillerMoves();
         }
+        context_.best_move = q_core::NULL_MOVE;
     }
 
 SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
@@ -77,13 +76,6 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, idepth_t idepth) {
         return score > 0 ? score - idepth : score + idepth;
     }
     return score;
-}
-
-void StoreKillers(std::array<q_core::Move, MovePicker::KILLER_MOVES_COUNT>& killer_moves, q_core::Move best_move) {
-    for (size_t j = MovePicker::KILLER_MOVES_COUNT - 1; j >= 1; j--) {
-        killer_moves[j] = killer_moves[j - 1];
-    }
-    killer_moves[0] = best_move;
 }
 
 #define SAVE_ROOT_BEST_MOVE      \
@@ -151,7 +143,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
 
     // Try moves one by one
-    MovePicker move_picker(position_, tt_move, context_.killer_moves[idepth]);
+    MovePicker move_picker(position_, tt_move, context_.killer_moves[idepth], context_.history_table);
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
@@ -172,7 +164,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             SAVE_ROOT_BEST_MOVE;
             tt_store_move(beta, best_move);
             if (move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
-                StoreKillers(context_.killer_moves[idepth], best_move);
+                context_.killer_moves[idepth].Add(best_move);
+                context_.history_table.Update(best_move, depth);
             }
             return beta;
         }

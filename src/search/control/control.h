@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "stat.h"
+#include "../position/position.h"
 #include "../../core/moves/move.h"
 #include "../../eval/score.h"
 

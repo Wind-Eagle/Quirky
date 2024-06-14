@@ -9,6 +9,9 @@
 
 namespace q_search {
 
+using depth_t = int16_t;
+using idepth_t = uint16_t;
+
 struct Position {
     q_core::Board board;
     q_eval::Evaluator<q_eval::EvaluationType::Value> evaluator;

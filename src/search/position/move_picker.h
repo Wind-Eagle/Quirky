@@ -6,10 +6,28 @@
 
 namespace q_search {
 
+class KillerMoves {
+    public:
+        static constexpr uint8_t COUNT = 2;
+        KillerMoves();
+        void Add(q_core::Move move);
+        q_core::Move GetMove(uint8_t index) const;
+    private:
+        std::array<q_core::Move, COUNT> moves_;
+};
+
+class HistoryTable {
+    public:
+        HistoryTable();
+        void Update(q_core::Move move, depth_t depth);
+        uint64_t GetScore(q_core::Move move) const;
+    private:
+        std::array<std::array<uint64_t, q_core::BOARD_SIZE>, q_core::BOARD_SIZE> table_;
+};
+
 class MovePicker {
     public:
-        static constexpr uint8_t KILLER_MOVES_COUNT = 2;
-        MovePicker(const Position& position, q_core::Move tt_move, const std::array<q_core::Move, KILLER_MOVES_COUNT>& killer_moves);
+        MovePicker(const Position& position, q_core::Move tt_move, const KillerMoves& killer_moves, const HistoryTable& history_table);
         enum class Stage: uint8_t {
             Start = 0,
             TTMove = 1,
@@ -26,7 +44,8 @@ class MovePicker {
         const Position& position_;
         q_core::MoveList list_;
         q_core::Move tt_move_;
-        std::array<q_core::Move, KILLER_MOVES_COUNT> killer_moves_;
+        const KillerMoves& killer_moves_;
+        const HistoryTable& history_table_;
         size_t pos_ = 0;
         Stage stage_ = Stage::Start;
 };
