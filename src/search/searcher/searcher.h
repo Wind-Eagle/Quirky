@@ -26,7 +26,9 @@ class Searcher {
         q_eval::score_t QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta);
         template <NodeType node_type>
         q_eval::score_t Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha, q_eval::score_t beta);
+
         SearchResult GetSearchResult(depth_t depth, q_eval::score_t score);
+        std::vector<q_core::Move> GetPV();
         bool ShouldStop();
 
         static constexpr idepth_t MAX_IDEPTH = 255;

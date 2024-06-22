@@ -15,9 +15,9 @@ class TranspositionTable {
     struct EntryInfo {
         EntryInfo() {}
         EntryInfo(uint8_t generation, NodeType type, bool is_pv) {
-            data_ = (generation << 3) + (static_cast<uint8_t>(type) << 1) + (is_pv ? 1 : 0);
+            data_ = generation + (static_cast<uint8_t>(type) << 1) + (is_pv ? 1 : 0);
         }
-        uint8_t GetGeneration() const { return data_ >> GENERATION_BIT_COUNT; }
+        uint8_t GetGeneration() const { return (data_ >> GENERATION_BIT_COUNT) << GENERATION_BIT_COUNT; }
         NodeType GetNodeType() const {
             return static_cast<NodeType>((data_ >> 1) & ((1 << NODE_TYPE_BIT_COUNT) - 1));
         }
@@ -66,6 +66,10 @@ class TranspositionTable {
                NodeType node_type, bool is_pv) const;
     Entry& GetEntry(q_core::hash_t hash, bool& found) const;
     void Prefetch(q_core::hash_t hash) const;
+
+    uint8_t GetGeneration() const {
+      return generation_;
+    }
 
   private:
     std::unique_ptr<Cluster[]> data_;

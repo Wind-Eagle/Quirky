@@ -8,15 +8,9 @@ uint64_t GetKeyHash(const q_core::hash_t hash, const uint8_t size_log) {
 
 uint32_t GetValueHash(const q_core::hash_t hash) { return hash >> 32; }
 
-uint16_t GetEntryImportance(const auto entry, uint16_t generation) {
-    return entry.depth + generation * 2;
-}
-
-bool IsEntryBetter(const auto lhs, const auto rhs) {
-    uint8_t generation_diff =
-        static_cast<int>(std::numeric_limits<decltype(lhs.info.GetGeneration())>::max()) + 1 +
-        lhs.info.GetGeneration() - rhs.info.GetGeneration();
-    return GetEntryImportance(lhs, generation_diff) > GetEntryImportance(rhs, generation_diff);
+int16_t GetEntryImportance(const auto entry, uint8_t cur_generation) {
+    uint8_t generation_diff = cur_generation - entry.info.GetGeneration();
+    return static_cast<int16_t>(entry.depth) - generation_diff / 4;
 }
 
 TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
@@ -33,7 +27,7 @@ void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_cor
                     .move = q_core::GetCompressedMove(move),
                     .depth = depth,
                     .info = EntryInfo(generation_, node_type, is_pv)};
-    if (IsEntryBetter(new_entry, old_entry)) {
+    if (GetEntryImportance(new_entry, generation_) > GetEntryImportance(old_entry, generation_)) {
         old_entry = new_entry;
     }
 }
@@ -50,13 +44,13 @@ TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t has
         }
     }
     found = false;
-    auto& entry_to_replace = entry.data[0];
+    size_t entry_to_replace_index = 0;
     for (uint8_t i = 1; i < Cluster::CLUSTER_ENTRY_COUNT; i++) {
-        if (IsEntryBetter(entry_to_replace, entry.data[i])) {
-            entry_to_replace = entry.data[i];
+        if (GetEntryImportance(entry.data[entry_to_replace_index], generation_) > GetEntryImportance(entry.data[i], generation_)) {
+            entry_to_replace_index = i;
         }
     }
-    return entry_to_replace;
+    return entry.data[entry_to_replace_index];
 }
 
 void TranspositionTable::Prefetch(const q_core::hash_t hash) const {
@@ -74,7 +68,9 @@ void TranspositionTable::ClearAndResize(uint8_t new_byte_size_log) {
     generation_ = 0;
 }
 
-void TranspositionTable::NextPosition() { generation_ += (1ULL << EntryInfo::GENERATION_BIT_COUNT); }
+void TranspositionTable::NextPosition() {
+    generation_ += (1ULL << EntryInfo::GENERATION_BIT_COUNT);
+}
 
 void TranspositionTable::NextGame() { generation_ = 0; }
 

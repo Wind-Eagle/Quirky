@@ -14,8 +14,41 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& 
         context_.best_move = q_core::NULL_MOVE;
     }
 
-SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
+std::vector<q_core::Move> Searcher::GetPV() {
+    if (q_core::IsMoveNull(context_.best_move)) {
+        return {};
+    }
+
+    RepetitionTable rt(10);
+    Position position = position_;
+    q_core::MakeMoveInfo make_move_info;
+    q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
     std::vector<q_core::Move> pv;
+
+    position.MakeMove(context_.best_move, make_move_info, evaluator_tag);
+    for (;;) {
+        const q_core::hash_t position_hash = position.board.hash;
+        if (!rt.Insert(position_hash)) {
+            break;
+        }
+        bool tt_entry_found = false;
+        auto& tt_entry = tt_.GetEntry(position_hash, tt_entry_found);
+        if (tt_entry_found) {
+            const q_core::Move tt_move = q_core::GetDecompressedMove(tt_entry.move);
+            if (q_core::IsMovePseudolegal(position.board, tt_move)) {
+                if (position.MakeMove(tt_move, make_move_info, evaluator_tag)) {
+                    pv.push_back(tt_move);
+                    continue;
+                }
+            }
+        }
+        break;
+    }
+    return pv;
+}
+
+SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
+    std::vector<q_core::Move> pv = GetPV();
     return SearchResult{
         .bound_type = Exact, .score = score, .best_move = context_.best_move, .depth = depth, .pv = pv};
 }
@@ -128,7 +161,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     if (tt_entry_found) {
         tt_move = q_core::GetDecompressedMove(tt_entry.move);
         const bool is_cutoff_allowed = (node_type != NodeType::Root) & (tt_entry.depth >= depth) &
-                                       (position_.board.fifty_rule_move_count < 90);
+                                       (position_.board.fifty_rule_move_count < 90) &
+                                       (node_type == NodeType::Simple || tt_entry.info.GetGeneration() == tt_.GetGeneration());
         if (is_cutoff_allowed) {
             const q_eval::score_t score = AdjustCheckmate(tt_entry.score, idepth);
             const auto tt_node_type = tt_entry.info.GetNodeType();

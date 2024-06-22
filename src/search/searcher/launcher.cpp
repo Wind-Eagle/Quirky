@@ -57,12 +57,35 @@ void PrintBestMove(const q_core::Move move) {
     q_util::Print("bestmove", q_core::CastMoveToString(move));
 }
 
+q_core::Move GetRandomMove(Position& position) {
+    q_core::MoveList move_list;
+    q_core::GenerateAllMoves(position.board, move_list);
+    for (size_t i = 0; i < move_list.size; i++) {
+        q_core::MakeMoveInfo make_move_info;
+        q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
+        bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_tag);
+        if (!legal) {
+            continue;
+        }
+        position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_tag);
+        return move_list.moves[i];
+    }
+    return q_core::NULL_MOVE;
+}
+
 void SearchLauncher::StartMainThread(const Position& start_position,
                                      const std::vector<q_core::Move>& moves,
                                      time_control_t time_control, depth_t max_depth) {
     RepetitionTable rt{GetRTByteSizeLog(moves.size())};
     Position position = start_position;
     ProcessPositionMoves(position, moves, rt);
+
+    const q_core::Move random_move = GetRandomMove(position);
+    if (q_core::IsMoveNull(random_move)) {
+        q_util::PrintError("This is a position with no legal moves: either mate or stalemate");
+        return;
+    }
+
     SearchStat stat;
     Searcher searcher(tt_, rt, position, control_, stat);
     SearchTimer timer(time_control, control_, stat);
@@ -102,19 +125,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
         }
     }
     if (q_core::IsMoveNull(final_result.best_move)) {
-        q_core::MoveList move_list;
-        q_core::GenerateAllSimpleMoves(position.board, move_list);
-        for (size_t i = 0; i < move_list.size; i++) {
-            q_core::MakeMoveInfo make_move_info;
-            q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
-            bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_tag);
-            if (!legal) {
-                continue;
-            }
-            final_result.best_move = move_list.moves[i];
-            position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_tag);
-            break;
-        }
+        final_result.best_move = random_move;
     }
     PrintBestMove(final_result.best_move);
     search_thread.join();
