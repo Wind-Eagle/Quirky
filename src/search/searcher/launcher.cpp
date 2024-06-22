@@ -57,9 +57,10 @@ void PrintBestMove(const q_core::Move move) {
     q_util::Print("bestmove", q_core::CastMoveToString(move));
 }
 
-q_core::Move GetRandomMove(Position& position) {
+q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     q_core::MoveList move_list;
     q_core::GenerateAllMoves(position.board, move_list);
+    q_core::Move random_move = q_core::NULL_MOVE;
     for (size_t i = 0; i < move_list.size; i++) {
         q_core::MakeMoveInfo make_move_info;
         q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
@@ -68,9 +69,14 @@ q_core::Move GetRandomMove(Position& position) {
             continue;
         }
         position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_tag);
-        return move_list.moves[i];
+        if (!q_core::IsMoveNull(random_move)) {
+            has_two_legal_moves = true;
+            return random_move;
+        }
+        random_move = move_list.moves[i];
     }
-    return q_core::NULL_MOVE;
+    has_two_legal_moves = false;
+    return random_move;
 }
 
 void SearchLauncher::StartMainThread(const Position& start_position,
@@ -80,15 +86,20 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     Position position = start_position;
     ProcessPositionMoves(position, moves, rt);
 
-    const q_core::Move random_move = GetRandomMove(position);
+    bool has_two_legal_moves = false;
+    const q_core::Move random_move = GetRandomMove(position, has_two_legal_moves);
     if (q_core::IsMoveNull(random_move)) {
         q_util::PrintError("This is a position with no legal moves: either mate or stalemate");
+        return;
+    }
+    if (!has_two_legal_moves && std::holds_alternative<GameTimeControl>(time_control)) {
+        PrintBestMove(random_move);
         return;
     }
 
     SearchStat stat;
     Searcher searcher(tt_, rt, position, control_, stat);
-    SearchTimer timer(time_control, control_, stat);
+    SearchTimer timer(time_control, control_, stat, position);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
     SearchResult final_result{.best_move = q_core::NULL_MOVE, .depth = 0};
@@ -107,6 +118,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                 PrintSearchResult(result, time_since_start);
                 if (result.bound_type == Exact && result.depth > final_result.depth) {
                     final_result = std::move(result);
+                    timer.ProcessNextDepth();
                 }
             }
             if (final_result.depth >= max_depth) {

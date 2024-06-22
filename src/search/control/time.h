@@ -23,7 +23,7 @@ struct PlayerTime {
 struct GameTimeControl {
     PlayerTime white_time;
     PlayerTime black_time;
-    uint8_t moves_to_go;
+    uint8_t moves_to_go = NO_MOVES_TO_GO;
     static constexpr uint8_t NO_MOVES_TO_GO = 255;
 };
 
@@ -38,16 +38,21 @@ using time_control_t =
 
 class SearchTimer {
     public:
-        SearchTimer(time_control_t time_control, SearchControl& control, SearchStat& stat);
-        void Start();
-        std::chrono::milliseconds GetWaitTime() const;
+        SearchTimer(time_control_t time_control, SearchControl& control, SearchStat& stat, Position& position);
+        void ProcessNextDepth();
+        std::chrono::milliseconds GetWaitTime();
         time_t GetTimeSinceStart() const;
     private:
+        struct Context {
+            time_t estimated_max_time = 0;
+            bool should_stop = false;
+        };
+        Context context_;
         std::chrono::time_point<std::chrono::steady_clock> start_time_;
-        time_t max_time_;
-        time_control_t time_control_;
-        SearchControl& control_;
-        SearchStat& stat_;
+        const time_control_t time_control_;
+        const SearchControl& control_;
+        const SearchStat& stat_;
+        const Position& position_;
 };
 
 }  // namespace q_search

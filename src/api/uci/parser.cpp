@@ -47,42 +47,69 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         UciGoCommand command;
         command.time_control = q_search::InfiniteTimeControl{};
         command.max_depth = q_search::Searcher::MAX_DEPTH;
-        for (size_t i = 1; i < args.size(); i += 2) {
-            if (args[i] == "infinite") {
-                if (i > 1) {
-                    return UciUnparsedCommand{.parse_error =
-                                                  "Infinite argument must be used alone"};
-                }
-            } else if (args[i] == "movetime") {
-                if (i + 1 == args.size()) {
-                    return UciUnparsedCommand{.parse_error =
-                                                  "Movetime argument must be used with amount of "
-                                                  "time as a next argument"};
-                }
+        if (args.size() == 1) {
+            return command;
+        }
+        if (args[1] == "infinite") {
+            if (args.size() > 2) {
+                return UciUnparsedCommand{.parse_error =
+                                                "Infinite argument must be used alone"};
+            }
+        } else if (args[1] == "movetime") {
+            if (args.size() == 2) {
+                return UciUnparsedCommand{.parse_error =
+                                                "Movetime argument must be used with amount of "
+                                                "time as a next argument"};
+            }
+            if (!q_util::IsStringNonNegativeNumber(args[2])) {
+                return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
+            }
+            if (args.size() != 3) {
+                return UciUnparsedCommand{.parse_error = "Movetime must be followed by precisely one argument"};
+            }
+            command.time_control = q_search::FixedTimeControl{
+                .time = static_cast<q_search::time_t>(std::stoll(args[2]))};
+        } else if (args[1] == "depth") {
+            if (args.size() == 2) {
+                return UciUnparsedCommand{.parse_error =
+                                                "Movetime argument must be used with amount of "
+                                                "time as a next argument"};
+            }
+            if (!q_util::IsStringNonNegativeNumber(args[2])) {
+                return UciUnparsedCommand{.parse_error = "Expected valid argument as depth"};
+            }
+            uint64_t depth_int = std::stoll(args[2]);
+            if (depth_int > q_search::Searcher::MAX_DEPTH) {
+                return UciUnparsedCommand{.parse_error =
+                                                "Depth should be not more than " +
+                                                std::to_string(q_search::Searcher::MAX_DEPTH)};
+            }
+            if (args.size() != 3) {
+                return UciUnparsedCommand{.parse_error = "Depth must be followed by precisely one argument"};
+            }
+            command.max_depth = depth_int;
+        } else {
+            q_search::GameTimeControl time_control{};
+            for (size_t i = 1; i < args.size(); i += 2) {
                 if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
                     return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
                 }
-                command.time_control = q_search::FixedTimeControl{
-                    .time = static_cast<q_search::time_t>(std::stoll(args[i + 1]))};
-            } else if (args[i] == "depth") {
-                if (i + 1 == args.size()) {
-                    return UciUnparsedCommand{.parse_error =
-                                                  "Movetime argument must be used with amount of "
-                                                  "time as a next argument"};
+                uint64_t arg = std::stoll(args[i + 1]);
+                if (args[i] == "wtime") {
+                    time_control.white_time.time = arg;
+                } else if (args[i] == "btime") {
+                    time_control.black_time.time = arg;
+                } else if (args[i] == "winc") {
+                    time_control.white_time.increment = arg;
+                } else if (args[i] == "binc") {
+                    time_control.black_time.increment = arg;
+                } else if (args[i] == "movestogo") {
+                    time_control.moves_to_go = arg;
+                } else {
+                    return UciUnparsedCommand{.parse_error = "Unsupported argument: " + args[i]};
                 }
-                if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
-                    return UciUnparsedCommand{.parse_error = "Expected valid argument as depth"};
-                }
-                uint64_t depth_int = std::stoll(args[i + 1]);
-                if (depth_int > q_search::Searcher::MAX_DEPTH) {
-                    return UciUnparsedCommand{.parse_error =
-                                                  "Depth should be not more than " +
-                                                  std::to_string(q_search::Searcher::MAX_DEPTH)};
-                }
-                command.max_depth = std::stoll(args[i + 1]);
-            } else {
-                return UciUnparsedCommand{.parse_error = "Unsupported option"};
             }
+            command.time_control = time_control;
         }
         return command;
     } else if (command_name == "stop") {
