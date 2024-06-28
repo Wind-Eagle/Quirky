@@ -18,8 +18,9 @@ TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
       data_(new TranspositionTable::Cluster[(1ULL << (byte_size_log - CLUSTER_SIZE_LOG))]) {}
 
 void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_core::hash_t hash,
-                               const q_core::Move move, const q_eval::score_t score, const uint8_t depth,
-                               const NodeType node_type, const bool is_pv) const {
+                               const q_core::Move move, const q_eval::score_t score,
+                               const uint8_t depth, const NodeType node_type,
+                               const bool is_pv) const {
     const auto value_hash = GetValueHash(hash);
     Entry new_entry{.hash_low = static_cast<uint16_t>(value_hash & ((1ULL << 16) - 1)),
                     .hash_high = static_cast<uint16_t>(value_hash >> 16),
@@ -32,12 +33,14 @@ void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_cor
     }
 }
 
-TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t hash, bool& found) const {
+TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t hash,
+                                                        bool& found) const {
     const auto key_hash = GetKeyHash(hash, size_log_);
     const auto value_hash = GetValueHash(hash);
     auto& entry = data_[key_hash];
     for (uint8_t i = 0; i < Cluster::CLUSTER_ENTRY_COUNT; i++) {
-        const uint32_t entry_hash = static_cast<uint32_t>(entry.data[i].hash_low) + (static_cast<uint32_t>(entry.data[i].hash_high) << 16);
+        const uint32_t entry_hash = static_cast<uint32_t>(entry.data[i].hash_low) +
+                                    (static_cast<uint32_t>(entry.data[i].hash_high) << 16);
         if (entry_hash == value_hash) {
             found = true;
             return entry.data[i];
@@ -46,7 +49,8 @@ TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t has
     found = false;
     size_t entry_to_replace_index = 0;
     for (uint8_t i = 1; i < Cluster::CLUSTER_ENTRY_COUNT; i++) {
-        if (GetEntryImportance(entry.data[entry_to_replace_index], generation_) > GetEntryImportance(entry.data[i], generation_)) {
+        if (GetEntryImportance(entry.data[entry_to_replace_index], generation_) >
+            GetEntryImportance(entry.data[i], generation_)) {
             entry_to_replace_index = i;
         }
     }

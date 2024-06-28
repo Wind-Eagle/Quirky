@@ -28,8 +28,7 @@ extern const std::array<ScorePair, (1 << 6)> STORM_WEIGHTS_INVERTED;
 inline constexpr q_core::bitboard_t WHITE_KING_SHIELDED_BITBOARD =
     q_core::RANK_BITBOARD[0] | q_core::RANK_BITBOARD[1];
 inline constexpr q_core::bitboard_t BLACK_KING_SHIELDED_BITBOARD =
-    q_core::RANK_BITBOARD[q_core::BOARD_SIDE - 1] |
-    q_core::RANK_BITBOARD[q_core::BOARD_SIDE - 2];
+    q_core::RANK_BITBOARD[q_core::BOARD_SIDE - 1] | q_core::RANK_BITBOARD[q_core::BOARD_SIDE - 2];
 
 uint8_t GetLInftyDistance(q_core::coord_t src, q_core::coord_t dst);
 

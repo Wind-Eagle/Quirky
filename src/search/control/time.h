@@ -33,29 +33,29 @@ struct FixedTimeControl {
 
 struct InfiniteTimeControl {};
 
-using time_control_t =
-    std::variant<GameTimeControl, FixedTimeControl, InfiniteTimeControl>;
+using time_control_t = std::variant<GameTimeControl, FixedTimeControl, InfiniteTimeControl>;
 
 class SearchTimer {
-    public:
-        SearchTimer(time_control_t time_control, SearchControl& control, SearchStat& stat, Position& position);
-        void ProcessNextDepth();
-        std::chrono::milliseconds GetWaitTime();
-        time_t GetTimeSinceStart() const;
-    private:
-        struct Context {
-            time_t estimated_max_time = 0;
-            bool should_stop = false;
-        };
-        Context context_;
-        std::chrono::time_point<std::chrono::steady_clock> start_time_;
-        const time_control_t time_control_;
-        const SearchControl& control_;
-        const SearchStat& stat_;
-        const Position& position_;
+  public:
+    SearchTimer(time_control_t time_control, SearchControl& control, SearchStat& stat,
+                Position& position);
+    void ProcessNextDepth();
+    std::chrono::milliseconds GetWaitTime();
+    time_t GetTimeSinceStart() const;
+
+  private:
+    struct Context {
+        time_t estimated_max_time = 0;
+        bool should_stop = false;
+    };
+    Context context_;
+    std::chrono::time_point<std::chrono::steady_clock> start_time_;
+    const time_control_t time_control_;
+    const SearchControl& control_;
+    const SearchStat& stat_;
+    const Position& position_;
 };
 
 }  // namespace q_search
 
 #endif  // QUIRKY_SRC_SEARCH_CONTROL_TIME_H
- 

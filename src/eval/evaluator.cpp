@@ -1,4 +1,5 @@
 #include "evaluator.h"
+
 #include <math.h>
 
 #include "../core/moves/magic.h"
@@ -85,8 +86,8 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
 template <EvaluationType type, Color c>
 void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
                    const PawnHashTableEntry& pawn_hash_table_entry) {
-    const bitboard_t open_files = pawn_hash_table_entry.white_open_files_mask &
-                            pawn_hash_table_entry.black_open_files_mask;
+    const bitboard_t open_files =
+        pawn_hash_table_entry.white_open_files_mask & pawn_hash_table_entry.black_open_files_mask;
     const bitboard_t half_open_files =
         (c == Color::White ? pawn_hash_table_entry.white_open_files_mask
                            : pawn_hash_table_entry.black_open_files_mask);
@@ -144,7 +145,9 @@ score_t Evaluator<type>::GetEvaluationScore(
         ans = score;
     }
     stage_t stage = std::min(tag_.GetStage(), Tag::STAGE_MAX);
-    return (static_cast<int32_t>(ans.GetFirst()) * stage + static_cast<int32_t>(ans.GetSecond()) * (Tag::STAGE_MAX - stage)) / Tag::STAGE_MAX;
+    return (static_cast<int32_t>(ans.GetFirst()) * stage +
+            static_cast<int32_t>(ans.GetSecond()) * (Tag::STAGE_MAX - stage)) /
+           Tag::STAGE_MAX;
 }
 
 template <EvaluationType type>
@@ -186,11 +189,12 @@ constexpr std::array<ScorePair, 2> QUEENSIGE_CASTLING_PSQ_UPDATE = {
         GetPSQValue(MakeCell(Color::Black, Piece::Rook), BLACK_KING_INITIAL_POSITION - 4)};
 
 template <EvaluationType type>
-typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& board, const Move move) const {
+typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& board,
+                                                                  const Move move) const {
     if constexpr (type == EvaluationType::Value) {
         typename Evaluator<type>::Tag new_tag = (*this);
         const MoveBasicType move_basic_type = GetMoveBasicType(move);
-        const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell){
+        const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {
             new_tag.score_ -= GetPSQValue(src_cell, move.src) + GetPSQValue(dst_cell, move.dst);
             new_tag.stage_ -= CELL_STAGE_EVAL[dst_cell];
         };
@@ -211,7 +215,8 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
                 basic_update(pawn, EMPTY_CELL);
                 new_tag.score_ += GetPSQValue(pawn, move.dst);
                 const coord_t taken_coord =
-                    (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
+                    (board.move_side == Color::White ? move.dst - BOARD_SIDE
+                                                     : move.dst + BOARD_SIDE);
                 const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);
                 new_tag.score_ -= GetPSQValue(enemy_pawn, taken_coord);
                 break;

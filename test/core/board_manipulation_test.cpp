@@ -1,6 +1,7 @@
+#include "../../src/core/moves/board_manipulation.h"
+
 #include <gtest/gtest.h>
 
-#include "../../src/core/moves/board_manipulation.h"
 #include "../../src/core/moves/movegen.h"
 #include "../../src/core/util.h"
 #include "util.h"

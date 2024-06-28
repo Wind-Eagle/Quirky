@@ -2,6 +2,7 @@
 #define QUIRKY_SRC_SEARCH_POSITION_POSITION_H
 
 #include <string_view>
+
 #include "../../core/board/board.h"
 #include "../../core/moves/board_manipulation.h"
 #include "../../core/moves/movegen.h"

@@ -25,7 +25,8 @@ bool IsStringMoveWellFormated(const Board& board, const std::string_view& str) {
     }
     coord_t src = CastStringToCoord(str.substr(0, 2));
     coord_t dst = CastStringToCoord(str.substr(2, 2));
-    if (!IsCoordValidAndDefined(src) || !IsCoordValidAndDefined(dst) || board.cells[src] == EMPTY_CELL) {
+    if (!IsCoordValidAndDefined(src) || !IsCoordValidAndDefined(dst) ||
+        board.cells[src] == EMPTY_CELL) {
         return false;
     }
     if (str.size() == 5) {
@@ -91,22 +92,25 @@ bool IsMoveWellFormed(Move move, Color c) {
                    GetFile(move.src) == GetFile(move.dst);
         }
         case MoveBasicType::EnPassant: {
-            const subcoord_t en_passant_rank = GetPawnDoubleMoveRank(GetInvertedColor(c)) + (c == Color::White ? -2 : 2);
+            const subcoord_t en_passant_rank =
+                GetPawnDoubleMoveRank(GetInvertedColor(c)) + (c == Color::White ? -2 : 2);
             return GetRank(move.src) == en_passant_rank &&
                    GetRank(move.dst) == en_passant_rank + (c == Color::White ? 1 : -1) &&
                    (GetFile(move.src) == GetFile(move.dst) + 1 ||
-                   GetFile(move.src) + 1 == GetFile(move.dst));
+                    GetFile(move.src) + 1 == GetFile(move.dst));
         }
         case MoveBasicType::Castling: {
-            const coord_t initial_king_position = c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION;
+            const coord_t initial_king_position =
+                c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION;
             return (move.src == initial_king_position && move.dst == initial_king_position + 2) ||
-            (move.src == initial_king_position && move.dst == initial_king_position - 2);
+                   (move.src == initial_king_position && move.dst == initial_king_position - 2);
         }
         case MoveBasicType::KnightPromotion:
         case MoveBasicType::BishopPromotion:
         case MoveBasicType::RookPromotion:
         case MoveBasicType::QueenPromotion: {
-            if (GetRank(move.src) != GetPawnPromotionRank(c) || GetRank(move.dst) != GetPawnPromotionRank(c) + (c == Color::White ? 1 : -1)) {
+            if (GetRank(move.src) != GetPawnPromotionRank(c) ||
+                GetRank(move.dst) != GetPawnPromotionRank(c) + (c == Color::White ? 1 : -1)) {
                 return false;
             }
             const subcoord_t src_file = GetFile(move.src);

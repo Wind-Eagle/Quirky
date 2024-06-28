@@ -1,5 +1,6 @@
-#include <algorithm>
 #include <benchmark/benchmark.h>
+
+#include <algorithm>
 #include <fstream>
 
 #include "../../src/core/board/board.h"
@@ -18,18 +19,20 @@ struct FixedSeedRandom8 {
         y = y_val;
         z = y_val;
     }
-private:
+
+  private:
     uint8_t x;
     uint8_t y;
     uint8_t z;
 };
 
 void SortMovesDeterministic(q_core::MoveList& move_list) {
-    std::sort(move_list.moves, move_list.moves + move_list.size, [&](const q_core::Move& lhs, const q_core::Move& rhs){
-        auto lhs_value = (lhs.src << 16) + (lhs.dst << 8) + lhs.type;
-        auto rhs_value = (rhs.src << 16) + (rhs.dst << 8) + rhs.type;
-        return lhs_value < rhs_value;
-    });
+    std::sort(move_list.moves, move_list.moves + move_list.size,
+              [&](const q_core::Move& lhs, const q_core::Move& rhs) {
+                  auto lhs_value = (lhs.src << 16) + (lhs.dst << 8) + lhs.type;
+                  auto rhs_value = (rhs.src << 16) + (rhs.dst << 8) + rhs.type;
+                  return lhs_value < rhs_value;
+              });
 }
 
 void RunMockSearch(q_core::Board& board, uint8_t depth, FixedSeedRandom8 rnd8) {
@@ -45,7 +48,7 @@ void RunMockSearch(q_core::Board& board, uint8_t depth, FixedSeedRandom8 rnd8) {
         return;
     }
     q_core::MoveList move_list;
-    auto run_mock_search = [&](uint8_t cnt_of_moves, bool seq){
+    auto run_mock_search = [&](uint8_t cnt_of_moves, bool seq) {
         if (move_list.size == 0) {
             return;
         }
@@ -143,21 +146,29 @@ static void BenchmarkNoisyRecurse(benchmark::State& state, const std::string_vie
     }
 }
 
-#define BENCHMARK_RECURSE(name, fen) \
-    static void BM_Recurse##name(benchmark::State &state) { BenchmarkRecurse(state, fen); } \
+#define BENCHMARK_RECURSE(name, fen)                                                        \
+    static void BM_Recurse##name(benchmark::State& state) { BenchmarkRecurse(state, fen); } \
     BENCHMARK(BM_Recurse##name)->Unit(benchmark::kMicrosecond);
 CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_RECURSE)
 #undef BENCHMARK_RECURSE
 
-#define BENCHMARK_NOISY_RECURSE(name, fen) \
-    static void BM_NoisyRecurse##name(benchmark::State &state) { BenchmarkNoisyRecurse(state, fen); } \
+#define BENCHMARK_NOISY_RECURSE(name, fen)                       \
+    static void BM_NoisyRecurse##name(benchmark::State& state) { \
+        BenchmarkNoisyRecurse(state, fen);                       \
+    }                                                            \
     BENCHMARK(BM_NoisyRecurse##name)->Unit(benchmark::kMicrosecond);
 CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_NOISY_RECURSE)
 #undef BENCHMARK_NOISY_RECURSE
 
-static void BM_MockSearch(benchmark::State &state) { BenchmarkMockSearch(state, "r1b1k2r/2qnbppp/p2ppn2/1p4B1/3NPPP1/2N2Q2/PPP4P/2KR1B1R w kq - 0 11"); } \
+static void BM_MockSearch(benchmark::State& state) {
+    BenchmarkMockSearch(state,
+                        "r1b1k2r/2qnbppp/p2ppn2/1p4B1/3NPPP1/2N2Q2/PPP4P/2KR1B1R w kq - 0 11");
+}
 BENCHMARK(BM_MockSearch)->Unit(benchmark::kMillisecond);
-static void BM_MockSearchNoisy(benchmark::State &state) { BenchmarkMockSearchNoisy(state, "r1b1k2r/2qnbppp/p2ppn2/1p4B1/3NPPP1/2N2Q2/PPP4P/2KR1B1R w kq - 0 11"); } \
-BENCHMARK(BM_MockSearchNoisy)->Unit(benchmark::kMicrosecond); \
+static void BM_MockSearchNoisy(benchmark::State& state) {
+    BenchmarkMockSearchNoisy(state,
+                             "r1b1k2r/2qnbppp/p2ppn2/1p4B1/3NPPP1/2N2Q2/PPP4P/2KR1B1R w kq - 0 11");
+}
+BENCHMARK(BM_MockSearchNoisy)->Unit(benchmark::kMicrosecond);
 
 BENCHMARK_MAIN();

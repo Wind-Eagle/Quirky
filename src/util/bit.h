@@ -52,14 +52,15 @@ inline constexpr void ClearBits(std::unsigned_integral auto& num, const uint64_t
     num &= ~(bits);
 }
 
-inline constexpr uint8_t GetBitCount(const std::unsigned_integral auto num) {\
+inline constexpr uint8_t GetBitCount(const std::unsigned_integral auto num) {
     return __builtin_popcountll(num);
 }
 
 template <int8_t delta, std::unsigned_integral T>
 inline constexpr T MoveAllBitsByDelta(const T num) {
     if constexpr (delta > 0) {
-        Q_ASSERT(num == 0 || q_util::GetHighestBit(num) + delta < std::numeric_limits<decltype(num)>::digits);
+        Q_ASSERT(num == 0 ||
+                 q_util::GetHighestBit(num) + delta < std::numeric_limits<decltype(num)>::digits);
         return num << delta;
     } else {
         Q_ASSERT(num == 0 || q_util::GetLowestBit(num) + delta >= 0);

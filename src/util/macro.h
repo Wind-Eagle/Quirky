@@ -6,20 +6,19 @@
 #include "io.h"
 
 class QDefer {
-    public:
-        template <class T>
-        auto operator| (T lambda) {
-            struct QDeferInner {
-                public:
-                    QDeferInner(T lambda) : lambda_(lambda) {}
-                    ~QDeferInner() {
-                        lambda_();
-                    }
-                private:
-                    T lambda_;
-            };
-            return QDeferInner(lambda);
+  public:
+    template <class T>
+    auto operator|(T lambda) {
+        struct QDeferInner {
+          public:
+            QDeferInner(T lambda) : lambda_(lambda) {}
+            ~QDeferInner() { lambda_(); }
+
+          private:
+            T lambda_;
         };
+        return QDeferInner(lambda);
+    };
 };
 
 #define ENUM_TO_INT_OP(type, base, op)                                          \
@@ -62,8 +61,7 @@ class QDefer {
         }                    \
     } while (false)
 
-#define Q_PREFETCH(addr, ...)          \
-    __builtin_prefetch(addr __VA_OPT__(,) __VA_ARGS__)
+#define Q_PREFETCH(addr, ...) __builtin_prefetch(addr __VA_OPT__(, ) __VA_ARGS__)
 
 #define Q_ASSERT(condition) assert(Q_UNLIKELY(condition))
 

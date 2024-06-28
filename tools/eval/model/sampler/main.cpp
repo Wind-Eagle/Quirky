@@ -1,22 +1,20 @@
-#include "../../../../src/util/io.h"
-#include "../../../../src/util/error.h"
-#include "calcer.h"
-#include "weighter.h"
-#include "reader.h"
-#include "writer.h"
-
 #include <cstddef>
 #include <map>
+
+#include "../../../../src/util/error.h"
+#include "../../../../src/util/io.h"
+#include "calcer.h"
+#include "reader.h"
+#include "weighter.h"
+#include "writer.h"
 
 void PrintHelp() {
     q_util::Print(
         "Quirky eval model sampler is a tool that can transform SGS games set"
         "into a dataset for Quirky eval model learner. Usage:\n",
-        "--help: print help\n",
-        "-i [path to file] - path to the SGS file\n",
+        "--help: print help\n", "-i [path to file] - path to the SGS file\n",
         "-o [path to file] - path to the dataset csv file\n"
-        "-s [positive integer] - size of file batch (default is 2048)"
-    );
+        "-s [positive integer] - size of file batch (default is 2048)");
 }
 
 struct SamplerArguments {
@@ -44,7 +42,7 @@ void Make(const SamplerArguments& args) {
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     SamplerArguments sampler_arguments;
     if (argc <= 1) {
         PrintHelp();

@@ -4,8 +4,6 @@
 
 namespace q_api {
 
-void StartCommunication() {
-    StartUciProtocol();
-}
+void StartCommunication() { StartUciProtocol(); }
 
 }  // namespace q_api

@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "../../src/eval/evaluator.h"
+
+#include <gtest/gtest.h>
 
 void SanityCheck(const std::string_view& str, q_eval::score_t min, q_eval::score_t max) {
     q_core::Board board;

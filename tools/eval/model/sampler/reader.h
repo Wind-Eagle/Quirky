@@ -1,16 +1,12 @@
 #ifndef QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_READER_H
 #define QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_READER_H
 
-#include "../../../../src/core/board/board.h"
-
 #include <fstream>
 #include <vector>
 
-enum class Result: int8_t {
-    WhiteWins = -1,
-    Draw = 0,
-    BlackWins = 1
-};
+#include "../../../../src/core/board/board.h"
+
+enum class Result : int8_t { WhiteWins = -1, Draw = 0, BlackWins = 1 };
 
 struct GameHeader {
     Result result;

@@ -1,9 +1,11 @@
 #include "interactor.h"
+
 #include <memory>
 
 namespace q_api {
 
-constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr std::string_view STARTPOS_FEN =
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 uci_response_t ProcessUciCommandInner(UciContext&, const UciInitCommand& command) {
     return UciInitResponse{};
@@ -33,7 +35,8 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionComm
         q_core::Board check_board = context.position.board;
         for (const auto& move_str : *command.moves) {
             if (!q_core::IsStringMoveWellFormated(check_board, move_str)) {
-                return UciErrorResponse{.error_message = "Invalid move string", .fatal_error = std::nullopt};
+                return UciErrorResponse{.error_message = "Invalid move string",
+                                        .fatal_error = std::nullopt};
             }
             q_core::Move move = q_core::TranslateStringToMove(check_board, move_str);
             context.moves.push_back(move);
@@ -45,7 +48,8 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionComm
 }
 
 uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& command) {
-    context.launcher.Start(context.position, context.moves, command.time_control, command.max_depth);
+    context.launcher.Start(context.position, context.moves, command.time_control,
+                           command.max_depth);
     return UciEmptyResponse{};
 }
 
@@ -64,10 +68,8 @@ uci_response_t ProcessUciCommandInner(UciContext&, const UciUnparsedCommand& com
 }
 
 uci_response_t UciInteractor::ProcessUciCommand(const uci_command_t& command) {
-    return std::visit([this](const auto& command)
-        {
-            return ProcessUciCommandInner(context_, command);
-        }, command);
+    return std::visit(
+        [this](const auto& command) { return ProcessUciCommandInner(context_, command); }, command);
 }
 
 UciInteractor::UciInteractor() {
@@ -75,8 +77,6 @@ UciInteractor::UciInteractor() {
     context_.should_stop = false;
 }
 
-bool UciInteractor::ShouldStop() const {
-    return context_.should_stop;
-}
+bool UciInteractor::ShouldStop() const { return context_.should_stop; }
 
 }  // namespace q_api

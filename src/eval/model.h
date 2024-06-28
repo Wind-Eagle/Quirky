@@ -1,14 +1,16 @@
 #ifndef QUIRKY_SRC_EVAL_MODEL_H
 #define QUIRKY_SRC_EVAL_MODEL_H
 
+#include <array>
+
 #include "feature.h"
 #include "score.h"
 
-#include <array>
-
 namespace q_eval {
 
-inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_COUNT>& res, Feature feature, score_t weight_first, score_t weight_second) {
+inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_COUNT>& res,
+                                         Feature feature, score_t weight_first,
+                                         score_t weight_second) {
     res[static_cast<uint16_t>(feature)] = ScorePair(weight_first, weight_second);
 }
 
@@ -23,7 +25,8 @@ inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> GetModelWeights() 
     return res;
 }
 
-static inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> MODEL_WEIGHTS = GetModelWeights();
+static inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> MODEL_WEIGHTS =
+    GetModelWeights();
 
 }  // namespace q_eval
 

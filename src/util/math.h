@@ -1,7 +1,7 @@
 #ifndef QUIRKY_SRC_UTIL_DISTANCE_H
 #define QUIRKY_SRC_UTIL_DISTANCE_H
 
-#include <cstdlib>
+#include <algorithm>
 
 namespace q_util {
 

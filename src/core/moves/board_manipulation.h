@@ -10,7 +10,8 @@ struct MakeMoveInfo {
     hash_t hash;
     coord_t en_passant;
     Castling castling;
-    uint8_t fifty_rule_move_counter;cell_t dst_cell;
+    uint8_t fifty_rule_move_counter;
+    cell_t dst_cell;
 };
 
 void MakeMove(Board& board, Move move, MakeMoveInfo& info);

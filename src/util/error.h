@@ -3,7 +3,12 @@
 
 #include <cstdint>
 
-enum class QuirkyError : int32_t { UnknownError = -1, UnexpectedValue = 1, UnexpectedArgument = 2, ParseError = 3 };
+enum class QuirkyError : int32_t {
+    UnknownError = -1,
+    UnexpectedValue = 1,
+    UnexpectedArgument = 2,
+    ParseError = 3
+};
 
 inline constexpr const char* GetErrorMessage(const QuirkyError error) {
     switch (error) {

@@ -6,11 +6,12 @@
 namespace q_search {
 
 class SearchStat {
-    public:
-        uint64_t GetNodesCount() const;
-        void IncNodesCount();
-    private:
-        uint64_t nodes_ = 0;
+  public:
+    uint64_t GetNodesCount() const;
+    void IncNodesCount();
+
+  private:
+    uint64_t nodes_ = 0;
 };
 
 }  // namespace q_search

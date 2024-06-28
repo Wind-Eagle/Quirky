@@ -33,9 +33,9 @@ struct UciUnparsedCommand {
     std::string parse_error;
 };
 
-using uci_command_t =
-    std::variant<UciInitCommand,UciReadyCommand, UciNewGameCommand, UciSetOptionCommand, UciPositionCommand,
-                 UciGoCommand, UciStopCommand, UciQuitCommand, UciUnparsedCommand>;
+using uci_command_t = std::variant<UciInitCommand, UciReadyCommand, UciNewGameCommand,
+                                   UciSetOptionCommand, UciPositionCommand, UciGoCommand,
+                                   UciStopCommand, UciQuitCommand, UciUnparsedCommand>;
 
 struct UciInitResponse {};
 struct UciReadyResponse {};
@@ -60,6 +60,7 @@ class UciInteractor {
     UciInteractor();
     uci_response_t ProcessUciCommand(const uci_command_t& command);
     bool ShouldStop() const;
+
   private:
     UciContext context_;
 };

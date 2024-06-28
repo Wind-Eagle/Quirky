@@ -50,12 +50,8 @@ struct FeatureStorage {
         Q_ASSERT(index >= 0 && index < FEATURE_COUNT + PSQ_SIZE);
         return features_[index];
     }
-    bool operator == (const FeatureStorage& rhs) const {
-        return features_ == rhs.features_;
-    }
-    const std::array<score_t, FEATURE_COUNT + PSQ_SIZE>& GetFeatures() const {
-        return features_;
-    }
+    bool operator==(const FeatureStorage& rhs) const { return features_ == rhs.features_; }
+    const std::array<score_t, FEATURE_COUNT + PSQ_SIZE>& GetFeatures() const { return features_; }
 
   private:
     std::array<score_t, FEATURE_COUNT + PSQ_SIZE> features_;
@@ -78,21 +74,20 @@ struct Evaluator {
             stage_ = stage_t{};
         }
 
-        typename EvaluationResultType<type>::type GetScore() const {
-            return score_;
-        }
+        typename EvaluationResultType<type>::type GetScore() const { return score_; }
 
-        static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0, 0, 1, 1, 2, 4, 0};
+        static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0,
+                                                                             0, 1, 1, 2, 4, 0};
         Q_STATIC_ASSERT(CELL_STAGE_EVAL[q_core::EMPTY_CELL] == 0);
-        Q_STATIC_ASSERT(CELL_STAGE_EVAL[q_core::MakeCell(q_core::Color::White, q_core::Piece::Pawn)] == 0);
-        Q_STATIC_ASSERT(CELL_STAGE_EVAL[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Pawn)] == 0);
+        Q_STATIC_ASSERT(
+            CELL_STAGE_EVAL[q_core::MakeCell(q_core::Color::White, q_core::Piece::Pawn)] == 0);
+        Q_STATIC_ASSERT(
+            CELL_STAGE_EVAL[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Pawn)] == 0);
         static constexpr uint8_t STAGE_MAX = 24;
 
-        stage_t GetStage() const {
-            return stage_;
-        }
+        stage_t GetStage() const { return stage_; }
 
-        bool operator == (const Tag& rhs) const {
+        bool operator==(const Tag& rhs) const {
             return score_ == rhs.score_ && stage_ == rhs.stage_;
         }
 
@@ -112,15 +107,11 @@ struct Evaluator {
         return old_tag;
     }
 
-    void SetTag(const Tag& tag) {
-        tag_ = tag;
-    }
+    void SetTag(const Tag& tag) { tag_ = tag; }
 
     typename EvaluationResultType<type>::type Evaluate(const q_core::Board& board) const;
 
-    stage_t GetStage() const {
-        return tag_.GetStage();
-    }
+    stage_t GetStage() const { return tag_.GetStage(); }
 
     score_t GetEvaluationScore(typename EvaluationResultType<type>::type score) const;
 

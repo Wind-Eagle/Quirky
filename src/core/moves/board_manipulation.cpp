@@ -55,7 +55,7 @@ const std::array<Castling, 1ULL << q_util::GetBitCount(TOTAL_CASTLING_CHANGE_BIT
 
 void UpdateCastling(Board &board, const bitboard_t change_bitboard) {
     if (IsAnyCastlingAllowed(board.castling) &&
-                   (change_bitboard & TOTAL_CASTLING_CHANGE_BITBOARD)) {
+        (change_bitboard & TOTAL_CASTLING_CHANGE_BITBOARD)) {
         board.hash ^= MakeZobristHashFromCastling(board.castling);
         uint8_t mask = q_util::ExtractBits(change_bitboard, TOTAL_CASTLING_CHANGE_BITBOARD);
         board.castling = CASTLING_CHANGE[mask] & board.castling;
@@ -342,8 +342,11 @@ void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
     Q_ASSERT(board.IsValid());
     Q_ASSERT(c == board.move_side);
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
-    info = MakeMoveInfo{.hash = board.hash, .en_passant = board.en_passant_coord, .castling = board.castling,
-                        .fifty_rule_move_counter = board.fifty_rule_move_count, .dst_cell = board.cells[move.dst]};
+    info = MakeMoveInfo{.hash = board.hash,
+                        .en_passant = board.en_passant_coord,
+                        .castling = board.castling,
+                        .fifty_rule_move_counter = board.fifty_rule_move_count,
+                        .dst_cell = board.cells[move.dst]};
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
             MakeMoveSimple<c>(board, move);
@@ -353,18 +356,18 @@ void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
             MakeMovePawnDouble<c>(board, move);
             break;
         }
-        [[unlikely]] case MoveBasicType::EnPassant: {
+        [[unlikely]] case MoveBasicType::EnPassant : {
             MakeMoveEnPassant<c>(board, move);
             break;
         }
-        [[unlikely]] case MoveBasicType::Castling: {
+        [[unlikely]] case MoveBasicType::Castling : {
             MakeMoveCastling<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::KnightPromotion:
         [[unlikely]] case MoveBasicType::BishopPromotion:
         [[unlikely]] case MoveBasicType::RookPromotion:
-        [[unlikely]] case MoveBasicType::QueenPromotion: {
+        [[unlikely]] case MoveBasicType::QueenPromotion : {
             MakeMovePromotion<c>(board, move);
             break;
         }
@@ -389,7 +392,7 @@ void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     board.castling = info.castling;
     board.fifty_rule_move_count = info.fifty_rule_move_counter;
     switch (move_basic_type) {
-        case MoveBasicType::Simple : {
+        case MoveBasicType::Simple: {
             UnmakeMoveSimple<c>(board, move, board.cells[move.dst], info.dst_cell);
             break;
         }
@@ -434,8 +437,8 @@ void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     }
 }
 
-template<Color c>
-bool WasMoveLegal(const Board& board, const Move move) {
+template <Color c>
+bool WasMoveLegal(const Board &board, const Move move) {
     if (Q_UNLIKELY(IsMoveCastling(move))) {
         if (GetCastlingSide(move) == CastlingSide::Kingside) {
             if (IsCellAttacked<c>(board, move.src) || IsCellAttacked<c>(board, move.src + 1)) {
@@ -450,7 +453,7 @@ bool WasMoveLegal(const Board& board, const Move move) {
     return !IsKingInCheck<GetInvertedColor(c)>(board);
 }
 
-bool WasMoveLegal(const Board& board, const Move move) {
+bool WasMoveLegal(const Board &board, const Move move) {
     if (board.move_side == Color::White) {
         return WasMoveLegal<Color::White>(board, move);
     }

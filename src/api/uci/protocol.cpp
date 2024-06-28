@@ -1,4 +1,5 @@
 #include "protocol.h"
+
 #include <memory>
 
 #include "interactor.h"
@@ -7,7 +8,8 @@
 
 namespace q_api {
 
-constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr std::string_view STARTPOS_FEN =
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 void StartUciProtocol() {
     UciInteractor interactor;

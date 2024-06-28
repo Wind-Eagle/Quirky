@@ -17,9 +17,6 @@ bool IsKingInCheck(const Board& board);
 
 bool IsKingInCheck(const Board& board);
 
-see_score_t GetSEE(const Board& board, coord_t dst,
-                   const std::array<see_score_t, NUMBER_OF_CELLS>& cells_cost);
-
 template <Color c>
 bitboard_t GetPawnAttacks(bitboard_t pawns);
 

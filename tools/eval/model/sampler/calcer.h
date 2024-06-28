@@ -1,10 +1,10 @@
 #ifndef QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_CALCER_H
 #define QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_CALCER_H
 
-#include "reader.h"
-#include "../../../../src/eval/evaluator.h"
-
 #include <array>
+
+#include "../../../../src/eval/evaluator.h"
+#include "reader.h"
 
 constexpr uint16_t PSQ_FEATURES_COUNT = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES;
 

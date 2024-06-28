@@ -30,8 +30,7 @@ void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size
 }
 
 template <Color c, bool p>
-void GeneratePawnSimpleMoves(Move* list, const bitboard_t src,
-                             const bitboard_t dst, size_t& size) {
+void GeneratePawnSimpleMoves(Move* list, const bitboard_t src, const bitboard_t dst, size_t& size) {
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta(c);
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     while (move_dst) {
@@ -42,8 +41,7 @@ void GeneratePawnSimpleMoves(Move* list, const bitboard_t src,
 }
 
 template <Color c>
-void GeneratePawnDoubleMoves(Move* list, const bitboard_t src,
-                             const bitboard_t dst, size_t& size) {
+void GeneratePawnDoubleMoves(Move* list, const bitboard_t src, const bitboard_t dst, size_t& size) {
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta(c);
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst;
@@ -256,26 +254,26 @@ void GenerateMoves(const Board& board, MoveList& list) {
     if (board.move_side == q_core::Color::White) {
         q_core::GenerateAllPawnMoves<q_core::Color::White, cp, pp>(board, list.moves, size);
         if constexpr (pp != PromotionPolicy::OnlyPromotions) {
-            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Knight, cp>(board, list.moves,
-                                                                                size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Bishop, cp>(board, list.moves,
-                                                                                size);
+            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Knight, cp>(
+                board, list.moves, size);
+            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Bishop, cp>(
+                board, list.moves, size);
             q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Rook, cp>(board, list.moves,
-                                                                                size);
+                                                                                 size);
             q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::King, cp>(board, list.moves,
-                                                                                size);
+                                                                                 size);
         }
     } else {
         q_core::GenerateAllPawnMoves<q_core::Color::Black, cp, pp>(board, list.moves, size);
         if constexpr (pp != PromotionPolicy::OnlyPromotions) {
-            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Knight, cp>(board, list.moves,
-                                                                                size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Bishop, cp>(board, list.moves,
-                                                                                size);
+            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Knight, cp>(
+                board, list.moves, size);
+            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Bishop, cp>(
+                board, list.moves, size);
             q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Rook, cp>(board, list.moves,
-                                                                                size);
+                                                                                 size);
             q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::King, cp>(board, list.moves,
-                                                                                size);
+                                                                                 size);
         }
     }
     list.size = size;

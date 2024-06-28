@@ -1,5 +1,7 @@
 #include "logger.h"
+
 #include <optional>
+
 #include "interactor.h"
 
 namespace q_api {
@@ -14,9 +16,7 @@ void LogUciResponseInner(const UciInitResponse& response) {
     q_util::Print("uciok");
 }
 
-void LogUciResponseInner(const UciReadyResponse& response) {
-    q_util::Print("readyok");
-}
+void LogUciResponseInner(const UciReadyResponse& response) { q_util::Print("readyok"); }
 
 void LogUciResponseInner(const UciEmptyResponse& response) {}
 
@@ -28,10 +28,7 @@ void LogUciResponseInner(const UciErrorResponse& response) {
 }
 
 void LogUciResponse(const uci_response_t& response) {
-    std::visit([](const auto& response)
-        {
-            LogUciResponseInner(response);
-        }, response);
+    std::visit([](const auto& response) { LogUciResponseInner(response); }, response);
 }
 
 }  // namespace q_api

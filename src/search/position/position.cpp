@@ -35,8 +35,6 @@ q_eval::score_t Position::GetEvaluatorScore() const {
     return evaluator.GetEvaluationScore(evaluator.Evaluate(board));
 }
 
-q_eval::ScorePair Position::GetEvaluatorScorePair() const{
-    return evaluator.Evaluate(board);
-}
+q_eval::ScorePair Position::GetEvaluatorScorePair() const { return evaluator.Evaluate(board); }
 
 }  // namespace q_search

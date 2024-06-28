@@ -1,10 +1,10 @@
 #ifndef QUIRKY_SRC_SEARCH_POSITION_REPETITION_TABLE_H
 #define QUIRKY_SRC_SEARCH_POSITION_REPETITION_TABLE_H
 
+#include <memory>
+
 #include "../../core/board/types.h"
 #include "../../util/bit.h"
-
-#include <memory>
 
 namespace q_search {
 
@@ -15,6 +15,7 @@ class RepetitionTable {
     bool Insert(q_core::hash_t hash);
     void Erase(q_core::hash_t hash);
     bool Has(q_core::hash_t hash) const;
+
   private:
     static constexpr uint8_t ENTRY_SIZE_LOG = q_util::GetHighestBit(sizeof(q_core::hash_t));
     static constexpr q_core::hash_t ABSENT_VALUE = 0;

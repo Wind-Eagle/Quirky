@@ -1,7 +1,7 @@
 #include "launcher.h"
 
-#include <utility>
 #include <fstream>
+#include <utility>
 
 #include "../../util/string.h"
 #include "../control/control.h"
@@ -47,8 +47,8 @@ void PrintSearchResult(const SearchResult& result, time_t time_since_start) {
         moves.push_back(q_core::CastMoveToString(move));
     }
     std::string pv_str = q_util::ConcatenateStrings(moves.begin(), moves.end());
-    q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start, "score cp", result.score,
-                  "pv", pv_str);
+    q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start,
+                  "score cp", result.score, "pv", pv_str);
 }
 
 void PrintNodes(const SearchStat& stat) { q_util::Print("info nodes", stat.GetNodesCount()); }
@@ -143,9 +143,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     search_thread.join();
 }
 
-void SearchLauncher::Stop() {
-    control_.Stop();
-}
+void SearchLauncher::Stop() { control_.Stop(); }
 
 void SearchLauncher::Join() {
     if (thread_.joinable()) {

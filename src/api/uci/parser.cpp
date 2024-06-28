@@ -52,28 +52,28 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         }
         if (args[1] == "infinite") {
             if (args.size() > 2) {
-                return UciUnparsedCommand{.parse_error =
-                                                "Infinite argument must be used alone"};
+                return UciUnparsedCommand{.parse_error = "Infinite argument must be used alone"};
             }
         } else if (args[1] == "movetime") {
             if (args.size() == 2) {
                 return UciUnparsedCommand{.parse_error =
-                                                "Movetime argument must be used with amount of "
-                                                "time as a next argument"};
+                                              "Movetime argument must be used with amount of "
+                                              "time as a next argument"};
             }
             if (!q_util::IsStringNonNegativeNumber(args[2])) {
                 return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
             }
             if (args.size() != 3) {
-                return UciUnparsedCommand{.parse_error = "Movetime must be followed by precisely one argument"};
+                return UciUnparsedCommand{
+                    .parse_error = "Movetime must be followed by precisely one argument"};
             }
             command.time_control = q_search::FixedTimeControl{
                 .time = static_cast<q_search::time_t>(std::stoll(args[2]))};
         } else if (args[1] == "depth") {
             if (args.size() == 2) {
                 return UciUnparsedCommand{.parse_error =
-                                                "Movetime argument must be used with amount of "
-                                                "time as a next argument"};
+                                              "Movetime argument must be used with amount of "
+                                              "time as a next argument"};
             }
             if (!q_util::IsStringNonNegativeNumber(args[2])) {
                 return UciUnparsedCommand{.parse_error = "Expected valid argument as depth"};
@@ -81,11 +81,12 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
             uint64_t depth_int = std::stoll(args[2]);
             if (depth_int > q_search::Searcher::MAX_DEPTH) {
                 return UciUnparsedCommand{.parse_error =
-                                                "Depth should be not more than " +
-                                                std::to_string(q_search::Searcher::MAX_DEPTH)};
+                                              "Depth should be not more than " +
+                                              std::to_string(q_search::Searcher::MAX_DEPTH)};
             }
             if (args.size() != 3) {
-                return UciUnparsedCommand{.parse_error = "Depth must be followed by precisely one argument"};
+                return UciUnparsedCommand{.parse_error =
+                                              "Depth must be followed by precisely one argument"};
             }
             command.max_depth = depth_int;
         } else {

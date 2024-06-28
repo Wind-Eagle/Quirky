@@ -25,11 +25,10 @@ struct ScorePair {
   public:
     constexpr ScorePair() {}
     constexpr ScorePair(const ScorePair& lhs) : value_(lhs.value_) {}
-    constexpr ScorePair(const score_t first, const score_t second) : value_(first + second * (1 << 16)) {}
+    constexpr ScorePair(const score_t first, const score_t second)
+        : value_(first + second * (1 << 16)) {}
 
-    constexpr score_t GetFirst() const {
-        return static_cast<score_t>(value_);
-    }
+    constexpr score_t GetFirst() const { return static_cast<score_t>(value_); }
     constexpr score_t GetSecond() const {
         score_t ans = value_ >> 16;
         if (GetFirst() < 0) {
@@ -38,33 +37,30 @@ struct ScorePair {
         return ans;
     }
 
-    constexpr ScorePair& operator += (const ScorePair& rhs) {
+    constexpr ScorePair& operator+=(const ScorePair& rhs) {
         value_ += rhs.value_;
         return *this;
     }
 
-    constexpr ScorePair& operator -= (const ScorePair& rhs) {
+    constexpr ScorePair& operator-=(const ScorePair& rhs) {
         value_ -= rhs.value_;
         return *this;
     }
 
-    constexpr bool operator == (const ScorePair rhs) const {
-        return value_ == rhs.value_;
-    }
+    constexpr bool operator==(const ScorePair rhs) const { return value_ == rhs.value_; }
 
-    constexpr ScorePair operator + (const ScorePair& rhs) const {
+    constexpr ScorePair operator+(const ScorePair& rhs) const {
         return ScorePair(value_ + rhs.value_);
     }
-    constexpr ScorePair operator - (const ScorePair& rhs) const {
+    constexpr ScorePair operator-(const ScorePair& rhs) const {
         return ScorePair(value_ - rhs.value_);
     }
-    constexpr ScorePair operator * (const int8_t& rhs) const {
-        return ScorePair(value_ * rhs);
-    }
-    constexpr ScorePair& operator *= (const int8_t& rhs) {
+    constexpr ScorePair operator*(const int8_t& rhs) const { return ScorePair(value_ * rhs); }
+    constexpr ScorePair& operator*=(const int8_t& rhs) {
         value_ *= rhs;
         return *this;
     }
+
   private:
     constexpr ScorePair(const int32_t lhs) : value_(lhs) {}
     constexpr ScorePair(const score_t score) : ScorePair(score, score) {}

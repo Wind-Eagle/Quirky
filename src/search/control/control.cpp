@@ -28,13 +28,9 @@ void SearchControl::Reset() {
     results_.clear();
 }
 
-bool SearchControl::IsStopped() const {
-    return is_stopped_.load(std::memory_order_acquire);
-}
+bool SearchControl::IsStopped() const { return is_stopped_.load(std::memory_order_acquire); }
 
-depth_t SearchControl::GetDepth() const {
-    return depth_.load(std::memory_order_acquire);
-}
+depth_t SearchControl::GetDepth() const { return depth_.load(std::memory_order_acquire); }
 
 bool SearchControl::FinishDepth(depth_t depth) {
     return depth_.compare_exchange_strong(depth, depth + 1, std::memory_order_acq_rel);
