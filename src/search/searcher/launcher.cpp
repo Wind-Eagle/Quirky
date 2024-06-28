@@ -17,16 +17,15 @@ uint8_t GetRTByteSizeLog(size_t moves_count) {
 void ProcessPositionMoves(Position& position, const std::vector<q_core::Move>& moves,
                           RepetitionTable& rt) {
     RepetitionTable helper_rt{GetRTByteSizeLog(moves.size())};
-    helper_rt.Insert(position.board.hash);
     for (const auto& move : moves) {
-        q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
-        position.MakeMove(move, make_move_info, evaluator_tag);
         if (helper_rt.Has(position.board.hash)) {
             rt.Insert(position.board.hash);
         } else {
             helper_rt.Insert(position.board.hash);
         }
+        q_core::MakeMoveInfo make_move_info;
+        q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
+        position.MakeMove(move, make_move_info, evaluator_tag);
     }
 }
 
