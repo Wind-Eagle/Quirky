@@ -22,11 +22,13 @@ time_t GetMaxTime(const GameTimeControl& time_control, const Position& position)
     float opening_factor = 2 - std::min(position.board.move_count, static_cast<uint16_t>(20)) / 20.0;
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
         max_time = player_time.time / time_control.moves_to_go * opening_factor + player_time.increment;
+        max_time = std::min(max_time, player_time.time - 1);
     } else {
+        float no_time_factor = player_time.time < 200 ? 5 : player_time.time < 1000 ? 2 : 1;
         uint16_t moves_to_go_imitation = std::max(5, 20 - position.board.move_count / 5);
-        max_time = player_time.time / moves_to_go_imitation * opening_factor + player_time.increment;
+        max_time = player_time.time / moves_to_go_imitation * opening_factor / no_time_factor + player_time.increment;
+        max_time = std::min(max_time, player_time.time / 2);
     }
-    max_time = std::min(max_time, player_time.time - 1);
     return max_time;
 }
 

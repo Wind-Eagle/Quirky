@@ -1,4 +1,5 @@
 #include <benchmark/benchmark.h>
+
 #include <fstream>
 
 #include "../../src/core/board/board.h"
@@ -16,8 +17,10 @@ static void BenchmarkSimpleOnTestBoard(benchmark::State& state, const std::strin
     benchmark::DoNotOptimize(move_list);
 }
 
-#define BENCHMARK_SIMPLE(name, fen) \
-    static void BM_SimpleMovegen##name(benchmark::State &state) { BenchmarkSimpleOnTestBoard(state, fen); } \
+#define BENCHMARK_SIMPLE(name, fen)                               \
+    static void BM_SimpleMovegen##name(benchmark::State& state) { \
+        BenchmarkSimpleOnTestBoard(state, fen);                   \
+    }                                                             \
     BENCHMARK(BM_SimpleMovegen##name);
 
 CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_SIMPLE)
