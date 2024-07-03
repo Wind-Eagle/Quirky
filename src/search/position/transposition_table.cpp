@@ -15,7 +15,8 @@ int16_t GetEntryImportance(const auto entry, uint8_t cur_generation) {
 
 TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
     : size_log_(byte_size_log - CLUSTER_SIZE_LOG),
-      data_(new TranspositionTable::Cluster[(1ULL << (byte_size_log - CLUSTER_SIZE_LOG))]) {}
+      data_(new TranspositionTable::Cluster[(1ULL << (byte_size_log - CLUSTER_SIZE_LOG))]),
+      generation_(0) {}
 
 void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_core::hash_t hash,
                                const q_core::Move move, const q_eval::score_t score,
