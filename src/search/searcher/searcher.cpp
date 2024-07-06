@@ -118,6 +118,9 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, idepth_t idepth) {
 #define SAVE_ROOT_BEST_MOVE \
     if constexpr (node_type == NodeType::Root) context_.best_move = best_move
 
+inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
+inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
+
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
                                  q_eval::score_t beta) {
@@ -167,7 +170,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         tt_move = q_core::GetDecompressedMove(tt_entry.move);
         const bool is_cutoff_allowed =
             (node_type != NodeType::Root) & (tt_entry.depth >= depth) &
-            (position_.board.fifty_rule_move_count < 90) &
+            (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT) &
             (node_type == NodeType::Simple || tt_entry.info.GetGeneration() == tt_.GetGeneration());
         if (is_cutoff_allowed) {
             const q_eval::score_t score = AdjustCheckmate(tt_entry.score, idepth);
