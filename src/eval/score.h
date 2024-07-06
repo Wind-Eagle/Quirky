@@ -37,26 +37,30 @@ struct ScorePair {
         return ans;
     }
 
-    constexpr ScorePair& operator+=(const ScorePair& rhs) {
+    constexpr ScorePair& operator+=(const ScorePair rhs) {
         value_ += rhs.value_;
         return *this;
     }
 
-    constexpr ScorePair& operator-=(const ScorePair& rhs) {
+    constexpr ScorePair& operator-=(const ScorePair rhs) {
         value_ -= rhs.value_;
         return *this;
     }
 
+    constexpr ScorePair& operator=(const ScorePair rhs) {
+        value_ = rhs.value_;
+        return *this;
+    }
     constexpr bool operator==(const ScorePair rhs) const { return value_ == rhs.value_; }
 
-    constexpr ScorePair operator+(const ScorePair& rhs) const {
+    constexpr ScorePair operator+(const ScorePair rhs) const {
         return ScorePair(value_ + rhs.value_);
     }
-    constexpr ScorePair operator-(const ScorePair& rhs) const {
+    constexpr ScorePair operator-(const ScorePair rhs) const {
         return ScorePair(value_ - rhs.value_);
     }
-    constexpr ScorePair operator*(const int8_t& rhs) const { return ScorePair(value_ * rhs); }
-    constexpr ScorePair& operator*=(const int8_t& rhs) {
+    constexpr ScorePair operator*(const int8_t rhs) const { return ScorePair(value_ * rhs); }
+    constexpr ScorePair& operator*=(const int8_t rhs) {
         value_ *= rhs;
         return *this;
     }

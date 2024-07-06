@@ -38,7 +38,7 @@ void TestSimpleMovegen(const std::string_view& fen, const std::string_view& ans)
         for (q_core::coord_t dst = 0; dst < q_core::BOARD_SIZE; dst++) {
             for (uint8_t basic_move_type = 0; basic_move_type <= q_core::BASIC_TYPE_MOVE_MASK;
                  basic_move_type++) {
-                q_core::Move move{.src = src, .dst = dst, .type = basic_move_type};
+                q_core::Move move = q_core::ConstructMove(src, dst, basic_move_type);
                 if (!q_core::IsMoveWellFormed(move, board.move_side)) {
                     continue;
                 }

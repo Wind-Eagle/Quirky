@@ -7,20 +7,20 @@ namespace q_api {
 constexpr std::string_view STARTPOS_FEN =
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciInitCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext&, const UciInitCommand&) {
     return UciInitResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciReadyCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext&, const UciReadyCommand&) {
     return UciReadyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext& context, const UciNewGameCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciNewGameCommand&) {
     context.launcher.NewGame();
     return UciEmptyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciSetOptionCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext&, const UciSetOptionCommand&) {
     return UciEmptyResponse{};
 }
 
@@ -53,12 +53,12 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& c
     return UciEmptyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext& context, const UciStopCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciStopCommand&) {
     context.launcher.Join();
     return UciEmptyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext& context, const UciQuitCommand& command) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciQuitCommand&) {
     context.should_stop = true;
     return UciEmptyResponse{};
 }

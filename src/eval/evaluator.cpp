@@ -37,7 +37,6 @@ template <EvaluationType type, Color c>
 void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score,
                    uint8_t& open_files_mask) {
     const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
-    const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)];
 
     const auto colored_pawn_frontspan =
         (c == Color::White ? WHITE_PAWN_FRONTSPAN_BITBOARD : BLACK_PAWN_FRONTSPAN_BITBOARD);
@@ -77,9 +76,9 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
     EvaluatePawns<type, Color::Black>(board, score, black_open_files_mask);
     res += score;
     if constexpr (type == EvaluationType::Vector) {
-        return PawnHashTableEntry{ScorePair(), white_open_files_mask, black_open_files_mask};
+        return ConstructPawnHashTableEntry(ScorePair(), white_open_files_mask, black_open_files_mask);
     } else {
-        return PawnHashTableEntry{score, white_open_files_mask, black_open_files_mask};
+        return ConstructPawnHashTableEntry(score, white_open_files_mask, black_open_files_mask);
     }
 }
 
@@ -251,7 +250,7 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
     return *this;
 }
 
-template class Evaluator<EvaluationType::Value>;
-template class Evaluator<EvaluationType::Vector>;
+template struct Evaluator<EvaluationType::Value>;
+template struct Evaluator<EvaluationType::Vector>;
 
 }  // namespace q_eval

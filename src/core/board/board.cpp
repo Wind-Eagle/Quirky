@@ -267,7 +267,7 @@ std::string Board::GetFEN() const {
     res += {' ', CastColorToChar(move_side)};
     res += " " + CastCastlingToString(castling);
     res += " " + CastEnPassantCoordToString(en_passant_coord);
-    res += " " + std::to_string(fifty_rule_move_count);
+    res += " " + std::to_string(static_cast<int>(fifty_rule_move_count));
     res += " " + std::to_string((move_count + 1) / 2);
     return res;
 }

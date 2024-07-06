@@ -20,12 +20,12 @@ inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t b) {
 template <uint8_t type, bool is_promotion>
 void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size) {
     if constexpr (is_promotion) {
-        list[size++] = Move{.src = src, .dst = dst, .type = GetPromotionMoveType(Piece::Knight)};
-        list[size++] = Move{.src = src, .dst = dst, .type = GetPromotionMoveType(Piece::Bishop)};
-        list[size++] = Move{.src = src, .dst = dst, .type = GetPromotionMoveType(Piece::Rook)};
-        list[size++] = Move{.src = src, .dst = dst, .type = GetPromotionMoveType(Piece::Queen)};
+        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Knight));
+        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Bishop));
+        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Rook));
+        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Queen));
     } else {
-        list[size++] = Move{.src = src, .dst = dst, .type = type};
+        list[size++] = ConstructMove(src, dst, type);
     }
 }
 
@@ -131,18 +131,18 @@ void GenerateAllPawnMoves(const Board& board, Move* list, size_t& size) {
     }
 }
 
-constexpr Move WHITE_KINGSIDE_CASTLING_MOVE = Move{.src = WHITE_KING_INITIAL_POSITION,
-                                                   .dst = WHITE_KING_INITIAL_POSITION + 2,
-                                                   .type = GetMoveType<MoveBasicType::Castling>()};
-constexpr Move WHITE_QUEENSIDE_CASTLING_MOVE = Move{.src = WHITE_KING_INITIAL_POSITION,
-                                                    .dst = WHITE_KING_INITIAL_POSITION - 2,
-                                                    .type = GetMoveType<MoveBasicType::Castling>()};
-constexpr Move BLACK_KINGSIDE_CASTLING_MOVE = Move{.src = BLACK_KING_INITIAL_POSITION,
-                                                   .dst = BLACK_KING_INITIAL_POSITION + 2,
-                                                   .type = GetMoveType<MoveBasicType::Castling>()};
-constexpr Move BLACK_QUEENSIDE_CASTLING_MOVE = Move{.src = BLACK_KING_INITIAL_POSITION,
-                                                    .dst = BLACK_KING_INITIAL_POSITION - 2,
-                                                    .type = GetMoveType<MoveBasicType::Castling>()};
+constexpr Move WHITE_KINGSIDE_CASTLING_MOVE =
+    ConstructMove(WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION + 2,
+                  GetMoveType<MoveBasicType::Castling>());
+constexpr Move WHITE_QUEENSIDE_CASTLING_MOVE =
+    ConstructMove(WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION - 2,
+                  GetMoveType<MoveBasicType::Castling>());
+constexpr Move BLACK_KINGSIDE_CASTLING_MOVE =
+    ConstructMove(BLACK_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION + 2,
+                  GetMoveType<MoveBasicType::Castling>());
+constexpr Move BLACK_QUEENSIDE_CASTLING_MOVE =
+    ConstructMove(BLACK_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION - 2,
+                  GetMoveType<MoveBasicType::Castling>());
 constexpr bitboard_t WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD =
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 1) |
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 2);
@@ -208,18 +208,16 @@ void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, 
                 move_dst_init & board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))];
             while (move_dst) {
                 const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-                list[size++] = Move{.src = src_coord,
-                                    .dst = dst_coord,
-                                    .type = GetMoveType<MoveBasicType::Simple>(true)};
+                list[size++] =
+                    ConstructMove(src_coord, dst_coord, GetMoveType<MoveBasicType::Simple>(true));
             }
         }
         if constexpr (cp != CapturePolicy::OnlyCaptures) {
             bitboard_t move_dst = move_dst_init & board.bb_pieces[EMPTY_CELL];
             while (move_dst) {
                 const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-                list[size++] = Move{.src = src_coord,
-                                    .dst = dst_coord,
-                                    .type = GetMoveType<MoveBasicType::Simple>(false)};
+                list[size++] =
+                    ConstructMove(src_coord, dst_coord, GetMoveType<MoveBasicType::Simple>(false));
             }
         }
     }

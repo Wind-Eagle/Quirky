@@ -101,7 +101,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     SearchTimer timer(time_control, control_, stat, position);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
-    SearchResult final_result{.best_move = q_core::NULL_MOVE, .depth = 0};
+    SearchResult final_result{};
     static constexpr time_t NODES_UPDATE_TICK = 3000;
     time_t nodes_update_timer = 0;
     for (;;) {
@@ -112,7 +112,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
         }
         time_t time_since_start = timer.GetTimeSinceStart();
         if (event == SearchControl::Event::NewResult) {
-            std::vector<SearchResult> results = std::move(control_.GetResults());
+            std::vector<SearchResult> results = control_.GetResults();
             for (auto& result : results) {
                 PrintSearchResult(result, time_since_start);
                 if (result.bound_type == Exact && result.depth > final_result.depth) {

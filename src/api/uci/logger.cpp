@@ -10,15 +10,15 @@ void LogStart() {
     q_util::Print("Hello! I'm Quirky, a chess engine. Use UCI protocol to communicate with me.");
 }
 
-void LogUciResponseInner(const UciInitResponse& response) {
+void LogUciResponseInner(const UciInitResponse&) {
     q_util::Print("id name Quirky");
     q_util::Print("id author Wind_Eagle");
     q_util::Print("uciok");
 }
 
-void LogUciResponseInner(const UciReadyResponse& response) { q_util::Print("readyok"); }
+void LogUciResponseInner(const UciReadyResponse&) { q_util::Print("readyok"); }
 
-void LogUciResponseInner(const UciEmptyResponse& response) {}
+void LogUciResponseInner(const UciEmptyResponse&) {}
 
 void LogUciResponseInner(const UciErrorResponse& response) {
     q_util::PrintError(response.error_message);

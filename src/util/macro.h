@@ -18,7 +18,7 @@ class QDefer {
             T lambda_;
         };
         return QDeferInner(lambda);
-    };
+    }
 };
 
 #define ENUM_TO_INT_OP(type, base, op)                                          \

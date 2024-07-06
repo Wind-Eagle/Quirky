@@ -2,7 +2,15 @@ cmake_minimum_required(VERSION 3.14)
 project(Quirky)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mavx -mavx2 -mbmi -mbmi2 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mavx -mavx2 -mbmi -mbmi2")
+
+add_compile_options(
+    -Wall -Wextra -Wpedantic
+    -Wnon-virtual-dtor -Woverloaded-virtual
+    -Wold-style-cast -Wcast-qual -Wsign-promo
+    -Wzero-as-null-pointer-constant -Wextra-semi
+    -Werror
+)
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT supported OUTPUT error)

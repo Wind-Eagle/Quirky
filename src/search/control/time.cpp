@@ -6,11 +6,11 @@ namespace q_search {
 
 static constexpr time_t TICK_TIME = 30;
 
-time_t GetMaxTime(const FixedTimeControl& time_control, const Position& position) {
+time_t GetMaxTime(const FixedTimeControl& time_control, const Position&) {
     return time_control.time;
 }
 
-time_t GetMaxTime(const InfiniteTimeControl& time_control, const Position& position) {
+time_t GetMaxTime(const InfiniteTimeControl&, const Position&) {
     return TIME_INF;
 }
 

@@ -37,7 +37,6 @@ BoardSetWithFeatures CalcFeatures(GameSet&& game_set_ref) {
     res.file_path = game_set.file_path;
     for (size_t i = 0; i < game_set.games.size(); i++) {
         const auto& game = game_set.games[i];
-        const auto& header = game.header;
         uint16_t last_move_number = game.boards.back().move_count;
         for (const auto& board : game.boards) {
             q_eval::Evaluator<q_eval::EvaluationType::Vector> evaluator;

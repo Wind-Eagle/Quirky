@@ -13,10 +13,10 @@ std::string CastMoveToString(const Move move) {
     return ans;
 }
 
-Move TranslatePromotionStringToMove(const Board& board, const std::string_view& str,
-                                    const coord_t src, const coord_t dst) {
+Move TranslatePromotionStringToMove(const std::string_view& str, const coord_t src,
+                                    const coord_t dst) {
     Piece piece = CastCharToPiece(str[4]);
-    return Move{.src = src, .dst = dst, .type = GetPromotionMoveType(piece)};
+    return ConstructMove(src, dst, GetPromotionMoveType(piece));
 }
 
 bool IsStringMoveWellFormated(const Board& board, const std::string_view& str) {
@@ -48,32 +48,30 @@ Move TranslateStringToMove(const Board& board, const std::string_view& str) {
         is_move_fifty_rule = true;
         if (dst - src == GetPawnMoveDelta(Color::White) * 2 ||
             dst - src == GetPawnMoveDelta(Color::Black) * 2) {
-            return Move{.src = src, .dst = dst, .type = GetMoveType<MoveBasicType::PawnDouble>()};
+            return ConstructMove(src, dst, GetMoveType<MoveBasicType::PawnDouble>());
         }
         if (dst - src != GetPawnMoveDelta(Color::White) &&
             dst - src != GetPawnMoveDelta(Color::Black)) {
             if (board.cells[dst] == EMPTY_CELL) {
-                return Move{
-                    .src = src, .dst = dst, .type = GetMoveType<MoveBasicType::EnPassant>()};
+                return ConstructMove(src, dst, GetMoveType<MoveBasicType::EnPassant>());
             }
         }
         if (str.size() == 5) {
-            return TranslatePromotionStringToMove(board, str, src, dst);
+            return TranslatePromotionStringToMove(str, src, dst);
         }
     }
     if (q_core::GetCellPiece(board.cells[src]) == Piece::King) {
         if (GetFile(dst) - GetFile(src) == 2) {
-            return Move{.src = src, .dst = dst, .type = GetMoveType<MoveBasicType::Castling>()};
+            return ConstructMove(src, dst, GetMoveType<MoveBasicType::Castling>());
         }
         if (GetFile(dst) - GetFile(src) == -2) {
-            return Move{.src = src, .dst = dst, .type = GetMoveType<MoveBasicType::Castling>()};
+            return ConstructMove(src, dst, GetMoveType<MoveBasicType::Castling>());
         }
     }
     if (board.cells[dst] != EMPTY_CELL) {
         is_move_fifty_rule = true;
     }
-    return Move{
-        .src = src, .dst = dst, .type = GetMoveType<MoveBasicType::Simple>(is_move_fifty_rule)};
+    return ConstructMove(src, dst, GetMoveType<MoveBasicType::Simple>(is_move_fifty_rule));
 }
 
 bool IsMoveWellFormed(Move move, Color c) {

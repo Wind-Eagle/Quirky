@@ -38,7 +38,11 @@ inline constexpr uint8_t BASIC_TYPE_MOVE_MASK = 7;
 inline constexpr uint8_t FIFTY_RULE_MOVE_BIT = 8;
 inline constexpr uint8_t MOVE_TYPE_BYTES_COUNT = 4;
 
-inline constexpr Move NULL_MOVE = Move{.src = 0, .dst = 0, .type = 0};
+inline constexpr Move ConstructMove(const coord_t src, const coord_t dst, const uint8_t type) {
+    return Move{.src = src, .dst = dst, .type = type, .info = 0};
+}
+
+inline constexpr Move NULL_MOVE = ConstructMove(0, 0, 0);
 
 inline constexpr MoveBasicType GetMoveBasicType(const Move move) {
     Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
@@ -150,9 +154,10 @@ bool IsMoveWellFormed(Move move, Color c);
 using compressed_move_t = uint16_t;
 
 inline constexpr Move GetDecompressedMove(const compressed_move_t compressed_move) {
-    return Move{.src = static_cast<coord_t>(compressed_move & (BOARD_SIZE - 1)),
-                .dst = static_cast<coord_t>((compressed_move >> BOARD_SIZE_LOG) & (BOARD_SIZE - 1)),
-                .type = static_cast<uint8_t>((compressed_move >> (BOARD_SIZE_LOG * 2)))};
+    return ConstructMove(
+        static_cast<coord_t>(compressed_move & (BOARD_SIZE - 1)),
+        static_cast<coord_t>((compressed_move >> BOARD_SIZE_LOG) & (BOARD_SIZE - 1)),
+        static_cast<uint8_t>((compressed_move >> (BOARD_SIZE_LOG * 2))));
 }
 
 inline constexpr compressed_move_t GetCompressedMove(const Move move) {

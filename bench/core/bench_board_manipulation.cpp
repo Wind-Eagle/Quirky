@@ -13,6 +13,7 @@ static void BenchmarkSimpleOnTestBoard(benchmark::State& state, const std::strin
     q_core::MoveList move_list;
     q_core::MakeMoveInfo info;
     for (auto _ : state) {
+        move_list.size = 0;
         q_core::GenerateAllMoves(board, move_list);
         for (size_t i = 0; i < move_list.size; i++) {
             q_core::MakeMove(board, move_list.moves[i], info);

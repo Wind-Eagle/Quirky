@@ -17,7 +17,7 @@ struct FixedSeedRandom8 {
     void SetParams(uint8_t x_val, uint8_t y_val, uint8_t z_val) {
         x = x_val;
         y = y_val;
-        z = y_val;
+        z = z_val;
     }
 
   private:
