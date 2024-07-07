@@ -22,6 +22,7 @@ else()
 endif()
 
 add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h)
+
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(util)
 
