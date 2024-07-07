@@ -7,9 +7,13 @@ readability-*, \
 -readability-implicit-bool-conversion, \
 -readability-magic-numbers, \
 -readability-named-parameter, \
--readability-misleading-indentation"
+-readability-misleading-indentation, \
+-readability-identifier-length, \
+-readability-function-cognitive-complexity, \
+-readability-use-anyofallof, \
+-readability-simplify-boolean-expr"
 
-HeaderFilterRegex: 'src/.+'
+HeaderFilterRegex: '(src|test)/.+'
 
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase
