@@ -108,9 +108,9 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
     return alpha;
 }
 
-q_eval::score_t AdjustCheckmate(const q_eval::score_t score, idepth_t idepth) {
+q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
     if (q_eval::IsScoreMate(score)) {
-        return score > 0 ? score - idepth : score + idepth;
+        return score > 0 ? score - depth : score + depth;
     }
     return score;
 }
