@@ -437,6 +437,23 @@ void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
     }
 }
 
+void MakeNullMove(Board& board, coord_t& old_en_passant_coord) {
+    Q_ASSERT(board.IsValid());
+    old_en_passant_coord = board.en_passant_coord;
+    board.en_passant_coord = NO_ENPASSANT_COORD;
+    board.move_side = GetInvertedColor(board.move_side);
+    board.hash ^= ZOBRIST_HASH_MOVE_SIDE[0] ^ ZOBRIST_HASH_MOVE_SIDE[1];
+    Q_ASSERT(board.IsValid());
+}
+
+void UnmakeNullMove(Board& board, const coord_t& old_en_passant_coord) {
+    Q_ASSERT(board.IsValid());
+    board.en_passant_coord = old_en_passant_coord;
+    board.move_side = GetInvertedColor(board.move_side);
+    board.hash ^= ZOBRIST_HASH_MOVE_SIDE[0] ^ ZOBRIST_HASH_MOVE_SIDE[1];
+    Q_ASSERT(board.IsValid());
+}
+
 template <Color c>
 bool WasMoveLegal(const Board &board, const Move move) {
     if (Q_UNLIKELY(IsMoveCastling(move))) {

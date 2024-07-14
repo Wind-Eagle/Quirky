@@ -1,5 +1,7 @@
 #include "position.h"
 
+#include "../../core/moves/attack.h"
+
 namespace q_search {
 
 bool Position::MakeMove(const q_core::Move move, q_core::MakeMoveInfo& make_move_info,
@@ -20,6 +22,18 @@ void Position::UnmakeMove(
     const q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag) {
     q_core::UnmakeMove(board, move, make_move_info);
     evaluator.SetTag(evaluator_tag);
+}
+
+void Position::MakeNullMove(q_core::coord_t& old_en_passant_coord) {
+    q_core::MakeNullMove(board, old_en_passant_coord);
+}
+
+void Position::UnmakeNullMove(const q_core::coord_t& old_en_passant_coord) {
+    q_core::UnmakeNullMove(board, old_en_passant_coord);
+}
+
+bool Position::IsCheck() const {
+    return q_core::IsKingInCheck(board);
 }
 
 q_core::Board::FENParseStatus Position::MakeFromFEN(const std::string_view& fen) {
