@@ -17,15 +17,15 @@ inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t b) {
     return static_cast<bitboard_t>(q_util::MoveAllBitsByDelta<delta>(b));
 }
 
-template <uint8_t type, bool is_promotion>
+template <MoveBasicType basic_type, bool is_capture, bool is_promotion>
 void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size) {
     if constexpr (is_promotion) {
-        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Knight));
-        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Bishop));
-        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Rook));
-        list[size++] = ConstructMove(src, dst, GetPromotionMoveType(Piece::Queen));
+        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
+        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
+        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::RookPromotion>(is_capture));
+        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
     } else {
-        list[size++] = ConstructMove(src, dst, type);
+        list[size++] = ConstructMove(src, dst, GetMoveType<basic_type>(is_capture));
     }
 }
 
@@ -35,7 +35,7 @@ void GeneratePawnSimpleMoves(Move* list, const bitboard_t src, const bitboard_t 
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
     while (move_dst) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-        AddPawnMoves<GetMoveType<MoveBasicType::Simple>(true), p>(
+        AddPawnMoves<MoveBasicType::Simple, false, p>(
             dst_coord - CURRENT_PAWN_MOVE_DELTA, dst_coord, list, size);
     }
 }
@@ -47,7 +47,7 @@ void GeneratePawnDoubleMoves(Move* list, const bitboard_t src, const bitboard_t 
     move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst;
     while (move_dst) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-        AddPawnMoves<GetMoveType<MoveBasicType::PawnDouble>(), false>(
+        AddPawnMoves<MoveBasicType::PawnDouble, false, false>(
             dst_coord - CURRENT_PAWN_MOVE_DELTA * 2, dst_coord, list, size);
     }
 }
@@ -66,7 +66,7 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
     bitboard_t move_dst_left = move_left & dst;
     while (move_dst_left) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_left);
-        AddPawnMoves<GetMoveType<MoveBasicType::Simple>(true), p>(
+        AddPawnMoves<MoveBasicType::Simple, true, p>(
             dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list, size);
     }
     const bitboard_t move_right =
@@ -74,7 +74,7 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
     bitboard_t move_dst_right = move_right & dst;
     while (move_dst_right) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_right);
-        AddPawnMoves<GetMoveType<MoveBasicType::Simple>(true), p>(
+        AddPawnMoves<MoveBasicType::Simple, true, p>(
             dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list, size);
     }
     if constexpr (!p) {
@@ -83,13 +83,13 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
             move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_left)) {
                 const coord_t dst_coord = board.en_passant_coord;
-                AddPawnMoves<GetMoveType<MoveBasicType::EnPassant>(), false>(
+                AddPawnMoves<MoveBasicType::EnPassant, true, false>(
                     dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list, size);
             }
             move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_right)) {
                 const coord_t dst_coord = board.en_passant_coord;
-                AddPawnMoves<GetMoveType<MoveBasicType::EnPassant>(), false>(
+                AddPawnMoves<MoveBasicType::EnPassant, true, false>(
                     dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list, size);
             }
         }
@@ -133,16 +133,16 @@ void GenerateAllPawnMoves(const Board& board, Move* list, size_t& size) {
 
 constexpr Move WHITE_KINGSIDE_CASTLING_MOVE =
     ConstructMove(WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION + 2,
-                  GetMoveType<MoveBasicType::Castling>());
+                  GetMoveType<MoveBasicType::Castling>(false));
 constexpr Move WHITE_QUEENSIDE_CASTLING_MOVE =
     ConstructMove(WHITE_KING_INITIAL_POSITION, WHITE_KING_INITIAL_POSITION - 2,
-                  GetMoveType<MoveBasicType::Castling>());
+                  GetMoveType<MoveBasicType::Castling>(false));
 constexpr Move BLACK_KINGSIDE_CASTLING_MOVE =
     ConstructMove(BLACK_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION + 2,
-                  GetMoveType<MoveBasicType::Castling>());
+                  GetMoveType<MoveBasicType::Castling>(false));
 constexpr Move BLACK_QUEENSIDE_CASTLING_MOVE =
     ConstructMove(BLACK_KING_INITIAL_POSITION, BLACK_KING_INITIAL_POSITION - 2,
-                  GetMoveType<MoveBasicType::Castling>());
+                  GetMoveType<MoveBasicType::Castling>(false));
 constexpr bitboard_t WHITE_KINGSIDE_CASTLING_MOVE_BITBOARD =
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 1) |
     MakeBitboardFromCoord(WHITE_KING_INITIAL_POSITION + 2);

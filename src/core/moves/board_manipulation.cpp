@@ -191,7 +191,7 @@ void MakeMoveSimple(Board &board, const Move move) {
                   MakeZobristHashFromEnPassantCoord(board.en_passant_coord) ^
                   MakeZobristHashFromEnPassantCoord(NO_ENPASSANT_COORD);
     UpdateCastling(board, change_bitboard);
-    if (Q_LIKELY(IsMoveFiftyRuleMove(move))) {
+    if (Q_LIKELY(IsMoveCapture(move) || GetCellPiece(src_cell) == Piece::Pawn)) {
         board.fifty_rule_move_count = 0;
     } else {
         board.fifty_rule_move_count++;
