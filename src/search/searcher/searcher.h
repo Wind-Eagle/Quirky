@@ -31,10 +31,13 @@ class Searcher {
     bool ShouldStop();
 
     static constexpr idepth_t MAX_IDEPTH = 255;
-    struct Context {
+    struct GlobalContext {
         HistoryTable history_table;
         KillerMoves killer_moves[MAX_IDEPTH];
         q_core::Move best_move;
+    };
+    struct LocalContext {
+        q_core::Move current_move;
     };
 
     TranspositionTable& tt_;
@@ -42,7 +45,8 @@ class Searcher {
     Position position_;
     SearchControl& control_;
     SearchStat& stat_;
-    Context context_;
+    GlobalContext global_context_;
+    LocalContext local_context_[MAX_IDEPTH];
 };
 
 }  // namespace q_search

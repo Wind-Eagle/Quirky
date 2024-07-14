@@ -7,15 +7,15 @@ namespace q_search {
 Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& position,
                    SearchControl& control, SearchStat& stat)
     : tt_(tt), rt_(rt), position_(position), control_(control), stat_(stat) {
-    context_.history_table = HistoryTable();
+    global_context_.history_table = HistoryTable();
     for (idepth_t i = 0; i < MAX_IDEPTH; i++) {
-        context_.killer_moves[i] = KillerMoves();
+        global_context_.killer_moves[i] = KillerMoves();
     }
-    context_.best_move = q_core::NULL_MOVE;
+    global_context_.best_move = q_core::NULL_MOVE;
 }
 
 std::vector<q_core::Move> Searcher::GetPV() {
-    if (q_core::IsMoveNull(context_.best_move)) {
+    if (q_core::IsMoveNull(global_context_.best_move)) {
         return {};
     }
 
@@ -25,7 +25,7 @@ std::vector<q_core::Move> Searcher::GetPV() {
     q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
     std::vector<q_core::Move> pv;
 
-    position.MakeMove(context_.best_move, make_move_info, evaluator_tag);
+    position.MakeMove(global_context_.best_move, make_move_info, evaluator_tag);
     for (;;) {
         const q_core::hash_t position_hash = position.board.hash;
         if (!rt.Insert(position_hash)) {
@@ -51,7 +51,7 @@ SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
     std::vector<q_core::Move> pv = GetPV();
     return SearchResult{.bound_type = Exact,
                         .score = score,
-                        .best_move = context_.best_move,
+                        .best_move = global_context_.best_move,
                         .depth = depth,
                         .pv = pv};
 }
@@ -116,10 +116,13 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 }
 
 #define SAVE_ROOT_BEST_MOVE \
-    if constexpr (node_type == NodeType::Root) context_.best_move = best_move
+    if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move
 
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
+
+inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 5;
+inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -185,9 +188,27 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
     }
 
+    // Prepare local context
+    local_context_[idepth].current_move = q_core::NULL_MOVE;
+
+    // Null move pruning
+    if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD && !q_core::IsKingInCheck(position_.board) &&
+        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta) &&
+        !IsMoveNull(local_context_[idepth - 1].current_move) &&
+        !IsMoveCapture(local_context_[idepth - 1].current_move)) {
+        q_core::coord_t old_en_passant_coord;
+        position_.MakeNullMove(old_en_passant_coord);
+        Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
+
+        const q_eval::score_t new_score = -Search<NodeType::Simple>(depth - NMP_DEPTH_REDUCTION - 1, idepth + 1, -beta, -beta + 1);
+        if (new_score >= beta) {
+            return beta;
+        }
+    }
+
     // Try moves one by one
-    MovePicker move_picker(position_, tt_move, context_.killer_moves[idepth],
-                           context_.history_table);
+    MovePicker move_picker(position_, tt_move, global_context_.killer_moves[idepth],
+                           global_context_.history_table);
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
@@ -196,6 +217,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
 
+        local_context_[idepth].current_move = move;
         const bool do_pv_search = (node_type != NodeType::Simple) & (moves_done > 0);
         moves_done++;
         q_eval::score_t new_score = alpha;
@@ -220,8 +242,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             SAVE_ROOT_BEST_MOVE;
             tt_store_move(beta, best_move);
             if (move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
-                context_.killer_moves[idepth].Add(best_move);
-                context_.history_table.Update(src_cell, best_move, depth);
+                global_context_.killer_moves[idepth].Add(best_move);
+                global_context_.history_table.Update(src_cell, best_move, depth);
             }
             return beta;
         }
