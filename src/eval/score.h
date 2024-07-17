@@ -13,6 +13,7 @@ using score_t = int16_t;
 
 constexpr score_t SCORE_MIN = -30000;
 constexpr score_t SCORE_MAX = 30000;
+constexpr score_t SCORE_UNKNOWN = 31000;
 
 constexpr score_t SCORE_MATE = SCORE_MIN + 1;
 constexpr score_t SCORE_ALMOST_MATE = -25000;

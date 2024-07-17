@@ -123,6 +123,8 @@ inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_
 
 inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 5;
 inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
+inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
+inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -146,6 +148,16 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Increase nodes count
     stat_.IncNodesCount();
+
+    // Prepare local context
+    local_context_[idepth].current_move = q_core::NULL_MOVE;
+    local_context_[idepth].eval = q_eval::SCORE_UNKNOWN;
+
+    auto get_node_evaluation = [&]() {
+        if (local_context_[idepth].eval == q_eval::SCORE_UNKNOWN) {
+            local_context_[idepth].eval = position_.GetEvaluatorScore();
+        }
+    };
 
     // Checking transposition table
     q_core::Move tt_move = q_core::NULL_MOVE;
@@ -188,8 +200,14 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
     }
 
-    // Prepare local context
-    local_context_[idepth].current_move = q_core::NULL_MOVE;
+    // Futility pruning
+    if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD && !q_core::IsKingInCheck(position_.board) &&
+        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta)) {
+        get_node_evaluation();
+        if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
+            return beta;
+        }
+    }
 
     // Null move pruning
     if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD && !q_core::IsKingInCheck(position_.board) &&

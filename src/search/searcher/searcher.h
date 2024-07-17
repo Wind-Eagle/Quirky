@@ -38,6 +38,7 @@ class Searcher {
     };
     struct LocalContext {
         q_core::Move current_move;
+        q_eval::score_t eval;
     };
 
     TranspositionTable& tt_;
