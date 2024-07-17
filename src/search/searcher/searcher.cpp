@@ -121,7 +121,7 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
 
-inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 5;
+inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 3;
 inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
 inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
