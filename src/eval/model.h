@@ -2,31 +2,35 @@
 #define QUIRKY_SRC_EVAL_MODEL_H
 
 #include <array>
+#include <span>
+#include <vector>
 
-#include "feature.h"
 #include "score.h"
 
 namespace q_eval {
 
-inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_COUNT>& res,
-                                         Feature feature, score_t weight_first,
-                                         score_t weight_second) {
-    res[static_cast<uint16_t>(feature)] = ScorePair(weight_first, weight_second);
-}
+enum class Feature : uint16_t {
+    // Simple features
+    IsolatedPawn = 0,
+    DoubledPawn = 1,
+    NoPawns = 2,
+    BishopPair = 3,
+    RookOnOpenFile = 4,
+    RookOnHalfOpenFile = 5,
+    // Array features
+    QueensidePawnShield = 6,
+    QueensidePawnStorm = 12,
+    KingsidePawnShield = 18,
+    KingsidePawnStorm = 24,
+    Count = 30
+};
 
-inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> GetModelWeights() {
-    std::array<ScorePair, q_eval::FEATURE_COUNT> res{};
-    AssignFeatureValue(res, Feature::IsolatedPawn, -5, -5);
-    AssignFeatureValue(res, Feature::DoubledPawn, -30, -30);
-    AssignFeatureValue(res, Feature::NoPawns, -50, -50);
-    AssignFeatureValue(res, Feature::BishopPair, 32, 32);
-    AssignFeatureValue(res, Feature::RookOnOpenFile, 2, 2);
-    AssignFeatureValue(res, Feature::RookOnHalfOpenFile, 21, 21);
-    return res;
-}
+constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
 
-static inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> MODEL_WEIGHTS =
-    GetModelWeights();
+ScorePair GetModelWeight(Feature feature, uint8_t array_index = 0);
+uint8_t GetModelFeatureSize(Feature feature);
+
+ScorePair ApplyModel(const int16_t* features, size_t count);
 
 }  // namespace q_eval
 

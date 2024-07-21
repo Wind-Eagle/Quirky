@@ -4,7 +4,6 @@
 #include "../core/board/board.h"
 #include "../core/moves/move.h"
 #include "../core/util.h"
-#include "feature.h"
 #include "model.h"
 #include "psq.h"
 #include "score.h"
@@ -51,10 +50,10 @@ struct FeatureStorage {
         return features_[index];
     }
     bool operator==(const FeatureStorage& rhs) const { return features_ == rhs.features_; }
-    const std::array<score_t, FEATURE_COUNT + PSQ_SIZE>& GetFeatures() const { return features_; }
+    const std::array<int16_t, FEATURE_COUNT + PSQ_SIZE>& GetFeatures() const { return features_; }
 
   private:
-    std::array<score_t, FEATURE_COUNT + PSQ_SIZE> features_;
+    std::array<int16_t, FEATURE_COUNT + PSQ_SIZE> features_;
 };
 
 template <>

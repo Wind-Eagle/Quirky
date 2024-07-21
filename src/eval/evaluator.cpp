@@ -5,24 +5,24 @@
 #include "../core/moves/magic.h"
 #include "../core/util.h"
 #include "eval_features.h"
-#include "feature.h"
+#include "model.h"
 #include "pawns.h"
 #include "psq.h"
+#include "score.h"
 
 using namespace q_core;
 
 namespace q_eval {
 
 template <EvaluationType type, Color c>
-void AddFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
+void AddSimpleFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
                 const int8_t count) {
-    /*Q_ASSERT(MODEL_WEIGHTS[static_cast<uint16_t>(feature)].GetFirst() != 0 ||
-             MODEL_WEIGHTS[static_cast<uint16_t>(feature)].GetSecond() != 0);*/
+    Q_ASSERT(GetModelFeatureSize(feature) == 1);
     if constexpr (type == EvaluationType::Value) {
         if constexpr (c == Color::White) {
-            score += MODEL_WEIGHTS[static_cast<uint16_t>(feature)] * count;
+            score += GetModelWeight(feature) * count;
         } else {
-            score -= MODEL_WEIGHTS[static_cast<uint16_t>(feature)] * count;
+            score -= GetModelWeight(feature) * count;
         }
     } else {
         if constexpr (c == Color::White) {
@@ -34,11 +34,30 @@ void AddFeature(typename EvaluationResultType<type>::type& score, const Feature 
 }
 
 template <EvaluationType type, Color c>
+void AddArrayFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
+                const uint8_t array_index, const int8_t count) {
+    Q_ASSERT(array_index < GetModelFeatureSize(feature) && GetModelFeatureSize(feature) > 1);
+    if constexpr (type == EvaluationType::Value) {
+        if constexpr (c == Color::White) {
+            score += GetModelWeight(feature, array_index) * count;
+        } else {
+            score -= GetModelWeight(feature, array_index) * count;
+        }
+    } else {
+        if constexpr (c == Color::White) {
+            score[static_cast<uint16_t>(feature) + array_index] += count;
+        } else {
+            score[static_cast<uint16_t>(feature) + array_index] -= count;
+        }
+    }
+}
+
+template <EvaluationType type, Color c>
 void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score,
                    uint8_t& open_files_mask) {
     const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
     if (!our_pawns) {
-        AddFeature<type, c>(score, Feature::NoPawns, 1);
+        AddSimpleFeature<type, c>(score, Feature::NoPawns, 1);
         open_files_mask = -(static_cast<uint8_t>(0));
         return;
     }
@@ -53,11 +72,11 @@ void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type
         context.pawn_coord = pawn_coord;
 
         if (IsPawnIsolated(context)) {
-            AddFeature<type, c>(score, Feature::IsolatedPawn, 1);
+            AddSimpleFeature<type, c>(score, Feature::IsolatedPawn, 1);
         }
 
         if (IsPawnDoubled(context)) {
-            AddFeature<type, c>(score, Feature::DoubledPawn, 1);
+            AddSimpleFeature<type, c>(score, Feature::DoubledPawn, 1);
         }
     }
     open_files_mask = (~pawn_islands_mask);
@@ -73,37 +92,84 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
     EvaluatePawns<type, Color::Black>(board, score, black_open_files_mask);
     res += score;
     if constexpr (type == EvaluationType::Vector) {
-        return ConstructPawnHashTableEntry(ScorePair(), white_open_files_mask, black_open_files_mask);
+        return ConstructPawnHashTableEntry(ScorePair(), white_open_files_mask,
+                                           black_open_files_mask);
     } else {
         return ConstructPawnHashTableEntry(score, white_open_files_mask, black_open_files_mask);
     }
 }
 
 template <EvaluationType type, Color c>
-void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
-                   const PawnHashTableEntry& pawn_hash_table_entry) {
+void EvaluateNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
+                  const PawnHashTableEntry& pawn_hash_table_entry) {
     const bitboard_t open_files =
         pawn_hash_table_entry.white_open_files_mask & pawn_hash_table_entry.black_open_files_mask;
     const bitboard_t half_open_files =
         (c == Color::White ? pawn_hash_table_entry.white_open_files_mask
                            : pawn_hash_table_entry.black_open_files_mask);
     if (board.bb_pieces[MakeCell(c, Piece::Bishop)]) {
-        AddFeature<type, c>(score, Feature::BishopPair,
+        AddSimpleFeature<type, c>(score, Feature::BishopPair,
                             q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Bishop)]) - 1);
     }
-    AddFeature<type, c>(score, Feature::RookOnOpenFile,
+    AddSimpleFeature<type, c>(score, Feature::RookOnOpenFile,
                         q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
                                             q_util::ScatterByte(open_files)));
-    AddFeature<type, c>(score, Feature::RookOnHalfOpenFile,
+    AddSimpleFeature<type, c>(score, Feature::RookOnHalfOpenFile,
                         q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
                                             q_util::ScatterByte(half_open_files)));
 }
 
 template <EvaluationType type>
-void EvaluateKNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
-                   const PawnHashTableEntry pawn_hash_table_entry) {
-    EvaluateKNBRQ<type, Color::White>(board, score, pawn_hash_table_entry);
-    EvaluateKNBRQ<type, Color::Black>(board, score, pawn_hash_table_entry);
+void EvaluateNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
+                  const PawnHashTableEntry pawn_hash_table_entry) {
+    EvaluateNBRQ<type, Color::White>(board, score, pawn_hash_table_entry);
+    EvaluateNBRQ<type, Color::Black>(board, score, pawn_hash_table_entry);
+}
+
+const std::array<ScorePair, (1 << PAWN_SHIELD_PAWN_COUNT)* 2> PAWN_SHIELD_MASK_WEIGHT = []() {
+    std::array<ScorePair, (1 << PAWN_SHIELD_PAWN_COUNT)* 2> ans = {};
+    for (size_t mask = 0; mask < (1 << PAWN_SHIELD_PAWN_COUNT); mask++) {
+        for (uint8_t bit = 0; bit < PAWN_SHIELD_PAWN_COUNT; bit++) {
+            if (q_util::CheckBit(mask, bit)) {
+                ans[mask] += GetModelWeight(Feature::KingsidePawnShield, bit);
+                ans[mask + (1 << PAWN_SHIELD_PAWN_COUNT)] += GetModelWeight(Feature::QueensidePawnShield, bit);
+            }
+        }
+    }
+    return ans;
+}();
+
+const std::array<ScorePair, (1 << PAWN_STORM_PAWN_COUNT)* 2> PAWN_STORM_MASK_WEIGHT = []() {
+    std::array<ScorePair, (1 << PAWN_STORM_PAWN_COUNT)* 2> ans = {};
+    for (size_t mask = 0; mask < (1 << PAWN_STORM_PAWN_COUNT); mask++) {
+        for (uint8_t bit = 0; bit < PAWN_STORM_PAWN_COUNT; bit++) {
+            if (q_util::CheckBit(mask, bit)) {
+                ans[mask] +=
+                    GetModelWeight(Feature::KingsidePawnStorm, bit);
+                ans[mask + (1 << PAWN_STORM_PAWN_COUNT)] +=
+                    GetModelWeight(Feature::QueensidePawnStorm, bit);
+            }
+        }
+    }
+    return ans;
+}();
+
+template <EvaluationType type, Color c>
+void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type& score) {
+    const KingSafety king_safety = GetKingSafety(board, c);
+    uint8_t shield_delta = king_safety.is_side_queenside ? 0 : (1 << PAWN_SHIELD_PAWN_COUNT);
+    uint8_t storm_delta = king_safety.is_side_queenside ? 0 : (1 << PAWN_STORM_PAWN_COUNT);
+    if constexpr (type == EvaluationType::Value) {
+        score += PAWN_SHIELD_MASK_WEIGHT[king_safety.pawn_shield_mask + shield_delta];
+        score += PAWN_STORM_MASK_WEIGHT[king_safety.pawn_shield_mask + storm_delta];
+    } else {
+    }
+}
+
+template <EvaluationType type>
+void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type& score) {
+    EvaluateKing<type, Color::White>(board, score);
+    EvaluateKing<type, Color::Black>(board, score);
 }
 
 template <EvaluationType type>
@@ -116,7 +182,8 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board&
     }());
     typename EvaluationResultType<type>::type res = tag_.GetScore();
     const auto pawn_entry = EvaluatePawns<type>(board, res);
-    EvaluateKNBRQ<type>(board, res, pawn_entry);
+    EvaluateNBRQ<type>(board, res, pawn_entry);
+    EvaluateKing<type>(board, res);
     if constexpr (type == EvaluationType::Value) {
         if (board.move_side == Color::Black) {
             res *= -1;
@@ -131,9 +198,7 @@ score_t Evaluator<type>::GetEvaluationScore(
     ScorePair ans{};
     if constexpr (type == EvaluationType::Vector) {
         const auto& features = score.GetFeatures();
-        for (size_t i = 0; i < FEATURE_COUNT; i++) {
-            ans += MODEL_WEIGHTS[i] * features[i];
-        }
+        ans = ApplyModel(features.data(), FEATURE_COUNT);
         for (size_t i = 0; i < PSQ_SIZE; i++) {
             ans += PSQ[i] * features[i + FEATURE_COUNT];
         }
