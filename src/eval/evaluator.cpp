@@ -38,19 +38,15 @@ void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type
                    uint8_t& open_files_mask) {
     const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
 
-    const auto colored_pawn_frontspan =
+    const auto& colored_pawn_frontspan =
         (c == Color::White ? WHITE_PAWN_FRONTSPAN_BITBOARD : BLACK_PAWN_FRONTSPAN_BITBOARD);
 
     uint8_t pawn_islands_mask = 0;
     bitboard_t pawn_bitboard = board.bb_pieces[MakeCell(c, Piece::Pawn)];
     while (pawn_bitboard) {
         const coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
-        const subcoord_t pawn_rank = GetRank(pawn_coord);
         const subcoord_t pawn_file = GetFile(pawn_coord);
         q_util::SetBit(pawn_islands_mask, pawn_file);
-        const subcoord_t relative_pawn_rank =
-            (c == Color::White ? pawn_rank : InvertSubcoord(pawn_rank));
-        Q_ASSUME(relative_pawn_rank > 0 && relative_pawn_rank < BOARD_SIDE - 1);
 
         if (!(PAWN_NEIGHBOURS_BITBOARD[pawn_file] & our_pawns)) {
             AddFeature<type, c>(score, Feature::IsolatedPawn, 1);
