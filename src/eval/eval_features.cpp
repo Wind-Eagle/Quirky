@@ -55,4 +55,13 @@ constexpr std::array<bitboard_t, BOARD_SIZE> BLACK_PAWN_FRONTSPAN_BITBOARD =
     GetBlackPawnFrontspanBitboard();
 constexpr std::array<bitboard_t, BOARD_SIDE> PAWN_NEIGHBOURS_BITBOARD = GetPawnNeighboursBitboard();
 
+bool IsPawnIsolated(const PawnContext& context){
+    return !(PAWN_NEIGHBOURS_BITBOARD[GetFile(context.pawn_coord)] & context.our_pawns);
+}
+
+bool IsPawnDoubled(const PawnContext& context) {
+    const auto& colored_pawn_frontspan = context.color == Color::White ? WHITE_PAWN_FRONTSPAN_BITBOARD : BLACK_PAWN_FRONTSPAN_BITBOARD;
+    return colored_pawn_frontspan[context.pawn_coord] & context.our_pawns;
+}
+
 }  // namespace q_eval

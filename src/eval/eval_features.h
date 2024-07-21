@@ -10,9 +10,14 @@
 
 namespace q_eval {
 
-extern const std::array<q_core::bitboard_t, q_core::BOARD_SIZE> WHITE_PAWN_FRONTSPAN_BITBOARD;
-extern const std::array<q_core::bitboard_t, q_core::BOARD_SIZE> BLACK_PAWN_FRONTSPAN_BITBOARD;
-extern const std::array<q_core::bitboard_t, q_core::BOARD_SIDE> PAWN_NEIGHBOURS_BITBOARD;
+struct PawnContext {
+    q_core::bitboard_t our_pawns;
+    q_core::coord_t pawn_coord;
+    q_core::Color color;
+};
+
+bool IsPawnIsolated(const PawnContext& context);
+bool IsPawnDoubled(const PawnContext& context);
 
 }  // namespace q_eval
 

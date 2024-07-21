@@ -37,27 +37,28 @@ template <EvaluationType type, Color c>
 void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score,
                    uint8_t& open_files_mask) {
     const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
+    if (!our_pawns) {
+        AddFeature<type, c>(score, Feature::NoPawns, 1);
+        open_files_mask = -(static_cast<uint8_t>(0));
+        return;
+    }
 
-    const auto& colored_pawn_frontspan =
-        (c == Color::White ? WHITE_PAWN_FRONTSPAN_BITBOARD : BLACK_PAWN_FRONTSPAN_BITBOARD);
+    PawnContext context{.our_pawns = our_pawns, .pawn_coord = UNDEFINED_COORD, .color = c};
 
     uint8_t pawn_islands_mask = 0;
     bitboard_t pawn_bitboard = board.bb_pieces[MakeCell(c, Piece::Pawn)];
     while (pawn_bitboard) {
         const coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
-        const subcoord_t pawn_file = GetFile(pawn_coord);
-        q_util::SetBit(pawn_islands_mask, pawn_file);
+        q_util::SetBit(pawn_islands_mask, GetFile(pawn_coord));
+        context.pawn_coord = pawn_coord;
 
-        if (!(PAWN_NEIGHBOURS_BITBOARD[pawn_file] & our_pawns)) {
+        if (IsPawnIsolated(context)) {
             AddFeature<type, c>(score, Feature::IsolatedPawn, 1);
         }
 
-        if (colored_pawn_frontspan[pawn_coord] & our_pawns) {
+        if (IsPawnDoubled(context)) {
             AddFeature<type, c>(score, Feature::DoubledPawn, 1);
         }
-    }
-    if (!our_pawns) {
-        AddFeature<type, c>(score, Feature::NoPawns, 1);
     }
     open_files_mask = (~pawn_islands_mask);
 }
