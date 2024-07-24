@@ -104,8 +104,8 @@ KingSafety GetKingSafety(const q_core::Board& board, const Color color) {
         ((enemy_pawns & RANK_BITBOARD[king_rank + dir * 3]) >>
          (color == Color::White ? BOARD_SIDE * 3 - 1 + king_pos : king_pos - BOARD_SIDE * 3 - 1)) &
         (BOARD_SIDE - 1);
-    king_safety.pawn_shield_mask = (shield_mask1 << 3 | shield_mask2);
-    king_safety.pawn_storm_mask = (storm_mask2 << 3 | storm_mask3);
+    king_safety.pawn_shield_mask = (shield_mask1 | shield_mask2 << 3);
+    king_safety.pawn_storm_mask = (storm_mask2 | storm_mask3 << 3);
     king_safety.is_side_queenside = king_file < BOARD_SIDE / 2;
     return king_safety;
 }

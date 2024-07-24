@@ -16,7 +16,7 @@ namespace q_eval {
 
 template <EvaluationType type, Color c>
 void AddSimpleFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
-                const int8_t count) {
+                      const int8_t count) {
     Q_ASSERT(GetModelFeatureSize(feature) == 1);
     if constexpr (type == EvaluationType::Value) {
         if constexpr (c == Color::White) {
@@ -35,7 +35,7 @@ void AddSimpleFeature(typename EvaluationResultType<type>::type& score, const Fe
 
 template <EvaluationType type, Color c>
 void AddArrayFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
-                const uint8_t array_index, const int8_t count) {
+                     const uint8_t array_index, const int8_t count) {
     Q_ASSERT(array_index < GetModelFeatureSize(feature) && GetModelFeatureSize(feature) > 1);
     if constexpr (type == EvaluationType::Value) {
         if constexpr (c == Color::White) {
@@ -108,15 +108,16 @@ void EvaluateNBRQ(const Board& board, typename EvaluationResultType<type>::type&
         (c == Color::White ? pawn_hash_table_entry.white_open_files_mask
                            : pawn_hash_table_entry.black_open_files_mask);
     if (board.bb_pieces[MakeCell(c, Piece::Bishop)]) {
-        AddSimpleFeature<type, c>(score, Feature::BishopPair,
-                            q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Bishop)]) - 1);
+        AddSimpleFeature<type, c>(
+            score, Feature::BishopPair,
+            q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Bishop)]) - 1);
     }
     AddSimpleFeature<type, c>(score, Feature::RookOnOpenFile,
-                        q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
-                                            q_util::ScatterByte(open_files)));
+                              q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
+                                                  q_util::ScatterByte(open_files)));
     AddSimpleFeature<type, c>(score, Feature::RookOnHalfOpenFile,
-                        q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
-                                            q_util::ScatterByte(half_open_files)));
+                              q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
+                                                  q_util::ScatterByte(half_open_files)));
 }
 
 template <EvaluationType type>
@@ -131,8 +132,9 @@ const std::array<ScorePair, (1 << PAWN_SHIELD_PAWN_COUNT)* 2> PAWN_SHIELD_MASK_W
     for (size_t mask = 0; mask < (1 << PAWN_SHIELD_PAWN_COUNT); mask++) {
         for (uint8_t bit = 0; bit < PAWN_SHIELD_PAWN_COUNT; bit++) {
             if (q_util::CheckBit(mask, bit)) {
-                ans[mask] += GetModelWeight(Feature::KingsidePawnShield, bit);
-                ans[mask + (1 << PAWN_SHIELD_PAWN_COUNT)] += GetModelWeight(Feature::QueensidePawnShield, bit);
+                ans[mask] += GetModelWeight(Feature::QueensidePawnShield, bit);
+                ans[mask + (1 << PAWN_SHIELD_PAWN_COUNT)] +=
+                    GetModelWeight(Feature::KingsidePawnShield, bit);
             }
         }
     }
@@ -144,10 +146,9 @@ const std::array<ScorePair, (1 << PAWN_STORM_PAWN_COUNT)* 2> PAWN_STORM_MASK_WEI
     for (size_t mask = 0; mask < (1 << PAWN_STORM_PAWN_COUNT); mask++) {
         for (uint8_t bit = 0; bit < PAWN_STORM_PAWN_COUNT; bit++) {
             if (q_util::CheckBit(mask, bit)) {
-                ans[mask] +=
-                    GetModelWeight(Feature::KingsidePawnStorm, bit);
+                ans[mask] += GetModelWeight(Feature::QueensidePawnStorm, bit);
                 ans[mask + (1 << PAWN_STORM_PAWN_COUNT)] +=
-                    GetModelWeight(Feature::QueensidePawnStorm, bit);
+                    GetModelWeight(Feature::KingsidePawnStorm, bit);
             }
         }
     }
@@ -163,6 +164,24 @@ void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type&
         score += PAWN_SHIELD_MASK_WEIGHT[king_safety.pawn_shield_mask + shield_delta];
         score += PAWN_STORM_MASK_WEIGHT[king_safety.pawn_shield_mask + storm_delta];
     } else {
+        for (uint8_t bit = 0; bit < PAWN_SHIELD_PAWN_COUNT; bit++) {
+            if (q_util::CheckBit(king_safety.pawn_shield_mask, bit)) {
+                AddArrayFeature<type, c>(score,
+                                         king_safety.is_side_queenside
+                                             ? Feature::QueensidePawnShield
+                                             : Feature::KingsidePawnShield,
+                                         bit, 1);
+            }
+        }
+        for (uint8_t bit = 0; bit < PAWN_STORM_PAWN_COUNT; bit++) {
+            if (q_util::CheckBit(king_safety.pawn_storm_mask, bit)) {
+                AddArrayFeature<type, c>(score,
+                                         king_safety.is_side_queenside
+                                             ? Feature::QueensidePawnStorm
+                                             : Feature::KingsidePawnStorm,
+                                         bit, 1);
+            }
+        }
     }
 }
 
