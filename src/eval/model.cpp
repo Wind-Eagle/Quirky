@@ -65,7 +65,6 @@ uint8_t GetModelFeatureSize(const Feature feature) {
 }
 
 ScorePair ApplyModel(const int16_t* features, size_t count) {
-    Q_ASSERT(features.size() <= count);
     Q_ASSERT(count <= FEATURE_COUNT);
     ScorePair ans{};
     for (size_t i = 0; i < count; i++) {

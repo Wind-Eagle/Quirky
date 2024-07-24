@@ -41,8 +41,8 @@ BoardSetWithFeatures CalcFeatures(GameSet&& game_set_ref) {
         for (const auto& board : game.boards) {
             q_eval::Evaluator<q_eval::EvaluationType::Vector> evaluator;
             evaluator.StartTrackingBoard(board);
-            const auto& features = evaluator.Evaluate(board).GetFeatures();
-            std::array<int8_t, q_core::NUMBER_OF_PIECES> piece_count_storage{};
+            const auto features = evaluator.Evaluate(board).GetFeatures();
+            std::array<int8_t, q_core::NUMBER_OF_PIECES> piece_count_storage = {};
             std::array<int8_t, q_eval::FEATURE_COUNT> feature_storage = {};
             std::array<int8_t, q_core::BOARD_SIZE* q_core::NUMBER_OF_PIECES> psq_storage = {};
             for (size_t j = 0; j < features.size(); j++) {
