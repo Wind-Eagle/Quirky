@@ -27,12 +27,12 @@ inline constexpr std::pair<std::array<ScorePair, q_eval::FEATURE_COUNT>,
 GetModelWeightsAndFeatureSizes() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
     std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
-    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -5, -5);
-    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -30, -30);
-    AssignFeatureValue(weights, sizes, Feature::NoPawns, -50, -50);
-    AssignFeatureValue(weights, sizes, Feature::BishopPair, 32, 32);
-    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 2, 2);
-    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 21, 21);
+    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -20, -0);
+    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -5, -51);
+    AssignFeatureValue(weights, sizes, Feature::NoPawns, 138, -52);
+    AssignFeatureValue(weights, sizes, Feature::BishopPair, 8, 80);
+    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 36, -18);
+    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 24, 21);
 
     AssignFeatureValues<6>(weights, sizes, Feature::QueensidePawnShield,
                            {ScorePair(7, 0), ScorePair(65, 0), ScorePair(9, 0), ScorePair(-15, 0),
