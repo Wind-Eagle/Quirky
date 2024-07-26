@@ -21,6 +21,7 @@ bool IsPawnDoubled(const PawnContext& context);
 struct KingSafety {
     uint8_t pawn_shield_mask;
     uint8_t pawn_storm_mask;
+    uint8_t queen_distance;
     bool is_side_queenside;
 };
 

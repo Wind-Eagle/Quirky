@@ -183,6 +183,7 @@ void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type&
             }
         }
     }
+    AddArrayFeature<type, c>(score, Feature::QueenDistanceToKing, king_safety.queen_distance, 1);
 }
 
 template <EvaluationType type>

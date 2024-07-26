@@ -22,7 +22,8 @@ enum class Feature : uint16_t {
     QueensidePawnStorm = 12,
     KingsidePawnShield = 18,
     KingsidePawnStorm = 24,
-    Count = 30
+    QueenDistanceToKing = 30,
+    Count = 38
 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);

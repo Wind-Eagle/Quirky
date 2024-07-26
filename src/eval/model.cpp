@@ -46,6 +46,9 @@ GetModelWeightsAndFeatureSizes() {
     AssignFeatureValues<6>(weights, sizes, Feature::KingsidePawnStorm,
                            {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
                             ScorePair(1, 0), ScorePair(1, 0)});
+    AssignFeatureValues<8>(weights, sizes, Feature::QueenDistanceToKing,
+                           {ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1),
+                            ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1)});
     return std::make_pair(weights, sizes);
 }
 

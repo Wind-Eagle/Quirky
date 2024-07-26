@@ -73,7 +73,7 @@ constexpr q_core::bitboard_t BLACK_KING_SHIELDED_BITBOARD =
 
 template <q_core::Color color>
 KingSafety GetKingSafety(const q_core::Board& board) {
-    KingSafety king_safety = KingSafety{.pawn_shield_mask = 0, .pawn_storm_mask = 0, .is_side_queenside = false};
+    KingSafety king_safety{};
     const coord_t king_pos = q_util::GetLowestBit(board.bb_pieces[MakeCell(color, Piece::King)]);
     const subcoord_t king_rank = GetRank(king_pos);
     const subcoord_t king_file = GetFile(king_pos);
@@ -83,31 +83,37 @@ KingSafety GetKingSafety(const q_core::Board& board) {
     bool is_king_shielded =
         (color == Color::White ? WHITE_KING_SHIELDED_BITBOARD : BLACK_KING_SHIELDED_BITBOARD) &
         MakeBitboardFromCoord(king_pos);
-    if (king_can_castle || !is_king_shielded) {
-        return king_safety;
+    if (!king_can_castle && is_king_shielded) {
+        const int8_t dir = (color == Color::White ? 1 : -1);
+        const bitboard_t our_pawns = board.bb_pieces[MakeCell(color, Piece::Pawn)];
+        const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(color), Piece::Pawn)];
+        const uint8_t shield_mask1 =
+            ((our_pawns & RANK_BITBOARD[king_rank + dir]) >>
+            (color == Color::White ? BOARD_SIDE - 1 + king_pos : king_pos - BOARD_SIDE - 1)) &
+            (BOARD_SIDE - 1);
+        const uint8_t shield_mask2 =
+            ((our_pawns & RANK_BITBOARD[king_rank + dir * 2]) >>
+            (color == Color::White ? BOARD_SIDE * 2 - 1 + king_pos : king_pos - BOARD_SIDE * 2 - 1)) &
+            (BOARD_SIDE - 1);
+        const uint8_t storm_mask2 =
+            ((enemy_pawns & RANK_BITBOARD[king_rank + dir * 2]) >>
+            (color == Color::White ? BOARD_SIDE * 2 - 1 + king_pos : king_pos - BOARD_SIDE * 2 - 1)) &
+            (BOARD_SIDE - 1);
+        const uint8_t storm_mask3 =
+            ((enemy_pawns & RANK_BITBOARD[king_rank + dir * 3]) >>
+            (color == Color::White ? BOARD_SIDE * 3 - 1 + king_pos : king_pos - BOARD_SIDE * 3 - 1)) &
+            (BOARD_SIDE - 1);
+        king_safety.pawn_shield_mask = (shield_mask1 | shield_mask2 << 3);
+        king_safety.pawn_storm_mask = (storm_mask2 | storm_mask3 << 3);
+        king_safety.is_side_queenside = king_file < BOARD_SIDE / 2;
     }
-    const int8_t dir = (color == Color::White ? 1 : -1);
-    const bitboard_t our_pawns = board.bb_pieces[MakeCell(color, Piece::Pawn)];
-    const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(color), Piece::Pawn)];
-    const uint8_t shield_mask1 =
-        ((our_pawns & RANK_BITBOARD[king_rank + dir]) >>
-         (color == Color::White ? BOARD_SIDE - 1 + king_pos : king_pos - BOARD_SIDE - 1)) &
-        (BOARD_SIDE - 1);
-    const uint8_t shield_mask2 =
-        ((our_pawns & RANK_BITBOARD[king_rank + dir * 2]) >>
-         (color == Color::White ? BOARD_SIDE * 2 - 1 + king_pos : king_pos - BOARD_SIDE * 2 - 1)) &
-        (BOARD_SIDE - 1);
-    const uint8_t storm_mask2 =
-        ((enemy_pawns & RANK_BITBOARD[king_rank + dir * 2]) >>
-         (color == Color::White ? BOARD_SIDE * 2 - 1 + king_pos : king_pos - BOARD_SIDE * 2 - 1)) &
-        (BOARD_SIDE - 1);
-    const uint8_t storm_mask3 =
-        ((enemy_pawns & RANK_BITBOARD[king_rank + dir * 3]) >>
-         (color == Color::White ? BOARD_SIDE * 3 - 1 + king_pos : king_pos - BOARD_SIDE * 3 - 1)) &
-        (BOARD_SIDE - 1);
-    king_safety.pawn_shield_mask = (shield_mask1 | shield_mask2 << 3);
-    king_safety.pawn_storm_mask = (storm_mask2 | storm_mask3 << 3);
-    king_safety.is_side_queenside = king_file < BOARD_SIDE / 2;
+
+    const auto enemy_queens = board.bb_pieces[MakeCell(GetInvertedColor(color), Piece::Queen)];
+    if (enemy_queens) {
+        const coord_t enemy_queen_pos = q_util::GetLowestBit(enemy_queens);
+        king_safety.queen_distance = q_util::GetLInftyDistance(king_rank, king_file, GetRank(enemy_queen_pos), GetFile(enemy_queen_pos));
+        Q_ASSERT(king_safety.queen_distance > 0 && king_safety.queen_distance < BOARD_SIDE);
+    }
     return king_safety;
 }
 
