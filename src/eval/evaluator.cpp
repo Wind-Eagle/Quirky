@@ -157,7 +157,7 @@ const std::array<ScorePair, (1 << PAWN_STORM_PAWN_COUNT)* 2> PAWN_STORM_MASK_WEI
 
 template <EvaluationType type, Color c>
 void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type& score) {
-    const KingSafety king_safety = GetKingSafety(board, c);
+    const KingSafety king_safety = GetKingSafety<c>(board);
     uint8_t shield_delta = king_safety.is_side_queenside ? 0 : (1 << PAWN_SHIELD_PAWN_COUNT);
     uint8_t storm_delta = king_safety.is_side_queenside ? 0 : (1 << PAWN_STORM_PAWN_COUNT);
     if constexpr (type == EvaluationType::Value) {

@@ -71,7 +71,8 @@ constexpr q_core::bitboard_t WHITE_KING_SHIELDED_BITBOARD =
 constexpr q_core::bitboard_t BLACK_KING_SHIELDED_BITBOARD =
     q_core::RANK_BITBOARD[q_core::BOARD_SIDE - 1] | q_core::RANK_BITBOARD[q_core::BOARD_SIDE - 2];
 
-KingSafety GetKingSafety(const q_core::Board& board, const Color color) {
+template <q_core::Color color>
+KingSafety GetKingSafety(const q_core::Board& board) {
     KingSafety king_safety = KingSafety{.pawn_shield_mask = 0, .pawn_storm_mask = 0, .is_side_queenside = false};
     const coord_t king_pos = q_util::GetLowestBit(board.bb_pieces[MakeCell(color, Piece::King)]);
     const subcoord_t king_rank = GetRank(king_pos);
@@ -109,5 +110,8 @@ KingSafety GetKingSafety(const q_core::Board& board, const Color color) {
     king_safety.is_side_queenside = king_file < BOARD_SIDE / 2;
     return king_safety;
 }
+
+template KingSafety GetKingSafety<Color::White>(const Board& board);
+template KingSafety GetKingSafety<Color::Black>(const Board& board);
 
 }  // namespace q_eval

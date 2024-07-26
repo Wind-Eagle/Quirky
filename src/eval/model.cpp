@@ -35,17 +35,17 @@ GetModelWeightsAndFeatureSizes() {
     AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 24, 21);
 
     AssignFeatureValues<6>(weights, sizes, Feature::QueensidePawnShield,
-                           {ScorePair(7, 0), ScorePair(65, 0), ScorePair(9, 0), ScorePair(-15, 0),
-                            ScorePair(-56, 0), ScorePair(24, 0)});
+                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
+                            ScorePair(1, 0), ScorePair(1, 0)});
     AssignFeatureValues<6>(weights, sizes, Feature::QueensidePawnStorm,
-                           {ScorePair(49, 0), ScorePair(-23, 0), ScorePair(-78, 0), ScorePair(7, 0),
-                            ScorePair(2, 0), ScorePair(22, 0)});
+                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
+                            ScorePair(1, 0), ScorePair(1, 0)});
     AssignFeatureValues<6>(weights, sizes, Feature::KingsidePawnShield,
-                           {ScorePair(9, 0), ScorePair(65, 0), ScorePair(7, 0), ScorePair(24, 0),
-                            ScorePair(56, 0), ScorePair(-15, 0)});
+                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
+                            ScorePair(1, 0), ScorePair(1, 0)});
     AssignFeatureValues<6>(weights, sizes, Feature::KingsidePawnStorm,
-                           {ScorePair(-78, 0), ScorePair(-23, 0), ScorePair(49, 0), ScorePair(22, 0),
-                            ScorePair(2, 0), ScorePair(7, 0)});
+                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
+                            ScorePair(1, 0), ScorePair(1, 0)});
     return std::make_pair(weights, sizes);
 }
 

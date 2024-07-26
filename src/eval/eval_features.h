@@ -27,7 +27,8 @@ struct KingSafety {
 inline constexpr uint8_t PAWN_SHIELD_PAWN_COUNT = 6;
 inline constexpr uint8_t PAWN_STORM_PAWN_COUNT = 6;
 
-KingSafety GetKingSafety(const q_core::Board& board, q_core::Color color);
+template <q_core::Color c>
+KingSafety GetKingSafety(const q_core::Board& board);
 
 }  // namespace q_eval
 
