@@ -127,71 +127,6 @@ void EvaluateNBRQ(const Board& board, typename EvaluationResultType<type>::type&
     EvaluateNBRQ<type, Color::Black>(board, score, pawn_hash_table_entry);
 }
 
-const std::array<ScorePair, (1 << PAWN_SHIELD_PAWN_COUNT)* 2> PAWN_SHIELD_MASK_WEIGHT = []() {
-    std::array<ScorePair, (1 << PAWN_SHIELD_PAWN_COUNT)* 2> ans = {};
-    for (size_t mask = 0; mask < (1 << PAWN_SHIELD_PAWN_COUNT); mask++) {
-        for (uint8_t bit = 0; bit < PAWN_SHIELD_PAWN_COUNT; bit++) {
-            if (q_util::CheckBit(mask, bit)) {
-                ans[mask] += GetModelWeight(Feature::QueensidePawnShield, bit);
-                ans[mask + (1 << PAWN_SHIELD_PAWN_COUNT)] +=
-                    GetModelWeight(Feature::KingsidePawnShield, bit);
-            }
-        }
-    }
-    return ans;
-}();
-
-const std::array<ScorePair, (1 << PAWN_STORM_PAWN_COUNT)* 2> PAWN_STORM_MASK_WEIGHT = []() {
-    std::array<ScorePair, (1 << PAWN_STORM_PAWN_COUNT)* 2> ans = {};
-    for (size_t mask = 0; mask < (1 << PAWN_STORM_PAWN_COUNT); mask++) {
-        for (uint8_t bit = 0; bit < PAWN_STORM_PAWN_COUNT; bit++) {
-            if (q_util::CheckBit(mask, bit)) {
-                ans[mask] += GetModelWeight(Feature::QueensidePawnStorm, bit);
-                ans[mask + (1 << PAWN_STORM_PAWN_COUNT)] +=
-                    GetModelWeight(Feature::KingsidePawnStorm, bit);
-            }
-        }
-    }
-    return ans;
-}();
-
-template <EvaluationType type, Color c>
-void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type& score) {
-    const KingSafety king_safety = GetKingSafety<c>(board);
-    uint8_t shield_delta = king_safety.is_side_queenside ? 0 : (1 << PAWN_SHIELD_PAWN_COUNT);
-    uint8_t storm_delta = king_safety.is_side_queenside ? 0 : (1 << PAWN_STORM_PAWN_COUNT);
-    if constexpr (type == EvaluationType::Value) {
-        score += PAWN_SHIELD_MASK_WEIGHT[king_safety.pawn_shield_mask + shield_delta];
-        score += PAWN_STORM_MASK_WEIGHT[king_safety.pawn_shield_mask + storm_delta];
-    } else {
-        for (uint8_t bit = 0; bit < PAWN_SHIELD_PAWN_COUNT; bit++) {
-            if (q_util::CheckBit(king_safety.pawn_shield_mask, bit)) {
-                AddArrayFeature<type, c>(score,
-                                         king_safety.is_side_queenside
-                                             ? Feature::QueensidePawnShield
-                                             : Feature::KingsidePawnShield,
-                                         bit, 1);
-            }
-        }
-        for (uint8_t bit = 0; bit < PAWN_STORM_PAWN_COUNT; bit++) {
-            if (q_util::CheckBit(king_safety.pawn_storm_mask, bit)) {
-                AddArrayFeature<type, c>(score,
-                                         king_safety.is_side_queenside
-                                             ? Feature::QueensidePawnStorm
-                                             : Feature::KingsidePawnStorm,
-                                         bit, 1);
-            }
-        }
-    }
-    AddArrayFeature<type, c>(score, Feature::QueenDistanceToKing, king_safety.queen_distance, 1);
-}
-
-template <EvaluationType type>
-void EvaluateKing(const Board& board, typename EvaluationResultType<type>::type& score) {
-    EvaluateKing<type, Color::White>(board, score);
-    EvaluateKing<type, Color::Black>(board, score);
-}
-
 template <EvaluationType type>
 typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board& board) const {
     Q_ASSERT(board.IsValid());
@@ -203,7 +138,6 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board&
     typename EvaluationResultType<type>::type res = tag_.GetScore();
     const auto pawn_entry = EvaluatePawns<type>(board, res);
     EvaluateNBRQ<type>(board, res, pawn_entry);
-    EvaluateKing<type>(board, res);
     if constexpr (type == EvaluationType::Value) {
         if (board.move_side == Color::Black) {
             res *= -1;

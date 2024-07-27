@@ -1,4 +1,5 @@
 #include "model.h"
+
 #include "score.h"
 
 namespace q_eval {
@@ -27,28 +28,12 @@ inline constexpr std::pair<std::array<ScorePair, q_eval::FEATURE_COUNT>,
 GetModelWeightsAndFeatureSizes() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
     std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
-    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -20, -0);
-    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -5, -51);
-    AssignFeatureValue(weights, sizes, Feature::NoPawns, 138, -52);
-    AssignFeatureValue(weights, sizes, Feature::BishopPair, 8, 80);
-    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 36, -18);
-    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 24, 21);
-
-    AssignFeatureValues<6>(weights, sizes, Feature::QueensidePawnShield,
-                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
-                            ScorePair(1, 0), ScorePair(1, 0)});
-    AssignFeatureValues<6>(weights, sizes, Feature::QueensidePawnStorm,
-                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
-                            ScorePair(1, 0), ScorePair(1, 0)});
-    AssignFeatureValues<6>(weights, sizes, Feature::KingsidePawnShield,
-                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
-                            ScorePair(1, 0), ScorePair(1, 0)});
-    AssignFeatureValues<6>(weights, sizes, Feature::KingsidePawnStorm,
-                           {ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0), ScorePair(1, 0),
-                            ScorePair(1, 0), ScorePair(1, 0)});
-    AssignFeatureValues<8>(weights, sizes, Feature::QueenDistanceToKing,
-                           {ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1),
-                            ScorePair(-1, -1), ScorePair(-1, -1), ScorePair(-1, -1)});
+    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -18, -0);
+    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -5, -53);
+    AssignFeatureValue(weights, sizes, Feature::NoPawns, 123, -42);
+    AssignFeatureValue(weights, sizes, Feature::BishopPair, 8, 81);
+    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 33, -18);
+    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 15, 25);
     return std::make_pair(weights, sizes);
 }
 

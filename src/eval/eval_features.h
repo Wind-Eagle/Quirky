@@ -18,19 +18,6 @@ struct PawnContext {
 bool IsPawnIsolated(const PawnContext& context);
 bool IsPawnDoubled(const PawnContext& context);
 
-struct KingSafety {
-    uint8_t pawn_shield_mask;
-    uint8_t pawn_storm_mask;
-    uint8_t queen_distance;
-    bool is_side_queenside;
-};
-
-inline constexpr uint8_t PAWN_SHIELD_PAWN_COUNT = 6;
-inline constexpr uint8_t PAWN_STORM_PAWN_COUNT = 6;
-
-template <q_core::Color c>
-KingSafety GetKingSafety(const q_core::Board& board);
-
 }  // namespace q_eval
 
 #endif  // QUIRKY_SRC_EVAL_EVAL_FEATURES_H

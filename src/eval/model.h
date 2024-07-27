@@ -17,13 +17,7 @@ enum class Feature : uint16_t {
     BishopPair = 3,
     RookOnOpenFile = 4,
     RookOnHalfOpenFile = 5,
-    // Array features
-    QueensidePawnShield = 6,
-    QueensidePawnStorm = 12,
-    KingsidePawnShield = 18,
-    KingsidePawnStorm = 24,
-    QueenDistanceToKing = 30,
-    Count = 38
+    Count = 6
 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
