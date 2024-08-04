@@ -11,6 +11,7 @@ namespace q_eval {
 
 struct PawnContext {
     q_core::bitboard_t our_pawns;
+    q_core::bitboard_t enemy_pawns;
     q_core::coord_t pawn_coord;
     q_core::Color color;
 };

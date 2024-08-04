@@ -56,13 +56,14 @@ template <EvaluationType type, Color c>
 void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score,
                    uint8_t& open_files_mask) {
     const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
+    const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)];
     if (!our_pawns) {
         AddSimpleFeature<type, c>(score, Feature::NoPawns, 1);
         open_files_mask = -(static_cast<uint8_t>(0));
         return;
     }
 
-    PawnContext context{.our_pawns = our_pawns, .pawn_coord = UNDEFINED_COORD, .color = c};
+    PawnContext context{.our_pawns = our_pawns, .enemy_pawns = enemy_pawns, .pawn_coord = UNDEFINED_COORD, .color = c};
 
     uint8_t pawn_islands_mask = 0;
     bitboard_t pawn_bitboard = board.bb_pieces[MakeCell(c, Piece::Pawn)];

@@ -13,11 +13,16 @@ enum class Feature : uint16_t {
     // Simple features
     IsolatedPawn = 0,
     DoubledPawn = 1,
-    NoPawns = 2,
-    BishopPair = 3,
-    RookOnOpenFile = 4,
-    RookOnHalfOpenFile = 5,
-    Count = 6
+    PassedPawn = 2,
+    ConnectedPassedPawn = 3,
+    NoPawns = 4,
+    BishopPair = 5,
+    RookOnOpenFile = 6,
+    RookOnHalfOpenFile = 7,
+    // Array features
+    PassedPawnAdvance = 8,
+    ConnectedPassedPawnAdvance = 11,
+    Count = 15
 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
