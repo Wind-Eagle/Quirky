@@ -35,9 +35,8 @@ time_t GetMaxTime(const GameTimeControl& time_control, const Position& position)
     return max_time;
 }
 
-SearchTimer::SearchTimer(time_control_t time_control, SearchControl& control, SearchStat& stat,
-                         Position& position)
-    : time_control_(time_control), control_(control), stat_(stat), position_(position) {
+SearchTimer::SearchTimer(time_control_t time_control, Position& position)
+    : time_control_(time_control), position_(position) {
     start_time_ = std::chrono::steady_clock::now();
 }
 

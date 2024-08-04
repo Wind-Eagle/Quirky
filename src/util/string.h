@@ -1,6 +1,7 @@
 #ifndef QUIRKY_SRC_UTIL_STRING_H
 #define QUIRKY_SRC_UTIL_STRING_H
 
+#include <algorithm>
 #include <string>
 #include <vector>
 

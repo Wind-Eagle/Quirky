@@ -98,7 +98,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
 
     SearchStat stat;
     Searcher searcher(tt_, rt, position, control_, stat);
-    SearchTimer timer(time_control, control_, stat, position);
+    SearchTimer timer(time_control, position);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
     SearchResult final_result{};

@@ -21,7 +21,7 @@ static void BenchmarkSimpleOnTestBoard(benchmark::State& state, const std::strin
     static void BM_SimpleMovegen##name(benchmark::State& state) { \
         BenchmarkSimpleOnTestBoard(state, fen);                   \
     }                                                             \
-    BENCHMARK(BM_SimpleMovegen##name);
+    BENCHMARK(BM_SimpleMovegen##name)
 
 CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_SIMPLE)
 #undef BENCH_SIMPLE
