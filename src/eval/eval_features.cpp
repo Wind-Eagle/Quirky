@@ -94,4 +94,12 @@ bool IsPawnDoubled(const PawnContext& context) {
     return HELPER_BITBOARDS.frontspan[static_cast<uint8_t>(context.color)][context.pawn_coord] & context.our_pawns;
 }
 
+bool IsPawnPassed(const PawnContext& context) {
+    return !(HELPER_BITBOARDS.passed_enemies[static_cast<uint8_t>(context.color)][context.pawn_coord] & context.enemy_pawns);
+}
+
+bool IsPawnConnected(const PawnContext& context) {
+    return HELPER_BITBOARDS.connected[static_cast<uint8_t>(context.color)][context.pawn_coord] & context.our_pawns;
+}
+
 }  // namespace q_eval

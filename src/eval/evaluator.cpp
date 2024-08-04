@@ -71,13 +71,25 @@ void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type
         const coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
         q_util::SetBit(pawn_islands_mask, GetFile(pawn_coord));
         context.pawn_coord = pawn_coord;
+        const coord_t relative_rank = c == q_core::Color::White ? GetRank(pawn_coord) : BOARD_SIDE - GetRank(pawn_coord) - 1;
 
         if (IsPawnIsolated(context)) {
             AddSimpleFeature<type, c>(score, Feature::IsolatedPawn, 1);
         }
-
         if (IsPawnDoubled(context)) {
             AddSimpleFeature<type, c>(score, Feature::DoubledPawn, 1);
+        }
+        if (IsPawnPassed(context)) {
+            AddSimpleFeature<type, c>(score, Feature::PassedPawn, 1);
+            if (relative_rank >= 3 && relative_rank <= 5) {
+                AddArrayFeature<type, c>(score, Feature::PassedPawnAdvance, relative_rank - 3, 1);
+            }
+            if (IsPawnConnected(context)) {
+                AddSimpleFeature<type, c>(score, Feature::ConnectedPassedPawn, 1);
+                if (relative_rank >= 3 && relative_rank <= 6) {
+                    AddArrayFeature<type, c>(score, Feature::ConnectedPassedPawnAdvance, relative_rank - 3, 1);
+                }
+            }
         }
     }
     open_files_mask = (~pawn_islands_mask);
