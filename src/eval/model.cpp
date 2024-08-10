@@ -28,23 +28,6 @@ inline constexpr std::pair<std::array<ScorePair, q_eval::FEATURE_COUNT>,
 GetModelWeightsAndFeatureSizes() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
     std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
-    // Simple features
-    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -11, -11);
-    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -21, -21);
-    AssignFeatureValue(weights, sizes, Feature::PassedPawn, 21, 21);
-    AssignFeatureValue(weights, sizes, Feature::ConnectedPawn, 1, 1);
-    AssignFeatureValue(weights, sizes, Feature::ConnectedPassedPawn, -9, -9);
-    AssignFeatureValue(weights, sizes, Feature::NoPawns, -262, -262);
-    AssignFeatureValue(weights, sizes, Feature::BishopPair, 27, 27);
-    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 4, 4);
-    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 23, 23);
-
-    // Array features
-    AssignFeatureValues<3>(weights, sizes, Feature::PassedPawnAdvance,
-                           {ScorePair(15, 15), ScorePair(42, 42), ScorePair(110, 110)});
-    AssignFeatureValues<4>(
-        weights, sizes, Feature::ConnectedPawnAdvance,
-        {ScorePair(8,8), ScorePair(18, 18), ScorePair(85, 85), ScorePair(223, 223)});
     return std::make_pair(weights, sizes);
 }
 

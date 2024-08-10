@@ -52,99 +52,6 @@ void AddArrayFeature(typename EvaluationResultType<type>::type& score, const Fea
     }
 }
 
-template <EvaluationType type, Color c>
-void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score,
-                   uint8_t& open_files_mask) {
-    const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
-    const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)];
-    if (!our_pawns) {
-        AddSimpleFeature<type, c>(score, Feature::NoPawns, 1);
-        open_files_mask = -(static_cast<uint8_t>(0));
-        return;
-    }
-
-    PawnContext context{.our_pawns = our_pawns, .enemy_pawns = enemy_pawns, .pawn_coord = UNDEFINED_COORD, .color = c};
-
-    uint8_t pawn_islands_mask = 0;
-    bitboard_t pawn_bitboard = board.bb_pieces[MakeCell(c, Piece::Pawn)];
-    while (pawn_bitboard) {
-        const coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
-        q_util::SetBit(pawn_islands_mask, GetFile(pawn_coord));
-        context.pawn_coord = pawn_coord;
-        const coord_t relative_rank = c == q_core::Color::White ? GetRank(pawn_coord) : BOARD_SIDE - GetRank(pawn_coord) - 1;
-        bool is_connected = false;
-
-        if (IsPawnIsolated(context)) {
-            AddSimpleFeature<type, c>(score, Feature::IsolatedPawn, 1);
-        }
-        if (IsPawnDoubled(context)) {
-            AddSimpleFeature<type, c>(score, Feature::DoubledPawn, 1);
-        }
-        if (IsPawnConnected(context)) {
-            AddSimpleFeature<type, c>(score, Feature::ConnectedPawn, 1);
-            is_connected = true;
-            if (relative_rank >= 3 && relative_rank <= 6) {
-                AddArrayFeature<type, c>(score, Feature::ConnectedPawnAdvance, relative_rank - 3, 1);
-            }
-        }
-        if (IsPawnPassed(context)) {
-            AddSimpleFeature<type, c>(score, Feature::PassedPawn, 1);
-            if (relative_rank >= 3 && relative_rank <= 5) {
-                AddArrayFeature<type, c>(score, Feature::PassedPawnAdvance, relative_rank - 3, 1);
-            }
-            if (is_connected) {
-                AddSimpleFeature<type, c>(score, Feature::ConnectedPassedPawn, 1);
-            }
-        }
-    }
-    open_files_mask = (~pawn_islands_mask);
-}
-
-template <EvaluationType type>
-PawnHashTableEntry EvaluatePawns(const Board& board,
-                                 typename EvaluationResultType<type>::type& res) {
-    uint8_t white_open_files_mask = 0;
-    uint8_t black_open_files_mask = 0;
-    typename EvaluationResultType<type>::type score{};
-    EvaluatePawns<type, Color::White>(board, score, white_open_files_mask);
-    EvaluatePawns<type, Color::Black>(board, score, black_open_files_mask);
-    res += score;
-    if constexpr (type == EvaluationType::Vector) {
-        return ConstructPawnHashTableEntry(ScorePair(), white_open_files_mask,
-                                           black_open_files_mask);
-    } else {
-        return ConstructPawnHashTableEntry(score, white_open_files_mask, black_open_files_mask);
-    }
-}
-
-template <EvaluationType type, Color c>
-void EvaluateNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
-                  const PawnHashTableEntry& pawn_hash_table_entry) {
-    const bitboard_t open_files =
-        pawn_hash_table_entry.white_open_files_mask & pawn_hash_table_entry.black_open_files_mask;
-    const bitboard_t half_open_files =
-        (c == Color::White ? pawn_hash_table_entry.white_open_files_mask
-                           : pawn_hash_table_entry.black_open_files_mask);
-    if (board.bb_pieces[MakeCell(c, Piece::Bishop)]) {
-        AddSimpleFeature<type, c>(
-            score, Feature::BishopPair,
-            q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Bishop)]) - 1);
-    }
-    AddSimpleFeature<type, c>(score, Feature::RookOnOpenFile,
-                              q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
-                                                  q_util::ScatterByte(open_files)));
-    AddSimpleFeature<type, c>(score, Feature::RookOnHalfOpenFile,
-                              q_util::GetBitCount(board.bb_pieces[MakeCell(c, Piece::Rook)] &
-                                                  q_util::ScatterByte(half_open_files)));
-}
-
-template <EvaluationType type>
-void EvaluateNBRQ(const Board& board, typename EvaluationResultType<type>::type& score,
-                  const PawnHashTableEntry pawn_hash_table_entry) {
-    EvaluateNBRQ<type, Color::White>(board, score, pawn_hash_table_entry);
-    EvaluateNBRQ<type, Color::Black>(board, score, pawn_hash_table_entry);
-}
-
 template <EvaluationType type>
 typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board& board) const {
     Q_ASSERT(board.IsValid());
@@ -154,8 +61,6 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board&
         return cur_tag == tag_;
     }());
     typename EvaluationResultType<type>::type res = tag_.GetScore();
-    const auto pawn_entry = EvaluatePawns<type>(board, res);
-    EvaluateNBRQ<type>(board, res, pawn_entry);
     if constexpr (type == EvaluationType::Value) {
         if (board.move_side == Color::Black) {
             res *= -1;
