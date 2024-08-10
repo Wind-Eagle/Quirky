@@ -94,9 +94,6 @@ void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type
             }
             if (is_connected) {
                 AddSimpleFeature<type, c>(score, Feature::ConnectedPassedPawn, 1);
-                if (relative_rank >= 3 && relative_rank <= 6) {
-                    AddArrayFeature<type, c>(score, Feature::ConnectedPassedPawnAdvance, relative_rank - 3, 1);
-                }
             }
         }
     }

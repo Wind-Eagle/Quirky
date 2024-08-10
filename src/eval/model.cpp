@@ -29,25 +29,22 @@ GetModelWeightsAndFeatureSizes() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
     std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
     // Simple features
-    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -17, -9);
-    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -10, -40);
-    AssignFeatureValue(weights, sizes, Feature::PassedPawn, -4, 29);
-    AssignFeatureValue(weights, sizes, Feature::ConnectedPawn, 6, 23);
-    AssignFeatureValue(weights, sizes, Feature::ConnectedPassedPawn, 11, -19);
-    AssignFeatureValue(weights, sizes, Feature::NoPawns, 179, -48);
-    AssignFeatureValue(weights, sizes, Feature::BishopPair, 9, 101);
-    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 43, -28);
-    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 28, 27);
+    AssignFeatureValue(weights, sizes, Feature::IsolatedPawn, -11, -11);
+    AssignFeatureValue(weights, sizes, Feature::DoubledPawn, -21, -21);
+    AssignFeatureValue(weights, sizes, Feature::PassedPawn, 21, 21);
+    AssignFeatureValue(weights, sizes, Feature::ConnectedPawn, 1, 1);
+    AssignFeatureValue(weights, sizes, Feature::ConnectedPassedPawn, -9, -9);
+    AssignFeatureValue(weights, sizes, Feature::NoPawns, -262, -262);
+    AssignFeatureValue(weights, sizes, Feature::BishopPair, 27, 27);
+    AssignFeatureValue(weights, sizes, Feature::RookOnOpenFile, 4, 4);
+    AssignFeatureValue(weights, sizes, Feature::RookOnHalfOpenFile, 23, 23);
 
     // Array features
     AssignFeatureValues<3>(weights, sizes, Feature::PassedPawnAdvance,
-                           {ScorePair(5, 26), ScorePair(31, 51), ScorePair(70, 114)});
+                           {ScorePair(15, 15), ScorePair(42, 42), ScorePair(110, 110)});
     AssignFeatureValues<4>(
         weights, sizes, Feature::ConnectedPawnAdvance,
-        {ScorePair(12, 2), ScorePair(11, 16), ScorePair(96, 42), ScorePair(50, 63)});
-    AssignFeatureValues<4>(
-        weights, sizes, Feature::ConnectedPassedPawnAdvance,
-        {ScorePair(-19, 24), ScorePair(0, 26), ScorePair(-16, 11), ScorePair(50, 63)});
+        {ScorePair(8,8), ScorePair(18, 18), ScorePair(85, 85), ScorePair(223, 223)});
     return std::make_pair(weights, sizes);
 }
 

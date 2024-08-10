@@ -23,8 +23,7 @@ enum class Feature : uint16_t {
     // Array features
     PassedPawnAdvance = 9,
     ConnectedPawnAdvance = 12,
-    ConnectedPassedPawnAdvance = 16,
-    Count = 20
+    Count = 16
 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
