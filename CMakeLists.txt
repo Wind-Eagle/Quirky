@@ -21,7 +21,7 @@ else()
     message(STATUS "LTO not supported: <${error}>")
 endif()
 
-add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h)
+add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h src/util/channel.h src/util/processor.h)
 
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(util)
@@ -41,14 +41,12 @@ target_link_libraries(api core eval search util)
 add_executable(Quirky src/main.cpp)
 target_link_libraries(Quirky core api util eval search)
 
-add_executable(eval_model_sampler
-    tools/eval/model/sampler/main.cpp
-    tools/eval/model/sampler/reader.cpp
-    tools/eval/model/sampler/calcer.cpp
-    tools/eval/model/sampler/weighter.cpp
-    tools/eval/model/sampler/writer.cpp
+add_executable(eval_tuner
+    tools/eval/tuner/main.cpp
+    tools/eval/tuner/reader.cpp
+    tools/eval/tuner/dataset.cpp
 )
-target_link_libraries(eval_model_sampler eval)
+target_link_libraries(eval_tuner eval)
 
 find_package(GTest)
 if(GTest_FOUND)
