@@ -10,6 +10,7 @@
 struct LearnerParams {
     std::shared_ptr<Dataset> dataset;
     std::string output_filename;
+    std::string state_filename;
     size_t number_of_threads;
     size_t channel_size;
 };
