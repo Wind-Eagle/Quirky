@@ -3,6 +3,7 @@
 #include <cmath>
 #include <fstream>
 #include <optional>
+#include <queue>
 
 #include "../../../src/eval/psq.h"
 #include "../../../src/util/processor.h"
@@ -86,6 +87,15 @@ void WriteToFile(const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
     out << std::endl;
 }
 
+struct FeatureWithImprovement {
+    double improvement;
+    size_t num;
+};
+
+bool operator < (FeatureWithImprovement a, FeatureWithImprovement b) {
+    return a.improvement < b.improvement;
+}
+
 void TuneWeights(const LearnerParams& params) {
     std::shared_ptr<Dataset> dataset = params.dataset;
 
@@ -114,40 +124,71 @@ void TuneWeights(const LearnerParams& params) {
     }
     std::array<float, PSQ_AND_FEATURE_COUNT> grad_preference{};
 
-    for (size_t size_div = 32; size_div >= 1; size_div /= 2) {
-        double best_loss = 0;
-        bool improved = true;
-        size_t iteration_number = 0;
+    for (size_t size_div = 8; size_div >= 1; size_div /= 2) {
         std::vector<Game> batch = dataset->GetAllElements();
         batch.resize(dataset->Size() / size_div);
-        while (improved) {
-            improved = false;
-            best_loss = GetLossByWeights(params, batch, weights);
-            double old_loss = best_loss;
-            const auto start_time = std::chrono::steady_clock::now();
-            for (size_t i = 0; i < PSQ_AND_FEATURE_COUNT; i++) {
-                const int grad_sign = grad_preference[i] >= 0 ? 1 : -1;
-                grad_preference[i] *= 0.8;
-                for (int delta = -1; delta <= 1; delta += 2) {
-                    int16_t weight_delta = delta * grad_sign;
-                    weights[i] += weight_delta;
-                    double cur_loss = GetLossByWeights(params, batch, weights);
-                    if (cur_loss + 1e-9 < best_loss) {
-                        best_loss = cur_loss;
-                        improved = true;
-                        grad_preference[i] += weight_delta;
-                        break;
-                    }
-                    weights[i] -= weight_delta;
-                }
+        
+        std::priority_queue<FeatureWithImprovement> priority{};
+        for (size_t i = 0; i < PSQ_AND_FEATURE_COUNT; i++) {
+            bool is_piece_weight = i < q_core::NUMBER_OF_PIECES;
+            if (i >= TAPERED_EVAL_BOUND && i - TAPERED_EVAL_BOUND < q_core::NUMBER_OF_PIECES) {
+                is_piece_weight = true;
             }
-            double iteration_duration =
+            priority.push({.improvement = is_piece_weight ? 1e-3 : 1e-5, .num = i});
+        }
+        std::vector<FeatureWithImprovement> tried{};
+
+        double best_loss = GetLossByWeights(params, batch, weights);;
+        const auto start_time = std::chrono::steady_clock::now();
+        auto last_print_time = std::chrono::steady_clock::now();
+        double last_printed_loss = best_loss;
+        while (!priority.empty()) {
+            size_t index = priority.top().num;
+            double improvement = priority.top().improvement;
+            priority.pop();
+
+            bool improved = false;
+            double old_loss = best_loss;
+            const int grad_sign = grad_preference[index] >= 0 ? 1 : -1;
+            grad_preference[index] *= 0.8;
+            for (int delta = -1; delta <= 1; delta += 2) {
+                int16_t weight_delta = delta * grad_sign;
+                weights[index] += weight_delta;
+                double cur_loss = GetLossByWeights(params, batch, weights);
+                if (cur_loss + 1e-9 < best_loss) {
+                    best_loss = cur_loss;
+                    improved = true;
+                    grad_preference[index] += weight_delta;
+                    break;
+                }
+                weights[index] -= weight_delta;
+            }
+            if (improved) {
+                double delta = old_loss - best_loss;
+                priority.push({.improvement = improvement * 0.3 + delta, .num = index});
+                for (const auto& i : tried) {
+                    priority.push({.improvement = i.improvement, .num = i.num});
+                }
+                tried.clear();
+            } else {
+                tried.push_back({.improvement = improvement * 0.3, .num = index});
+            }
+            double last_print_duration =
+                static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        std::chrono::steady_clock::now() - last_print_time)
+                                        .count()) / 1000;
+            if (last_print_duration > 10) {
+                double time_from_start =
                 static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
                                         std::chrono::steady_clock::now() - start_time)
-                                        .count()) / 1000;
-            q_util::Print("Iteration number:", ++iteration_number, "element count:", batch.size(),
-                          "loss change:", old_loss - best_loss, "loss:", best_loss, "time:", iteration_duration, "sec");
-            WriteToFile(weights, params.output_filename);
+                                        .count()) / 1000 / 60;
+                q_util::Print("Element count:", batch.size(),
+                          "loss change:", last_printed_loss - best_loss, "loss:", best_loss, "time:", time_from_start, "min");
+                WriteToFile(weights, params.output_filename);
+                last_print_time = std::chrono::steady_clock::now();
+                last_printed_loss = best_loss;
+            }
         }
+        
     }
 }
