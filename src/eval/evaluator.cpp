@@ -106,25 +106,21 @@ void Evaluator<type>::Tag::BuildTag(const Board& board) {
     }
 }
 
-constexpr std::array<ScorePair, 2> KINGSIGE_CASTLING_PSQ_UPDATE = {
-    GetPSQValue(MakeCell(Color::White, Piece::King), WHITE_KING_INITIAL_POSITION + 2) +
-        GetPSQValue(MakeCell(Color::White, Piece::Rook), WHITE_KING_INITIAL_POSITION + 1) -
-        GetPSQValue(MakeCell(Color::White, Piece::King), WHITE_KING_INITIAL_POSITION) -
-        GetPSQValue(MakeCell(Color::White, Piece::Rook), WHITE_KING_INITIAL_POSITION + 3),
-    GetPSQValue(MakeCell(Color::Black, Piece::King), BLACK_KING_INITIAL_POSITION + 2) +
-        GetPSQValue(MakeCell(Color::Black, Piece::Rook), BLACK_KING_INITIAL_POSITION + 1) -
-        GetPSQValue(MakeCell(Color::Black, Piece::King), BLACK_KING_INITIAL_POSITION) -
-        GetPSQValue(MakeCell(Color::Black, Piece::Rook), BLACK_KING_INITIAL_POSITION + 3)};
-
-constexpr std::array<ScorePair, 2> QUEENSIGE_CASTLING_PSQ_UPDATE = {
-    GetPSQValue(MakeCell(Color::White, Piece::King), WHITE_KING_INITIAL_POSITION - 2) +
-        GetPSQValue(MakeCell(Color::White, Piece::Rook), WHITE_KING_INITIAL_POSITION - 1) -
-        GetPSQValue(MakeCell(Color::White, Piece::King), WHITE_KING_INITIAL_POSITION) -
-        GetPSQValue(MakeCell(Color::White, Piece::Rook), WHITE_KING_INITIAL_POSITION - 4),
-    GetPSQValue(MakeCell(Color::Black, Piece::King), BLACK_KING_INITIAL_POSITION - 2) +
-        GetPSQValue(MakeCell(Color::Black, Piece::Rook), BLACK_KING_INITIAL_POSITION - 1) -
-        GetPSQValue(MakeCell(Color::Black, Piece::King), BLACK_KING_INITIAL_POSITION) -
-        GetPSQValue(MakeCell(Color::Black, Piece::Rook), BLACK_KING_INITIAL_POSITION - 4)};
+template <Color c, CastlingSide s>
+constexpr ScorePair GetCastlingUpdateScorePair() {
+    constexpr auto KING_INITIAL_POSITION =
+        c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION;
+    if constexpr (s == CastlingSide::Kingside) {
+        return GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION + 2) +
+               GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION + 1) -
+               GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION) -
+               GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION + 3);
+    }
+    return GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION - 2) +
+           GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION - 1) -
+           GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION) -
+           GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION - 4);
+}
 
 template <EvaluationType type>
 typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& board,
@@ -162,10 +158,18 @@ typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& b
             case MoveBasicType::Castling: {
                 if (GetCastlingSide(move) == CastlingSide::Kingside) {
                     new_tag.score_ +=
-                        KINGSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
+                        board.move_side == Color::White
+                            ? GetCastlingUpdateScorePair<q_core::Color::White,
+                                                         q_core::CastlingSide::Kingside>()
+                            : GetCastlingUpdateScorePair<q_core::Color::Black,
+                                                         q_core::CastlingSide::Kingside>();
                 } else {
                     new_tag.score_ +=
-                        QUEENSIGE_CASTLING_PSQ_UPDATE[static_cast<uint8_t>(board.move_side)];
+                        board.move_side == Color::White
+                            ? GetCastlingUpdateScorePair<q_core::Color::White,
+                                                         q_core::CastlingSide::Queenside>()
+                            : GetCastlingUpdateScorePair<q_core::Color::Black,
+                                                         q_core::CastlingSide::Queenside>();
                 }
                 return new_tag;
             }

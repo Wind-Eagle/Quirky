@@ -12,7 +12,9 @@
 class Dataset {
   public:
     void Load(Reader& reader);
-    std::vector<Game> GetBatch(size_t batch_size);
+    Game GetElement();
+    std::vector<Game> GetAllElements();
+    size_t Size() const;
   private:
     std::vector<Game> elements_{};
     std::mutex mutex_;

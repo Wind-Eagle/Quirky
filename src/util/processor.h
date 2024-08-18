@@ -20,30 +20,26 @@ class Processor {
           number_of_threads_(number_of_threads) {}
     void Start(std::function<Out(In)> func) {
         for (size_t i = 0; i < number_of_threads_; i++) {
-            for (size_t i = 0; i < number_of_threads_; i++) {
-                threads_.emplace_back([&]() {
-                    for (;;) {
-                        auto input = send_channel_.Recv();
-                        if (input == std::nullopt) {
-                            break;
-                        }
-                        receive_channel_.Send(func(input));
+            threads_.emplace_back([&]() {
+                for (;;) {
+                    auto input = send_channel_.Recv();
+                    if (input == std::nullopt) {
+                        break;
                     }
-                });
-            }
+                    receive_channel_.Send(func(*input));
+                }
+            });
         }
     }
     void Stop() {
-        receive_channel_.Close();
         send_channel_.Close();
-    }
-    void Send(In in) { send_channel_.Send(in); }
-    std::optional<Out> Receive() { return receive_channel_.Recv(); }
-    ~Processor() {
         for (size_t i = 0; i < number_of_threads_; i++) {
             threads_[i].join();
         }
+        receive_channel_.Close();
     }
+    void Send(In in) { send_channel_.Send(in); }
+    std::optional<Out> Receive() { return receive_channel_.Recv(); }
 
   private:
     std::vector<std::thread> threads_;

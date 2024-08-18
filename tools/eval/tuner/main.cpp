@@ -4,24 +4,30 @@
 #include "../../../src/util/io.h"
 #include "reader.h"
 #include "dataset.h"
+#include "learner.h"
 
 void PrintHelp() {
     q_util::Print(
         "Quirky eval tuner is a tool that constructs eval psq and model weights"
         "using a set of games. Usage:\n"
         "-d: file with dataset\n"
-        "-j: number of additional threads (default is 1)\n");
+        "-j: number of additional threads (default is 1)\n"
+        "-o: file with results");
 }
 
 struct ExecutableArguments {
     std::string dataset_path;
+    std::string output_filename;
     size_t number_of_threads = 1;
 };
 
 void Make(const ExecutableArguments& args) {
     Reader reader(args.dataset_path);
-    std::unique_ptr<Dataset> dataset = std::make_unique<Dataset>();
+    std::shared_ptr<Dataset> dataset = std::make_shared<Dataset>();
     dataset->Load(reader);
+
+    LearnerParams learner_params{.dataset = dataset, .output_filename = args.output_filename, .number_of_threads = args.number_of_threads, .channel_size = 64};
+    TuneWeights(learner_params);
 }
 
 int main(int argc, char* argv[]) {
@@ -42,6 +48,8 @@ int main(int argc, char* argv[]) {
             if (executable_arguments.number_of_threads == 0) {
                 q_util::ExitWithError(QuirkyError::UnexpectedValue);
             }
+        } else if (std::string(argv[i]) == "-o") {
+            executable_arguments.output_filename = argv[i + 1];
         } else {
             q_util::ExitWithError(QuirkyError::UnexpectedArgument);
         }

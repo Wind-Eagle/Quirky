@@ -86,5 +86,5 @@ Game Reader::GetNextGame() {
 }
 
 bool Reader::HasNext() const {
-    return in_.eof();
+    return !in_.eof();
 }
