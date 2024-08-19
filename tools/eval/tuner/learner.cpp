@@ -166,7 +166,7 @@ void GetDefaultState(std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
         if (i >= TAPERED_EVAL_BOUND && i - TAPERED_EVAL_BOUND < q_core::NUMBER_OF_PIECES) {
             is_piece_weight = true;
         }
-        improvements[i] = is_piece_weight ? 1e-3 : 1e-5;
+        improvements[i] = is_piece_weight ? 1e-3 : 1e-6;
     }
 }
 
@@ -185,7 +185,7 @@ void TuneWeights(const LearnerParams& params) {
     }
 
     std::vector<Game> batch = dataset->GetAllElements();
-    batch.resize(dataset->Size());
+    batch.resize(dataset->Size() / 4);
 
     std::priority_queue<FeatureWithImprovement> priority{};
     for (size_t i = 0; i < PSQ_AND_FEATURE_COUNT; i++) {
@@ -194,20 +194,25 @@ void TuneWeights(const LearnerParams& params) {
     std::vector<FeatureWithImprovement> tried{};
 
     double best_loss = GetLossByWeights(params, batch, weights);
-    ;
+
     const auto start_time = std::chrono::steady_clock::now();
     auto last_print_time = std::chrono::steady_clock::now();
     double last_printed_loss = best_loss;
+    size_t last_printed_weight_change = 0;
+    size_t last_printed_weight_try = 0;
+    size_t last_printed_weight_try_side = 0;
     while (!priority.empty()) {
         size_t index = priority.top().num;
         double improvement = priority.top().improvement;
         priority.pop();
+        last_printed_weight_try++;
 
         bool improved = false;
         double old_loss = best_loss;
         const int grad_sign = grad_preference[index] >= 0 ? 1 : -1;
         grad_preference[index] *= 0.8;
-        for (int delta = -1; delta <= 1; delta += 2) {
+        for (int delta = 1; delta >= -1; delta -= 2) {
+            last_printed_weight_try_side++;
             int16_t weight_delta = delta * grad_sign;
             weights[index] += weight_delta;
             double cur_loss = GetLossByWeights(params, batch, weights);
@@ -215,35 +220,36 @@ void TuneWeights(const LearnerParams& params) {
                 best_loss = cur_loss;
                 improved = true;
                 grad_preference[index] += weight_delta;
+                last_printed_weight_change++;
                 break;
             }
             weights[index] -= weight_delta;
         }
         if (improved) {
             double delta = old_loss - best_loss;
-            improvements[index] = improvement * 0.3 + delta;
-            priority.push({.improvement = improvement * 0.3 + delta, .num = index});
+            improvements[index] = improvement * 0.9 + delta;
+            priority.push({.improvement = improvement * 0.9 + delta, .num = index});
             for (const auto& i : tried) {
                 priority.push({.improvement = i.improvement, .num = i.num});
             }
             tried.clear();
         } else {
-            improvements[index] = improvement * 0.3;
-            tried.push_back({.improvement = improvement * 0.3, .num = index});
+            improvements[index] = improvement * 0.9;
+            tried.push_back({.improvement = improvement * 0.9, .num = index});
         }
         double last_print_duration =
             static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
                                     std::chrono::steady_clock::now() - last_print_time)
                                     .count()) /
             1000;
-        if (last_print_duration > 1) {
+        if (last_print_duration > 30) {
             double time_from_start =
                 static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
                                         std::chrono::steady_clock::now() - start_time)
                                         .count()) /
                 1000 / 60;
             q_util::Print("Element count:", batch.size(),
-                          "loss change:", last_printed_loss - best_loss, "loss:", best_loss,
+                          "loss change:", last_printed_loss - best_loss, "loss:", best_loss, "changes:", last_printed_weight_change, "/", last_printed_weight_try, "/", last_printed_weight_try_side,
                           "time:", time_from_start, "min");
             WriteResultToFile(weights, params.output_filename);
             if (!params.state_filename.empty()) {
@@ -251,6 +257,9 @@ void TuneWeights(const LearnerParams& params) {
             }
             last_print_time = std::chrono::steady_clock::now();
             last_printed_loss = best_loss;
+            last_printed_weight_change = 0;
+            last_printed_weight_try = 0;
+            last_printed_weight_try_side = 0;
         }
     }
 }
