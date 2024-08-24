@@ -5,15 +5,18 @@
 
 void Dataset::Load(Reader& reader) {
     while (reader.HasNext()) {
-        elements_.push_back(reader.GetNextGame());
+        Game game = reader.GetNextGame();
+        if (elements_.size() < 25000) {
+            std::vector<PositionState> states(game.moves.size(), PositionState{.old_score = q_eval::SCORE_UNKNOWN, .new_score = q_eval::SCORE_UNKNOWN, .score_type = NotReady, .force_update = true});
+            Element element{.game = game, .states = states};
+            elements_.push_back(std::make_shared<Element>(element));
+        } else {
+            break;
+        }
     }
 }
 
-Game Dataset::GetElement(){
-    return elements_[q_util::GetRandom64() % elements_.size()];
-}
-
-std::vector<Game> Dataset::GetAllElements() {
+std::vector<std::shared_ptr<Element>> Dataset::GetAllElements() const {
     return elements_;
 }
 

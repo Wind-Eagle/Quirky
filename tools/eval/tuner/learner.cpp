@@ -30,15 +30,18 @@ void AssignWeights(const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights) {
     }
 }
 
-double GetLossByWeights(const LearnerParams& params, const std::vector<Game>& games,
-                        const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights) {
+double GetLossByWeights(const LearnerParams& learner_params,
+                        const std::vector<std::shared_ptr<Element>>& elements,
+                        const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
+                        CalcerParams calcer_params) {
     AssignWeights(weights);
-    q_util::Processor<Game, CalcerResult> scoring_processor(
-        params.number_of_threads, params.channel_size, params.channel_size);
-    scoring_processor.Start([&](Game game) { return GetCalcerResult(game); });
+    q_util::Processor<std::shared_ptr<Element>, CalcerResult> scoring_processor(
+        learner_params.number_of_threads, learner_params.channel_size, learner_params.channel_size);
+    scoring_processor.Start(
+        [&](std::shared_ptr<Element> game) { return GetCalcerResult(game, calcer_params); });
     std::thread sender([&]() {
-        for (size_t i = 0; i < games.size(); i++) {
-            scoring_processor.Send(games[i]);
+        for (size_t i = 0; i < elements.size(); i++) {
+            scoring_processor.Send(elements[i]);
         }
         scoring_processor.Stop();
     });
@@ -90,9 +93,9 @@ void WriteResultToFile(const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights
 }
 
 bool ReadStateFromFile(std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
-                      std::array<double, PSQ_AND_FEATURE_COUNT>& grad_preference,
-                      std::array<double, PSQ_AND_FEATURE_COUNT>& improvements,
-                      const std::string& state_filename) {
+                       std::array<double, PSQ_AND_FEATURE_COUNT>& grad_preference,
+                       std::array<double, PSQ_AND_FEATURE_COUNT>& improvements,
+                       const std::string& state_filename) {
     if (!std::filesystem::exists(state_filename)) {
         return false;
     }
@@ -121,7 +124,7 @@ void WriteStateToFile(const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
                       const std::string& state_filename) {
     std::ofstream out(state_filename);
     for (size_t i = 0; i < PSQ_AND_FEATURE_COUNT; i++) {
-        out << std::fixed << std::setprecision(9) << weights[i] << " " << grad_preference[i] << " "
+        out << std::fixed << std::setprecision(12) << weights[i] << " " << grad_preference[i] << " "
             << improvements[i] << std::endl;
     }
 }
@@ -136,8 +139,8 @@ bool operator<(FeatureWithImprovement a, FeatureWithImprovement b) {
 }
 
 void GetDefaultState(std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
-                      std::array<double, PSQ_AND_FEATURE_COUNT>& grad_preference,
-                      std::array<double, PSQ_AND_FEATURE_COUNT>& improvements) {
+                     std::array<double, PSQ_AND_FEATURE_COUNT>& grad_preference,
+                     std::array<double, PSQ_AND_FEATURE_COUNT>& improvements) {
     for (size_t i = 0; i < q_core::NUMBER_OF_PIECES; i++) {
         weights[i] = q_eval::PIECE_COST[i].GetFirst();
         weights[i + TAPERED_EVAL_BOUND] = q_eval::PIECE_COST[i].GetSecond();
@@ -166,26 +169,55 @@ void GetDefaultState(std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
         if (i >= TAPERED_EVAL_BOUND && i - TAPERED_EVAL_BOUND < q_core::NUMBER_OF_PIECES) {
             is_piece_weight = true;
         }
-        improvements[i] = is_piece_weight ? 1e-3 : 1e-6;
+        improvements[i] = is_piece_weight ? 1e-3 : 1e-5;
     }
+}
+
+struct Stat {
+    std::chrono::time_point<std::chrono::steady_clock> time = std::chrono::steady_clock::now();
+    double loss = 0;
+    size_t weight_change = 0;
+    size_t weight_try = 0;
+    size_t weight_try_side = 0;
+};
+
+CalcerParams MakeCalcerParams(int16_t real_feature_index, bool weights_reverted) {
+    CalcerFeatureChangeType change_type =
+        real_feature_index < q_core::NUMBER_OF_PIECES
+            ? CalcerFeatureChangeType::PieceWeight
+            : (real_feature_index < q_core::NUMBER_OF_PIECES + COMPRESSED_PSQ_SIZE
+                   ? CalcerFeatureChangeType::PSQ
+                   : CalcerFeatureChangeType::Model);
+    q_core::Piece piece =
+        change_type == CalcerFeatureChangeType::Model
+            ? q_core::Piece::King
+            : (change_type == CalcerFeatureChangeType::PSQ
+                   ? static_cast<q_core::Piece>(
+                         (real_feature_index - q_core::NUMBER_OF_PIECES) / q_core::BOARD_SIZE + 1)
+                   : static_cast<q_core::Piece>(real_feature_index + 1));
+    q_core::coord_t coord =
+        change_type != CalcerFeatureChangeType::PSQ
+            ? q_core::UNDEFINED_COORD
+            : (real_feature_index - q_core::NUMBER_OF_PIECES) % q_core::BOARD_SIZE;
+    return CalcerParams{.changed_piece = piece, .changed_coord = coord, .change_type = change_type, .revert_last_change = weights_reverted};
 }
 
 void TuneWeights(const LearnerParams& params) {
     std::shared_ptr<Dataset> dataset = params.dataset;
-    
+
     std::array<int16_t, PSQ_AND_FEATURE_COUNT> weights{};
     std::array<double, PSQ_AND_FEATURE_COUNT> grad_preference{};
     std::array<double, PSQ_AND_FEATURE_COUNT> improvements{};
     bool loaded_state = false;
     if (!params.state_filename.empty()) {
-        loaded_state = ReadStateFromFile(weights, grad_preference, improvements, params.state_filename);
+        loaded_state =
+            ReadStateFromFile(weights, grad_preference, improvements, params.state_filename);
     }
     if (!loaded_state) {
         GetDefaultState(weights, grad_preference, improvements);
     }
 
-    std::vector<Game> batch = dataset->GetAllElements();
-    batch.resize(dataset->Size() / 4);
+    std::vector<std::shared_ptr<Element>> batch = dataset->GetAllElements();
 
     std::priority_queue<FeatureWithImprovement> priority{};
     for (size_t i = 0; i < PSQ_AND_FEATURE_COUNT; i++) {
@@ -193,37 +225,46 @@ void TuneWeights(const LearnerParams& params) {
     }
     std::vector<FeatureWithImprovement> tried{};
 
-    double best_loss = GetLossByWeights(params, batch, weights);
-
+    CalcerParams calcer_params{.changed_piece = q_core::Piece::Pawn,
+                               .changed_coord = q_core::UNDEFINED_COORD,
+                               .change_type = CalcerFeatureChangeType::Model,
+                               .revert_last_change = false};
+    bool weights_reverted = false;
+    double best_loss = GetLossByWeights(params, batch, weights, calcer_params);
+    
     const auto start_time = std::chrono::steady_clock::now();
-    auto last_print_time = std::chrono::steady_clock::now();
-    double last_printed_loss = best_loss;
-    size_t last_printed_weight_change = 0;
-    size_t last_printed_weight_try = 0;
-    size_t last_printed_weight_try_side = 0;
+    Stat stat;
+    stat.loss = best_loss;
     while (!priority.empty()) {
         size_t index = priority.top().num;
         double improvement = priority.top().improvement;
         priority.pop();
-        last_printed_weight_try++;
+        stat.weight_try++;
 
         bool improved = false;
         double old_loss = best_loss;
         const int grad_sign = grad_preference[index] >= 0 ? 1 : -1;
         grad_preference[index] *= 0.8;
         for (int delta = 1; delta >= -1; delta -= 2) {
-            last_printed_weight_try_side++;
+            stat.weight_try_side++;
             int16_t weight_delta = delta * grad_sign;
             weights[index] += weight_delta;
-            double cur_loss = GetLossByWeights(params, batch, weights);
-            if (cur_loss + 1e-9 < best_loss) {
+
+            int16_t real_feature_index =
+                index >= TAPERED_EVAL_BOUND ? index - TAPERED_EVAL_BOUND : index;
+            calcer_params = MakeCalcerParams(real_feature_index, weights_reverted);
+
+            double cur_loss = GetLossByWeights(params, batch, weights, calcer_params);
+            if (cur_loss + 1e-12 < best_loss) {
                 best_loss = cur_loss;
                 improved = true;
                 grad_preference[index] += weight_delta;
-                last_printed_weight_change++;
+                stat.weight_change++;
+                weights_reverted = false;
                 break;
             }
             weights[index] -= weight_delta;
+            weights_reverted = true;
         }
         if (improved) {
             double delta = old_loss - best_loss;
@@ -239,27 +280,24 @@ void TuneWeights(const LearnerParams& params) {
         }
         double last_print_duration =
             static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                                    std::chrono::steady_clock::now() - last_print_time)
+                                    std::chrono::steady_clock::now() - stat.time)
                                     .count()) /
             1000;
-        if (last_print_duration > 30) {
+        if (last_print_duration > 5) {
             double time_from_start =
                 static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
                                         std::chrono::steady_clock::now() - start_time)
                                         .count()) /
                 1000 / 60;
-            q_util::Print("Element count:", batch.size(),
-                          "loss change:", last_printed_loss - best_loss, "loss:", best_loss, "changes:", last_printed_weight_change, "/", last_printed_weight_try, "/", last_printed_weight_try_side,
-                          "time:", time_from_start, "min");
+            q_util::Print("Element count:", batch.size(), "loss change:", stat.loss - best_loss,
+                          "loss:", best_loss, "changes:", stat.weight_change, "/", stat.weight_try,
+                          "/", stat.weight_try_side, "time:", time_from_start, "min");
             WriteResultToFile(weights, params.output_filename);
             if (!params.state_filename.empty()) {
                 WriteStateToFile(weights, grad_preference, improvements, params.state_filename);
             }
-            last_print_time = std::chrono::steady_clock::now();
-            last_printed_loss = best_loss;
-            last_printed_weight_change = 0;
-            last_printed_weight_try = 0;
-            last_printed_weight_try_side = 0;
+            stat = {};
+            stat.loss = best_loss;
         }
     }
 }

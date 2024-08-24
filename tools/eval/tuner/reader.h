@@ -16,9 +16,9 @@ struct GameHeader {
 };
 
 struct Game {
-    std::string start_board_fen;
-    std::vector<std::string> moves;
-    GameHeader header;
+    const std::string start_board_fen;
+    const std::vector<std::string> moves;
+    const GameHeader header;
 };
 
 class Reader {
