@@ -123,8 +123,12 @@ inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_
 
 inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 3;
 inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
+
 inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
+
+inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
+inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -201,11 +205,22 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
 
     // Futility pruning
-    if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD && !q_core::IsKingInCheck(position_.board) &&
-        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta)) {
+    if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD && !q_eval::IsScoreMate(beta) && !q_core::IsKingInCheck(position_.board)) {
         get_node_evaluation();
         if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
             return beta;
+        }
+    }
+
+    // Razoring
+    if (node_type == NodeType::Simple && depth <= RPR_DEPTH_THRESHOLD && !q_eval::IsScoreMate(alpha)) {
+        get_node_evaluation();
+        q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
+        if (local_context_[idepth].eval <= threshold) {
+            q_eval::score_t q_score = QuiescenseSearch(threshold, threshold + 1);
+            if (q_score <= threshold) {
+                return alpha;
+            }
         }
     }
 
