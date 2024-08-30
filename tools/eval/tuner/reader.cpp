@@ -59,7 +59,7 @@ std::string ReadBoard(std::ifstream& in) {
     if (fen == "start") {
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     }
-    return fen;
+    return fen.substr(6);
 }
 
 Game ReadGameWithResult(std::ifstream& in, size_t game_index) {

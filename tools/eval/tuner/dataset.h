@@ -6,8 +6,7 @@
 #include <memory>
 #include <mutex>
 
-#include "../../../src/core/board/board.h"
-#include "../../../src/eval/model.h"
+#include "../../../src/search/position/position.h"
 #include "reader.h"
 
 enum PositionScoreType {
@@ -16,16 +15,12 @@ enum PositionScoreType {
     Ready = 2
 };
 
-struct PositionState {
-    q_eval::score_t old_score;
-    q_eval::score_t new_score;
-    PositionScoreType score_type;
-    bool force_update;
-};
-
 struct Element {
-    Game game;
-    std::vector<PositionState> states;
+    q_search::Position position;
+    Result result;
+    q_eval::score_t old_score = q_eval::SCORE_UNKNOWN;
+    q_eval::score_t new_score = q_eval::SCORE_UNKNOWN;
+    PositionScoreType score_type = PositionScoreType::NotReady;
 };
 
 class Dataset {

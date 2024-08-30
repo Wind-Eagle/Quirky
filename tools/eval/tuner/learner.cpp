@@ -35,7 +35,7 @@ double GetLossByWeights(const LearnerParams& learner_params,
                         const std::array<int16_t, PSQ_AND_FEATURE_COUNT>& weights,
                         CalcerParams calcer_params) {
     AssignWeights(weights);
-    q_util::Processor<std::shared_ptr<Element>, CalcerResult> scoring_processor(
+    q_util::Processor<std::shared_ptr<Element>, double> scoring_processor(
         learner_params.number_of_threads, learner_params.channel_size, learner_params.channel_size);
     scoring_processor.Start(
         [&](std::shared_ptr<Element> game) { return GetCalcerResult(game, calcer_params); });
@@ -48,10 +48,10 @@ double GetLossByWeights(const LearnerParams& learner_params,
     double total_loss = 0;
     size_t number_of_positions = 0;
     for (;;) {
-        std::optional<CalcerResult> calcer_result = scoring_processor.Receive();
+        std::optional<double> calcer_result = scoring_processor.Receive();
         if (calcer_result != std::nullopt) {
-            total_loss += calcer_result->loss;
-            number_of_positions += calcer_result->number_of_positions;
+            total_loss += *calcer_result;
+            number_of_positions++;
         } else {
             break;
         }

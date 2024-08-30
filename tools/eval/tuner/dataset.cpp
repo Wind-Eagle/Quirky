@@ -3,15 +3,27 @@
 #include "../../../src/util/processor.h"
 #include "../../../src/util/random.h"
 
+std::vector<Element> MakeElements(const Game& game) {
+    std::vector<Element> res;
+    q_search::Position position;
+    position.MakeFromFEN(game.start_board_fen);
+    q_core::MakeMoveInfo make_move_info;
+    q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
+    for (size_t i = 0; i < game.moves.size(); i++) {
+        if (i > 0) {
+            position.MakeMove(q_core::TranslateStringToMove(position.board, game.moves[i]),
+                              make_move_info, evaluator_tag);
+        }
+        res.push_back(Element{.position = position, .result = game.header.result});
+    }
+    return res;
+}
+
 void Dataset::Load(Reader& reader) {
     while (reader.HasNext()) {
-        Game game = reader.GetNextGame();
-        if (elements_.size() < 25000) {
-            std::vector<PositionState> states(game.moves.size(), PositionState{.old_score = q_eval::SCORE_UNKNOWN, .new_score = q_eval::SCORE_UNKNOWN, .score_type = NotReady, .force_update = true});
-            Element element{.game = game, .states = states};
+        std::vector<Element> elements = MakeElements(reader.GetNextGame());
+        for (const auto& element : elements) {
             elements_.push_back(std::make_shared<Element>(element));
-        } else {
-            break;
         }
     }
 }

@@ -42,8 +42,8 @@ q_eval::score_t FakeQuiescenseSearch(q_search::Position& position, q_eval::score
     return alpha;
 }
 
-bool WillScoreBeUpdated(q_search::Position& position, CalcerParams params, PositionState state) {
-    if (state.score_type != PositionScoreType::Ready) {
+bool WillScoreBeUpdated(q_search::Position& position, CalcerParams params, std::shared_ptr<Element> element) {
+    if (element->score_type != PositionScoreType::Ready) {
         return true;
     }
     switch (params.change_type) {
@@ -73,71 +73,38 @@ bool WillScoreBeUpdated(q_search::Position& position, CalcerParams params, Posit
     return true;
 }
 
-CalcerResult GetCalcerResult(std::shared_ptr<Element> element, CalcerParams params) {
-    const Game& game = element->game;
-    q_search::Position position;
-    position.MakeFromFEN(game.start_board_fen);
-    double target = game.header.result == Result::WhiteWins   ? 1
-                    : game.header.result == Result::BlackWins ? 0
-                                                              : 0.5;
-    double loss = 0;
-
-    q_core::MakeMoveInfo make_move_info;
-    q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
-    size_t position_count = 0;
-    size_t positions_cache_hits = 0;
-    for (size_t i = 0; i < game.moves.size(); i++) {
-        if (i > 0) {
-            position.MakeMove(q_core::TranslateStringToMove(position.board, game.moves[i]),
-                              make_move_info, evaluator_tag);
-        }
-        if (position.board.move_count <= 12) {
-            continue;
-        }
-        position_count++;
-
-        PositionState& position_state = element->states.at(i);
-        if (position_state.score_type == UpdatedJustBefore) {
-            if (params.revert_last_change) {
-                position_state.new_score = position_state.old_score;
-                position_state.old_score = q_eval::SCORE_UNKNOWN;
-                if (position_state.new_score == q_eval::SCORE_UNKNOWN) {
-                    position_state.score_type = NotReady;
-                } else {
-                    position_state.score_type = Ready;
-                }
+double GetCalcerResult(std::shared_ptr<Element> element, CalcerParams params) {
+    if (element->score_type == UpdatedJustBefore) {
+        if (params.revert_last_change) {
+            element->new_score = element->old_score;
+            element->old_score = q_eval::SCORE_UNKNOWN;
+            if (element->new_score == q_eval::SCORE_UNKNOWN) {
+                element->score_type = NotReady;
             } else {
-                position_state.score_type = Ready;
+                element->score_type = Ready;
             }
-        }
-        q_eval::score_t score = 0;
-        if (WillScoreBeUpdated(position, params, position_state)) {
-            score = FakeQuiescenseSearch(position, q_eval::SCORE_MIN, q_eval::SCORE_MAX);
-            position_state.score_type = UpdatedJustBefore;
-            position_state.old_score = position_state.new_score;
-            position_state.new_score = score;
         } else {
-            /*score = FakeQuiescenseSearch(position, q_eval::SCORE_MIN, q_eval::SCORE_MAX);
-            if (score != position_state.new_score) {
-                std::cerr << position.board.GetFEN() << " " << score << " "
-                          << position_state.new_score << " "
-                          << static_cast<int>(position_state.score_type) << " "
-                          << static_cast<int>(params.changed_piece) << " "
-                          << static_cast<int>(params.changed_coord) << " "
-                          << static_cast<int>(params.change_type) << " "
-                          << params.revert_last_change << std::endl;
-                exit(42);
-            }*/
-            positions_cache_hits++;
-            score = position_state.new_score;
+            element->score_type = Ready;
         }
-        if (position.board.move_side == q_core::Color::Black) {
-            score *= -1;
-        }
-        const double prob = GetProbabilityFromScore(score);
-        loss += (prob - target) * (prob - target);
     }
-    return {.loss = loss,
-            .number_of_positions = position_count,
-            .positions_cache_hits = positions_cache_hits};
+    q_search::Position& position = element->position;
+    double target = element->result == Result::WhiteWins   ? 1
+                    : element->result == Result::BlackWins ? 0
+                                                              : 0.5;
+    q_eval::score_t score;
+    if (WillScoreBeUpdated(position, params, element)) {
+        position.evaluator.StartTrackingBoard(position.board);
+        score = FakeQuiescenseSearch(position, q_eval::SCORE_MIN, q_eval::SCORE_MAX);
+        element->score_type = UpdatedJustBefore;
+        element->old_score = element->new_score;
+        element->new_score = score;
+    } else {
+        score = element->new_score;
+    }
+    if (position.board.move_side == q_core::Color::Black) {
+        score *= -1;
+    }
+    const double prob = GetProbabilityFromScore(score);
+    double loss = (prob - target) * (prob - target);
+    return loss;
 }
