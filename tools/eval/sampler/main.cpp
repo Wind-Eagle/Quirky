@@ -1,8 +1,8 @@
 #include <cstddef>
 #include <map>
 
-#include "../../../../src/util/error.h"
-#include "../../../../src/util/io.h"
+#include "../../../src/util/error.h"
+#include "../../../src/util/io.h"
 #include "calcer.h"
 #include "reader.h"
 #include "weighter.h"

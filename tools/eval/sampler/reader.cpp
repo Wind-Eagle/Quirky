@@ -2,9 +2,9 @@
 
 #include <fstream>
 
-#include "../../../../src/core/moves/board_manipulation.h"
-#include "../../../../src/core/moves/move.h"
-#include "../../../../src/util/string.h"
+#include "../../../src/core/moves/board_manipulation.h"
+#include "../../../src/core/moves/move.h"
+#include "../../../src/util/string.h"
 
 Result CastStringToResult(const std::string_view str) {
     if (str == "W") {
@@ -54,6 +54,11 @@ q_core::Board ReadBoard(std::ifstream& in) {
     std::string fen = ReadLine(in);
     if (fen == "start") {
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    } else if (fen.size() >= 6 && fen.substr(0, 5) == "board" && fen[5] == ' ') {
+        fen = fen.substr(6);
+    } else {
+        q_util::PrintError("Expected \"board or startpos\" word");
+        q_util::ExitWithError(QuirkyError::ParseError);
     }
     q_core::Board res;
     res.MakeFromFEN(fen);

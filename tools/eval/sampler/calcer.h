@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "../../../../src/eval/evaluator.h"
+#include "../../../src/eval/evaluator.h"
 #include "reader.h"
 
 constexpr uint16_t PSQ_FEATURES_COUNT = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES;
