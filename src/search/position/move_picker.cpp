@@ -113,7 +113,7 @@ void MovePicker::GetNewMoves() {
                 }
                 break;
             }
-            case Stage::Simple: {
+            case Stage::History: {
                 const size_t list_old_size = list_.size;
                 q_core::GenerateAllSimpleMoves(position_.board, list_);
                 for (size_t i = list_old_size; i < list_.size; i++) {
