@@ -41,6 +41,15 @@ target_link_libraries(api core eval search util)
 add_executable(Quirky src/main.cpp)
 target_link_libraries(Quirky core api util eval search)
 
+add_executable(eval_sampler
+    tools/eval/sampler/main.cpp
+    tools/eval/sampler/reader.cpp
+    tools/eval/sampler/calcer.cpp
+    tools/eval/sampler/weighter.cpp
+    tools/eval/sampler/writer.cpp
+)
+target_link_libraries(eval_sampler eval)
+
 add_executable(eval_tuner
     tools/eval/tuner/main.cpp
     tools/eval/tuner/reader.cpp
