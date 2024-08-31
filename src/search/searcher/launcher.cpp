@@ -117,7 +117,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                 PrintSearchResult(result, time_since_start);
                 if (result.bound_type == Exact && result.depth > final_result.depth) {
                     final_result = std::move(result);
-                    timer.ProcessNextDepth();
+                    timer.ProcessNextDepth(result);
                 }
             }
             if (final_result.depth >= max_depth) {

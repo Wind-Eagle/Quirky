@@ -241,6 +241,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
         const q_eval::score_t new_score = -Search<NodeType::Simple>(depth - NMP_DEPTH_REDUCTION - 1,
                                                                     idepth + 1, -beta, -beta + 1);
+        CHECK_STOP;
         if (new_score >= beta) {
             return beta;
         }
@@ -254,7 +255,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     size_t history_moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
-        CHECK_STOP;
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
 
@@ -267,6 +267,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         if (do_lmr) {
             const q_eval::score_t score = -Search<NodeType::Simple>(depth - LMR_DEPTH_REDUCTION - 1,
                                                                     idepth + 1, -alpha - 1, -alpha);
+            CHECK_STOP;
             if (score <= alpha) {
                 continue;
             }
@@ -279,12 +280,14 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         q_eval::score_t new_score = alpha;
         if (do_pv_search) {
             new_score = -Search<NodeType::Simple>(depth - 1, idepth + 1, -alpha - 1, -alpha);
+            CHECK_STOP;
             new_score = (new_score <= alpha ? alpha : alpha + 1);
         }
         if (!do_pv_search || (alpha < new_score && new_score < beta)) {
             const NodeType new_node_type =
                 (node_type == NodeType::Simple ? NodeType::Simple : NodeType::PV);
             new_score = -Search<new_node_type>(depth - 1, idepth + 1, -beta, -alpha);
+            CHECK_STOP;
         }
 
         if (new_score > alpha) {
