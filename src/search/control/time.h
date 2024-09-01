@@ -50,6 +50,7 @@ class SearchTimer {
     struct Context {
         std::set<uint16_t> best_moves{};
         uint16_t last_move = q_core::GetCompressedMove(q_core::NULL_MOVE);
+        q_eval::score_t last_score = 0;
         depth_t depth = 0;
         bool changed_last_move = false;
 

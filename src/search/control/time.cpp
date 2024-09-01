@@ -23,15 +23,24 @@ time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control) {
     time_t max_time = 0;
     float opening_factor =
         2 - std::min(position_.board.move_count, static_cast<uint16_t>(20)) / 20.0;
-    float pv_factor = (context_.changed_last_move ? 1.5 : 1) * (context_.best_moves.size() <= 2 ? 0.8 : 1) * 1.15;
+    float pv_factor = (context_.changed_last_move ? 1.5 : 1) * (context_.best_moves.size() <= 2 ? 0.8 : 1) * 1.1;
+    float score_factor = 1;
+    q_eval::score_t score = context_.last_score;
+    if (score <= -50) {
+        score_factor = 1.15;
+    } else if (score <= -75) {
+        score_factor = 1.25;
+    } else if (score <= -100) {
+        score_factor = 1.375;
+    }
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
         max_time =
-            player_time.time / time_control.moves_to_go * opening_factor * pv_factor + player_time.increment;
+            player_time.time / time_control.moves_to_go * opening_factor * pv_factor * score_factor + player_time.increment;
         max_time = std::min(max_time, player_time.time - time_control.moves_to_go * 2);
     } else {
         float no_time_factor = player_time.time < 200 ? 5 : player_time.time < 1000 ? 2 : 1;
         uint16_t moves_to_go_imitation = std::max(5, 20 - position_.board.move_count / 5);
-        max_time = player_time.time / moves_to_go_imitation * opening_factor * pv_factor/ no_time_factor +
+        max_time = player_time.time / moves_to_go_imitation * opening_factor * pv_factor * score_factor / no_time_factor +
                    player_time.increment;
         max_time = std::min(max_time, player_time.time / 2);
     }
@@ -52,6 +61,7 @@ void SearchTimer::ProcessNextDepth(const SearchResult& result) {
     }
     context_.best_moves.insert(cur_move);
     context_.last_move = cur_move;
+    context_.last_score = result.score;
     context_.estimated_max_time =
         std::visit([this](const auto& time_control) { return GetMaxTime(time_control); },
                    time_control_);
