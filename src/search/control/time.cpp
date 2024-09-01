@@ -8,15 +8,15 @@ static constexpr time_t TICK_TIME = 30;
 
 static constexpr time_t NO_SLOWING_TIME_THRESHOLD = 10;
 
-time_t SearchTimer::GetMaxTime(const FixedTimeControl& time_control) {
+time_t SearchTimer::GetMaxTime(const FixedTimeControl& time_control) const {
     return time_control.time;
 }
 
-time_t SearchTimer::GetMaxTime(const InfiniteTimeControl&) {
+time_t SearchTimer::GetMaxTime(const InfiniteTimeControl&) const {
     return TIME_INF;
 }
 
-time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control) {
+time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control) const {
     const PlayerTime player_time =
         (position_.board.move_side == q_core::Color::White ? time_control.white_time
                                                           : time_control.black_time);
@@ -47,6 +47,19 @@ time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control) {
     return max_time;
 }
 
+void SearchTimer::UpdateOnNextDepth(const FixedTimeControl&) {}
+void SearchTimer::UpdateOnNextDepth(const InfiniteTimeControl&) {}
+void SearchTimer::UpdateOnNextDepth(const GameTimeControl&) {
+    const auto time_since_start = GetTimeSinceStart();
+    const auto estimated_time_left = context_.estimated_max_time - time_since_start;
+    if (estimated_time_left < time_since_start) {
+        context_.should_stop = true;
+    }
+    if (context_.best_moves.size() == 1 && estimated_time_left < time_since_start * 2) {
+        context_.should_stop = true;
+    }
+}
+
 SearchTimer::SearchTimer(time_control_t time_control, Position& position)
     : time_control_(time_control), position_(position) {
     start_time_ = std::chrono::steady_clock::now();
@@ -66,14 +79,9 @@ void SearchTimer::ProcessNextDepth(const SearchResult& result) {
         std::visit([this](const auto& time_control) { return GetMaxTime(time_control); },
                    time_control_);
 
-    // Try to spend less time
-    const auto estimated_time_left = context_.estimated_max_time - time_since_start;
-    if (estimated_time_left < time_since_start) {
-        context_.should_stop = true;
-    }
-    if (context_.best_moves.size() == 1 && estimated_time_left < time_since_start * 2) {
-        context_.should_stop = true;
-    }
+    // Update context
+    std::visit([this](const auto& time_control) { UpdateOnNextDepth(time_control); },
+                   time_control_);
 }
 
 std::chrono::milliseconds SearchTimer::GetWaitTime() {

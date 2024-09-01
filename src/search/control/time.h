@@ -44,9 +44,12 @@ class SearchTimer {
     time_t GetTimeSinceStart() const;
 
   private:
-    time_t GetMaxTime(const FixedTimeControl& time_control);
-    time_t GetMaxTime(const InfiniteTimeControl&);
-    time_t GetMaxTime(const GameTimeControl& time_control);
+    time_t GetMaxTime(const FixedTimeControl& time_control) const;
+    time_t GetMaxTime(const InfiniteTimeControl&) const;
+    time_t GetMaxTime(const GameTimeControl& time_control) const;
+    void UpdateOnNextDepth(const FixedTimeControl& time_control);
+    void UpdateOnNextDepth(const InfiniteTimeControl&);
+    void UpdateOnNextDepth(const GameTimeControl& time_control);
     struct Context {
         std::set<uint16_t> best_moves{};
         uint16_t last_move = q_core::GetCompressedMove(q_core::NULL_MOVE);
