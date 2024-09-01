@@ -145,17 +145,32 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
     Q_DEFER { rt_.Erase(position_hash); };
 
-    // Prepare for search
-    const q_eval::score_t initial_alpha = alpha;
-    const q_eval::score_t initial_beta = beta;
-
     // Performing quiescense search
     if (depth <= 0) {
+        if (alpha >= -q_eval::SCORE_ALMOST_MATE) {
+            return alpha;
+        }
+        if (beta <= q_eval::SCORE_ALMOST_MATE) {
+            return beta;
+        }
         return QuiescenseSearch(alpha, beta);
+    }
+
+    // Mate pruning
+    if constexpr (node_type != NodeType::Root) {
+        alpha = std::max(alpha, static_cast<q_eval::score_t>(q_eval::SCORE_MATE + idepth));
+        beta = std::min(beta, static_cast<q_eval::score_t>(-(q_eval::SCORE_MATE + idepth + 1)));
+        if (alpha >= beta) {
+            return beta;
+        }
     }
 
     // Increase nodes count
     stat_.IncNodesCount();
+
+    // Prepare for search
+    const q_eval::score_t initial_alpha = alpha;
+    const q_eval::score_t initial_beta = beta;
 
     // Prepare local context
     local_context_[idepth].current_move = q_core::NULL_MOVE;
