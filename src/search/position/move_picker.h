@@ -37,7 +37,7 @@ class MovePicker {
         Capture = 2,
         Promotion = 3,
         KillerMoves = 4,
-        Simple = 5,
+        History = 5,
         End = 6
     };
     q_core::Move GetNextMove();

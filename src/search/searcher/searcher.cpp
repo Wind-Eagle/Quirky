@@ -123,8 +123,16 @@ inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_
 
 inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 3;
 inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
+
 inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
+
+inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
+inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
+
+inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
+inline static constexpr depth_t LMR_DEPTH_REDUCTION = 1;
+inline static constexpr uint16_t LMR_MOVES_NO_REDUCE = 2;
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -137,17 +145,32 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
     Q_DEFER { rt_.Erase(position_hash); };
 
-    // Prepare for search
-    const q_eval::score_t initial_alpha = alpha;
-    const q_eval::score_t initial_beta = beta;
-
     // Performing quiescense search
     if (depth <= 0) {
+        if (alpha >= -q_eval::SCORE_ALMOST_MATE) {
+            return alpha;
+        }
+        if (beta <= q_eval::SCORE_ALMOST_MATE) {
+            return beta;
+        }
         return QuiescenseSearch(alpha, beta);
+    }
+
+    // Mate pruning
+    if constexpr (node_type != NodeType::Root) {
+        alpha = std::max(alpha, static_cast<q_eval::score_t>(q_eval::SCORE_MATE + idepth));
+        beta = std::min(beta, static_cast<q_eval::score_t>(-(q_eval::SCORE_MATE + idepth + 1)));
+        if (alpha >= beta) {
+            return beta;
+        }
     }
 
     // Increase nodes count
     stat_.IncNodesCount();
+
+    // Prepare for search
+    const q_eval::score_t initial_alpha = alpha;
+    const q_eval::score_t initial_beta = beta;
 
     // Prepare local context
     local_context_[idepth].current_move = q_core::NULL_MOVE;
@@ -201,24 +224,39 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
 
     // Futility pruning
-    if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD && !q_core::IsKingInCheck(position_.board) &&
-        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta)) {
+    if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD &&
+        !q_eval::IsScoreMate(beta) && !q_core::IsKingInCheck(position_.board)) {
         get_node_evaluation();
         if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
             return beta;
         }
     }
 
+    // Razoring
+    if (node_type == NodeType::Simple && depth <= RPR_DEPTH_THRESHOLD &&
+        !q_eval::IsScoreMate(alpha)) {
+        get_node_evaluation();
+        q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
+        if (local_context_[idepth].eval <= threshold) {
+            q_eval::score_t q_score = QuiescenseSearch(threshold, threshold + 1);
+            if (q_score <= threshold) {
+                return alpha;
+            }
+        }
+    }
+
     // Null move pruning
-    if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD && !q_core::IsKingInCheck(position_.board) &&
-        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta) &&
-        !IsMoveNull(local_context_[idepth - 1].current_move) &&
+    if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD &&
+        !q_core::IsKingInCheck(position_.board) && !q_eval::IsScoreMate(alpha) &&
+        !q_eval::IsScoreMate(beta) && !IsMoveNull(local_context_[idepth - 1].current_move) &&
         !IsMoveCapture(local_context_[idepth - 1].current_move)) {
         q_core::coord_t old_en_passant_coord;
         position_.MakeNullMove(old_en_passant_coord);
         Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
 
-        const q_eval::score_t new_score = -Search<NodeType::Simple>(depth - NMP_DEPTH_REDUCTION - 1, idepth + 1, -beta, -beta + 1);
+        const q_eval::score_t new_score = -Search<NodeType::Simple>(depth - NMP_DEPTH_REDUCTION - 1,
+                                                                    idepth + 1, -beta, -beta + 1);
+        CHECK_STOP;
         if (new_score >= beta) {
             return beta;
         }
@@ -229,24 +267,42 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                            global_context_.history_table);
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
+    size_t history_moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
-        CHECK_STOP;
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
+
+        // Late move reduction
+        const bool do_lmr = (node_type == NodeType::Simple) && (moves_done > 0) &&
+                            (depth >= LMR_DEPTH_THRESHOLD) &&
+                            (move_picker.GetStage() == MovePicker::Stage::History) &&
+                            (history_moves_done + 1 > LMR_MOVES_NO_REDUCE) &&
+                            (!q_core::IsKingInCheck(position_.board));
+        if (do_lmr) {
+            const q_eval::score_t score = -Search<NodeType::Simple>(depth - LMR_DEPTH_REDUCTION - 1,
+                                                                    idepth + 1, -alpha - 1, -alpha);
+            CHECK_STOP;
+            if (score <= alpha) {
+                continue;
+            }
+        }
 
         local_context_[idepth].current_move = move;
         const bool do_pv_search = (node_type != NodeType::Simple) & (moves_done > 0);
         moves_done++;
+        history_moves_done += move_picker.GetStage() == MovePicker::Stage::History ? 1 : 0;
         q_eval::score_t new_score = alpha;
         if (do_pv_search) {
             new_score = -Search<NodeType::Simple>(depth - 1, idepth + 1, -alpha - 1, -alpha);
+            CHECK_STOP;
             new_score = (new_score <= alpha ? alpha : alpha + 1);
         }
         if (!do_pv_search || (alpha < new_score && new_score < beta)) {
             const NodeType new_node_type =
                 (node_type == NodeType::Simple ? NodeType::Simple : NodeType::PV);
             new_score = -Search<new_node_type>(depth - 1, idepth + 1, -beta, -alpha);
+            CHECK_STOP;
         }
 
         if (new_score > alpha) {
