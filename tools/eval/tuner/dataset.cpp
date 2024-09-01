@@ -28,11 +28,6 @@ void Dataset::Load(Reader& reader) {
     }
 }
 
-std::vector<std::shared_ptr<Element>> Dataset::GetAllElements() const {
-    return elements_;
-}
+std::vector<std::shared_ptr<Element>> Dataset::GetAllElements() const { return elements_; }
 
-size_t Dataset::Size() const {
-    return elements_.size();
-}
- 
+size_t Dataset::Size() const { return elements_.size(); }

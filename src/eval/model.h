@@ -5,14 +5,12 @@
 #include <span>
 #include <vector>
 
-#include "score.h"
 #include "psq.h"
+#include "score.h"
 
 namespace q_eval {
 
-enum class Feature : uint16_t {
-    Count = 0
-};
+enum class Feature : uint16_t { Count = 0 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
 

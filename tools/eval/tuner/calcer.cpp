@@ -42,7 +42,8 @@ q_eval::score_t FakeQuiescenseSearch(q_search::Position& position, q_eval::score
     return alpha;
 }
 
-bool WillScoreBeUpdated(q_search::Position& position, CalcerParams params, std::shared_ptr<Element> element) {
+bool WillScoreBeUpdated(q_search::Position& position, CalcerParams params,
+                        std::shared_ptr<Element> element) {
     if (element->score_type != PositionScoreType::Ready) {
         return true;
     }
@@ -90,7 +91,7 @@ double GetCalcerResult(std::shared_ptr<Element> element, CalcerParams params) {
     q_search::Position& position = element->position;
     double target = element->result == Result::WhiteWins   ? 1
                     : element->result == Result::BlackWins ? 0
-                                                              : 0.5;
+                                                           : 0.5;
     q_eval::score_t score;
     if (WillScoreBeUpdated(position, params, element)) {
         position.evaluator.StartTrackingBoard(position.board);

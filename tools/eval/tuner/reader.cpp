@@ -1,6 +1,5 @@
 #include "reader.h"
 
-
 #include "../../../src/core/moves/board_manipulation.h"
 #include "../../../src/core/moves/move.h"
 #include "../../../src/util/string.h"
@@ -12,9 +11,7 @@ void SkipWhitespaces(std::ifstream& in) {
     }
 }
 
-Reader::Reader(const std::string& filename): in_(filename.data()) {
-    SkipWhitespaces(in_);
-}
+Reader::Reader(const std::string& filename) : in_(filename.data()) { SkipWhitespaces(in_); }
 
 std::string ReadLine(std::ifstream& in) {
     SkipWhitespaces(in);
@@ -71,13 +68,13 @@ Game ReadGameWithResult(std::ifstream& in, size_t game_index) {
         q_util::PrintError("Expected \"moves\" word");
         q_util::ExitWithError(QuirkyError::ParseError);
     }
-    GameHeader header{.last_move_number = static_cast<uint16_t>(moves.size()), .game_index = game_index, .result = result};
+    GameHeader header{.last_move_number = static_cast<uint16_t>(moves.size()),
+                      .game_index = game_index,
+                      .result = result};
     return Game{.start_board_fen = start_board, .moves = moves, .header = header};
 }
 
-Game Reader::ReadGame() {
-    return ReadGameWithResult(in_, index_++);
-}
+Game Reader::ReadGame() { return ReadGameWithResult(in_, index_++); }
 
 Game Reader::GetNextGame() {
     auto game = ReadGame();
@@ -85,6 +82,4 @@ Game Reader::GetNextGame() {
     return game;
 }
 
-bool Reader::HasNext() const {
-    return !in_.eof();
-}
+bool Reader::HasNext() const { return !in_.eof(); }

@@ -199,7 +199,10 @@ CalcerParams MakeCalcerParams(int16_t real_feature_index, bool weights_reverted)
         change_type != CalcerFeatureChangeType::PSQ
             ? q_core::UNDEFINED_COORD
             : (real_feature_index - q_core::NUMBER_OF_PIECES) % q_core::BOARD_SIZE;
-    return CalcerParams{.changed_piece = piece, .changed_coord = coord, .change_type = change_type, .revert_last_change = weights_reverted};
+    return CalcerParams{.changed_piece = piece,
+                        .changed_coord = coord,
+                        .change_type = change_type,
+                        .revert_last_change = weights_reverted};
 }
 
 void TuneWeights(const LearnerParams& params) {
@@ -231,7 +234,7 @@ void TuneWeights(const LearnerParams& params) {
                                .revert_last_change = false};
     bool weights_reverted = false;
     double best_loss = GetLossByWeights(params, batch, weights, calcer_params);
-    
+
     const auto start_time = std::chrono::steady_clock::now();
     Stat stat;
     stat.loss = best_loss;

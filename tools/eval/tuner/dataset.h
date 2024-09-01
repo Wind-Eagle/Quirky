@@ -9,11 +9,7 @@
 #include "../../../src/search/position/position.h"
 #include "reader.h"
 
-enum PositionScoreType {
-    NotReady = 0,
-    UpdatedJustBefore = 1,
-    Ready = 2
-};
+enum PositionScoreType { NotReady = 0, UpdatedJustBefore = 1, Ready = 2 };
 
 struct Element {
     q_search::Position position;
@@ -28,6 +24,7 @@ class Dataset {
     void Load(Reader& reader);
     std::vector<std::shared_ptr<Element>> GetAllElements() const;
     size_t Size() const;
+
   private:
     std::vector<std::shared_ptr<Element>> elements_{};
     std::mutex mutex_;

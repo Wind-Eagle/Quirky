@@ -1,11 +1,11 @@
 #ifndef QUIRKY_TOOLS_EVAL_TUNER_PARSER_LEARNER_H
 #define QUIRKY_TOOLS_EVAL_TUNER_PARSER_LEARNER_H
 
+#include <memory>
+
 #include "calcer.h"
 #include "dataset.h"
 #include "reader.h"
-
-#include <memory>
 
 struct LearnerParams {
     std::shared_ptr<Dataset> dataset;

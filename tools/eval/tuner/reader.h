@@ -26,10 +26,11 @@ class Reader {
     explicit Reader(const std::string& filename);
     Game GetNextGame();
     bool HasNext() const;
+
   private:
     Game ReadGame();
     std::ifstream in_;
     size_t index_ = 0;
-}; 
+};
 
 #endif  // QUIRKY_TOOLS_EVAL_TUNER_PARSER_READER_H
