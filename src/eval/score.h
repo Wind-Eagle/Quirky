@@ -5,6 +5,7 @@
 #include <limits>
 
 #include "../util/macro.h"
+#include "../util/math.h"
 
 namespace q_eval {
 
@@ -13,12 +14,13 @@ using score_t = int16_t;
 
 constexpr score_t SCORE_MIN = -30000;
 constexpr score_t SCORE_MAX = 30000;
+constexpr score_t SCORE_UNKNOWN = 31000;
 
 constexpr score_t SCORE_MATE = SCORE_MIN + 1;
 constexpr score_t SCORE_ALMOST_MATE = -25000;
 
 inline constexpr bool IsScoreMate(const score_t score) {
-    return std::abs(score) > -SCORE_ALMOST_MATE;
+    return q_util::Abs(score) > -SCORE_ALMOST_MATE;
 }
 
 struct ScorePair {

@@ -18,6 +18,9 @@ void MakeMove(Board& board, Move move, MakeMoveInfo& info);
 void UnmakeMove(Board& board, Move move, const MakeMoveInfo& info);
 bool WasMoveLegal(const Board& board, Move move);
 
+void MakeNullMove(Board& board, coord_t& old_en_passant_coord);
+void UnmakeNullMove(Board& board, const coord_t& old_en_passant_coord);
+
 }  // namespace q_core
 
 #endif  // QUIRKY_SRC_CORE_MOVES_BOARD_MANIPULATION_H

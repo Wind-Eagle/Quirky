@@ -24,6 +24,11 @@ struct Position {
     void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
                     const q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag& evaluator_tag);
 
+    void MakeNullMove(q_core::coord_t& old_en_passant_coord);
+    void UnmakeNullMove(const q_core::coord_t& old_en_passant_coord);
+
+    bool IsCheck() const;
+
     q_eval::score_t GetEvaluatorScore() const;
     q_eval::ScorePair GetEvaluatorScorePair() const;
 };

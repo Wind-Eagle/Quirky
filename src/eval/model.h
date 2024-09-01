@@ -2,31 +2,68 @@
 #define QUIRKY_SRC_EVAL_MODEL_H
 
 #include <array>
+#include <span>
+#include <vector>
 
-#include "feature.h"
+#include "psq.h"
 #include "score.h"
 
 namespace q_eval {
 
-inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_COUNT>& res,
+enum class Feature : uint16_t { Count = 0 };
+
+constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
+
+inline constexpr void AssignFeatureValue(std::array<ScorePair, q_eval::FEATURE_COUNT>& weights,
+                                         std::array<uint8_t, q_eval::FEATURE_COUNT>& sizes,
                                          Feature feature, score_t weight_first,
                                          score_t weight_second) {
-    res[static_cast<uint16_t>(feature)] = ScorePair(weight_first, weight_second);
+    weights[static_cast<uint16_t>(feature)] = ScorePair(weight_first, weight_second);
+    sizes[static_cast<uint16_t>(feature)] = 1;
 }
 
-inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> GetModelWeights() {
-    std::array<ScorePair, q_eval::FEATURE_COUNT> res{};
-    AssignFeatureValue(res, Feature::IsolatedPawn, -5, -5);
-    AssignFeatureValue(res, Feature::DoubledPawn, -30, -30);
-    AssignFeatureValue(res, Feature::NoPawns, -50, -50);
-    AssignFeatureValue(res, Feature::BishopPair, 32, 32);
-    AssignFeatureValue(res, Feature::RookOnOpenFile, 2, 2);
-    AssignFeatureValue(res, Feature::RookOnHalfOpenFile, 21, 21);
-    return res;
+template <size_t SIZE>
+inline constexpr void AssignFeatureValues(std::array<ScorePair, q_eval::FEATURE_COUNT>& weights,
+                                          std::array<uint8_t, q_eval::FEATURE_COUNT>& sizes,
+                                          Feature first_feature,
+                                          const std::array<ScorePair, SIZE>& score_pairs) {
+    for (uint16_t num = 0; num < SIZE; num++) {
+        weights[static_cast<uint16_t>(first_feature) + num] = score_pairs[num];
+    }
+    sizes[static_cast<uint16_t>(first_feature)] = SIZE;
 }
 
-static inline constexpr std::array<ScorePair, q_eval::FEATURE_COUNT> MODEL_WEIGHTS =
-    GetModelWeights();
+inline constexpr std::pair<std::array<ScorePair, q_eval::FEATURE_COUNT>,
+                           std::array<uint8_t, q_eval::FEATURE_COUNT>>
+GetModelWeightsAndFeatureSizes() {
+    std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
+    std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
+    return std::make_pair(weights, sizes);
+}
+
+EVAL_CONSTS_TYPE std::array<ScorePair, q_eval::FEATURE_COUNT> MODEL_WEIGHTS =
+    GetModelWeightsAndFeatureSizes().first;
+
+EVAL_CONSTS_TYPE std::array<uint8_t, q_eval::FEATURE_COUNT> MODEL_FEATURE_SIZES =
+    GetModelWeightsAndFeatureSizes().second;
+
+inline constexpr uint8_t GetModelFeatureSize(const Feature feature) {
+    return MODEL_FEATURE_SIZES[static_cast<uint16_t>(feature)];
+}
+
+inline constexpr ScorePair GetModelWeight(const Feature feature, uint8_t array_index = 0) {
+    Q_ASSERT(array_index < GetModelFeatureSize(feature));
+    return MODEL_WEIGHTS[static_cast<uint16_t>(feature) + array_index];
+}
+
+inline constexpr ScorePair ApplyModel(const int16_t* features, size_t count) {
+    Q_ASSERT(count <= FEATURE_COUNT);
+    ScorePair ans{};
+    for (size_t i = 0; i < count; i++) {
+        ans += MODEL_WEIGHTS[i] * features[i];
+    }
+    return ans;
+}
 
 }  // namespace q_eval
 

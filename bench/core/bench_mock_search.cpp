@@ -148,7 +148,7 @@ static void BenchmarkNoisyRecurse(benchmark::State& state, const std::string_vie
 
 #define BENCHMARK_RECURSE(name, fen)                                                        \
     static void BM_Recurse##name(benchmark::State& state) { BenchmarkRecurse(state, fen); } \
-    BENCHMARK(BM_Recurse##name)->Unit(benchmark::kMicrosecond);
+    BENCHMARK(BM_Recurse##name)->Unit(benchmark::kMicrosecond)
 CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_RECURSE)
 #undef BENCHMARK_RECURSE
 
@@ -156,7 +156,7 @@ CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_RECURSE)
     static void BM_NoisyRecurse##name(benchmark::State& state) { \
         BenchmarkNoisyRecurse(state, fen);                       \
     }                                                            \
-    BENCHMARK(BM_NoisyRecurse##name)->Unit(benchmark::kMicrosecond);
+    BENCHMARK(BM_NoisyRecurse##name)->Unit(benchmark::kMicrosecond)
 CALL_FOR_ALL_TEST_BOARDS(BENCHMARK_NOISY_RECURSE)
 #undef BENCHMARK_NOISY_RECURSE
 

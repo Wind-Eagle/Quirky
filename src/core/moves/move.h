@@ -35,7 +35,7 @@ enum class MoveBasicType : uint8_t {
 enum class CastlingSide : bool { Queenside = 0, Kingside = 1 };
 
 inline constexpr uint8_t BASIC_TYPE_MOVE_MASK = 7;
-inline constexpr uint8_t FIFTY_RULE_MOVE_BIT = 8;
+inline constexpr uint8_t CAPTURE_MOVE_BIT = 8;
 inline constexpr uint8_t MOVE_TYPE_BYTES_COUNT = 4;
 
 inline constexpr Move ConstructMove(const coord_t src, const coord_t dst, const uint8_t type) {
@@ -50,22 +50,8 @@ inline constexpr MoveBasicType GetMoveBasicType(const Move move) {
 }
 
 template <MoveBasicType move_basic_type>
-inline constexpr uint8_t GetMoveType() {
-    Q_STATIC_ASSERT(move_basic_type != MoveBasicType::Simple);
-    return static_cast<uint8_t>(move_basic_type) +
-           (move_basic_type != MoveBasicType::Castling ? FIFTY_RULE_MOVE_BIT : 0);
-}
-
-template <MoveBasicType move_basic_type>
-inline constexpr uint8_t GetMoveType(bool is_move_fifty_rule) {
-    Q_STATIC_ASSERT(move_basic_type == MoveBasicType::Simple);
-    return static_cast<uint8_t>(move_basic_type) + (is_move_fifty_rule ? FIFTY_RULE_MOVE_BIT : 0);
-}
-
-inline constexpr uint8_t GetPromotionMoveType(const Piece piece) {
-    Q_ASSERT(IsPieceValid(piece) && piece != Piece::Pawn && piece != Piece::King);
-    return static_cast<uint8_t>(piece) - static_cast<uint8_t>(Piece::Knight) +
-           GetMoveType<MoveBasicType::KnightPromotion>();
+inline constexpr uint8_t GetMoveType(bool is_move_capture) {
+    return static_cast<uint8_t>(move_basic_type) + (is_move_capture ? CAPTURE_MOVE_BIT : 0);
 }
 
 inline constexpr bool operator==(const Move lhs, const Move rhs) {
@@ -78,7 +64,7 @@ inline constexpr bool IsMoveNull(const Move move) {
     return move.src == 0 && move.dst == 0;
 }
 
-inline constexpr bool IsMoveFiftyRuleMove(const Move move) {
+inline constexpr bool IsMoveCapture(const Move move) {
     Q_ASSERT(move.type < (1 << MOVE_TYPE_BYTES_COUNT));
     return move.type > BASIC_TYPE_MOVE_MASK;
 }
@@ -121,8 +107,8 @@ inline constexpr CastlingSide GetCastlingSide(const Move move) {
 
 inline constexpr Piece GetPromotionPiece(const Move move) {
     Q_ASSERT(IsMovePromotion(move));
-    uint8_t res = static_cast<uint8_t>(move.type) -
-                  static_cast<uint8_t>(GetMoveType<MoveBasicType::KnightPromotion>()) +
+    uint8_t res = static_cast<uint8_t>(move.type & BASIC_TYPE_MOVE_MASK) -
+                  static_cast<uint8_t>(MoveBasicType::KnightPromotion) +
                   static_cast<uint8_t>(Piece::Knight);
     return static_cast<Piece>(res);
 }

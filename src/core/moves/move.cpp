@@ -13,10 +13,33 @@ std::string CastMoveToString(const Move move) {
     return ans;
 }
 
-Move TranslatePromotionStringToMove(const std::string_view& str, const coord_t src,
+Move TranslatePromotionStringToMove(const Board& board, const std::string_view& str, const coord_t src,
                                     const coord_t dst) {
-    Piece piece = CastCharToPiece(str[4]);
-    return ConstructMove(src, dst, GetPromotionMoveType(piece));
+    const Piece piece = CastCharToPiece(str[4]);
+    Q_ASSERT(piece != Piece::Pawn && piece != Piece::King);
+    const bool is_move_capture = board.cells[dst] != EMPTY_CELL;
+    uint8_t move_type;
+    switch (piece) {
+        case Piece::Knight: {
+            move_type = GetMoveType<MoveBasicType::KnightPromotion>(is_move_capture);
+            break;
+        }
+        case Piece::Bishop: {
+            move_type = GetMoveType<MoveBasicType::BishopPromotion>(is_move_capture);
+            break;
+        }
+        case Piece::Rook: {
+            move_type = GetMoveType<MoveBasicType::RookPromotion>(is_move_capture);
+            break;
+        }
+        case Piece::Queen: {
+            move_type = GetMoveType<MoveBasicType::QueenPromotion>(is_move_capture);
+            break;
+        }
+        default:
+            Q_UNREACHABLE();
+    }
+    return ConstructMove(src, dst, move_type);
 }
 
 bool IsStringMoveWellFormated(const Board& board, const std::string_view& str) {
@@ -48,24 +71,24 @@ Move TranslateStringToMove(const Board& board, const std::string_view& str) {
         is_move_fifty_rule = true;
         if (dst - src == GetPawnMoveDelta(Color::White) * 2 ||
             dst - src == GetPawnMoveDelta(Color::Black) * 2) {
-            return ConstructMove(src, dst, GetMoveType<MoveBasicType::PawnDouble>());
+            return ConstructMove(src, dst, GetMoveType<MoveBasicType::PawnDouble>(false));
         }
         if (dst - src != GetPawnMoveDelta(Color::White) &&
             dst - src != GetPawnMoveDelta(Color::Black)) {
             if (board.cells[dst] == EMPTY_CELL) {
-                return ConstructMove(src, dst, GetMoveType<MoveBasicType::EnPassant>());
+                return ConstructMove(src, dst, GetMoveType<MoveBasicType::EnPassant>(true));
             }
         }
         if (str.size() == 5) {
-            return TranslatePromotionStringToMove(str, src, dst);
+            return TranslatePromotionStringToMove(board, str, src, dst);
         }
     }
     if (q_core::GetCellPiece(board.cells[src]) == Piece::King) {
         if (GetFile(dst) - GetFile(src) == 2) {
-            return ConstructMove(src, dst, GetMoveType<MoveBasicType::Castling>());
+            return ConstructMove(src, dst, GetMoveType<MoveBasicType::Castling>(false));
         }
         if (GetFile(dst) - GetFile(src) == -2) {
-            return ConstructMove(src, dst, GetMoveType<MoveBasicType::Castling>());
+            return ConstructMove(src, dst, GetMoveType<MoveBasicType::Castling>(false));
         }
     }
     if (board.cells[dst] != EMPTY_CELL) {
