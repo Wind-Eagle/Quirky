@@ -5,6 +5,7 @@
 #include "../core/moves/move.h"
 #include "../core/util.h"
 #include "model.h"
+#include "pawns.h"
 #include "psq.h"
 #include "score.h"
 

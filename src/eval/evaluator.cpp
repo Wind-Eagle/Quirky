@@ -4,6 +4,7 @@
 
 #include "../core/moves/magic.h"
 #include "../core/util.h"
+#include "../util/hash.h"
 #include "eval_features.h"
 #include "model.h"
 #include "pawns.h"
@@ -52,6 +53,59 @@ void AddArrayFeature(typename EvaluationResultType<type>::type& score, const Fea
     }
 }
 
+template <EvaluationType type, Color c>
+void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type& score) {
+    const bitboard_t our_pawns = board.bb_pieces[MakeCell(c, Piece::Pawn)];
+    const bitboard_t enemy_pawns = board.bb_pieces[MakeCell(GetInvertedColor(c), Piece::Pawn)];
+
+    PawnContext context{.our_pawns = our_pawns,
+                        .enemy_pawns = enemy_pawns,
+                        .pawn_coord = UNDEFINED_COORD,
+                        .color = c};
+
+    bitboard_t pawn_bitboard = board.bb_pieces[MakeCell(c, Piece::Pawn)];
+    while (pawn_bitboard) {
+        const coord_t pawn_coord = q_util::ExtractLowestBit(pawn_bitboard);
+        context.pawn_coord = pawn_coord;
+        const subcoord_t half_file =
+            GetFile(pawn_coord) <= 3 ? GetFile(pawn_coord) : (7 - GetFile(pawn_coord));
+
+        if (IsPawnIsolated(context)) {
+            AddArrayFeature<type, c>(score, Feature::IsolatedPawn, half_file, 1);
+        }
+        if (IsPawnDoubled(context)) {
+            AddArrayFeature<type, c>(score, Feature::DoubledPawn, half_file, 1);
+        }
+    }
+}
+
+template <EvaluationType type>
+PawnHashTableEntry EvaluatePawns(const Board& board,
+                                 typename EvaluationResultType<type>::type& res) {
+    PawnCache& pawn_cache = GetPawnCacheRef();
+    const uint64_t pawn_hash =
+        q_util::GetHash16(board.bb_pieces[MakeCell(Color::White, Piece::Pawn)],
+                          board.bb_pieces[MakeCell(Color::Black, Piece::Pawn)]);
+    
+    PawnHashTableEntry entry;
+    if (!pawn_cache.Get(pawn_hash, entry)) {
+        typename EvaluationResultType<type>::type score{};
+        EvaluatePawns<type, Color::White>(board, score);
+        EvaluatePawns<type, Color::Black>(board, score);
+        res += score;
+
+        ScorePair pawn_score = ScorePair();
+        if constexpr (type == EvaluationType::Value) {
+            pawn_score = score;
+        }
+        entry = pawn_cache.Add(pawn_hash, pawn_score);
+    }
+    if constexpr (type == EvaluationType::Value) {
+        res += entry.score;
+    }
+    return entry;
+}
+
 template <EvaluationType type>
 typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board& board) const {
     Q_ASSERT(board.IsValid());
@@ -61,6 +115,7 @@ typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board&
         return cur_tag == tag_;
     }());
     typename EvaluationResultType<type>::type res = tag_.GetScore();
+    [[maybe_unused]] const auto pawn_entry = EvaluatePawns<type>(board, res);
     if constexpr (type == EvaluationType::Value) {
         if (board.move_side == Color::Black) {
             res *= -1;

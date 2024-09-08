@@ -10,7 +10,13 @@
 
 namespace q_eval {
 
-enum class Feature : uint16_t { Count = 0 };
+enum class Feature : uint16_t {
+    // Simple features
+    // Array features
+    IsolatedPawn = 0,
+    DoubledPawn = 4,
+    Count = 8
+};
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
 
@@ -38,6 +44,10 @@ inline constexpr std::pair<std::array<ScorePair, q_eval::FEATURE_COUNT>,
 GetModelWeightsAndFeatureSizes() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
     std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
+    AssignFeatureValues<4>(weights, sizes, Feature::IsolatedPawn,
+                           {ScorePair(-8, 20),ScorePair(-17, -6),ScorePair(-19, 2),ScorePair(-28, -4)});
+    AssignFeatureValues<4>(weights, sizes, Feature::DoubledPawn,
+                           {ScorePair(4, -43),ScorePair(-4, -32),ScorePair(-2, -25),ScorePair(0, -25)});
     return std::make_pair(weights, sizes);
 }
 
