@@ -17,7 +17,7 @@ struct HelperBitboards {
     // Color dependent
     std::array<std::array<bitboard_t, BOARD_SIZE>, 2> frontspan;
     std::array<std::array<bitboard_t, BOARD_SIZE>, 2> passed_enemies;
-    std::array<std::array<bitboard_t, BOARD_SIZE>, 2> connected;
+    std::array<std::array<bitboard_t, BOARD_SIZE>, 2> defender;
     // Color independent
     std::array<bitboard_t, BOARD_SIZE> neighbours;
 };
@@ -46,15 +46,15 @@ constexpr void AddToPassedEnemiesBitboard(HelperBitboards& ans, subcoord_t rank,
     }
 }
 
-constexpr void AddToConnectedBitboard(HelperBitboards& ans, subcoord_t rank, subcoord_t file,
+constexpr void AddToDefenderBitboard(HelperBitboards& ans, subcoord_t rank, subcoord_t file,
                             subcoord_t new_rank, subcoord_t new_file, coord_t coord,
                             coord_t new_coord) {
     if (q_util::Abs(file - new_file) == 1) {
-        if (new_rank == rank || new_rank + 1 == rank) {
-            q_util::SetBit(ans.connected[static_cast<uint8_t>(Color::White)][coord], new_coord);
-        }
         if (new_rank == rank || new_rank == rank + 1) {
-            q_util::SetBit(ans.connected[static_cast<uint8_t>(Color::Black)][coord], new_coord);
+            q_util::SetBit(ans.defender[static_cast<uint8_t>(Color::White)][coord], new_coord);
+        }
+        if (new_rank == rank || new_rank + 1 == rank) {
+            q_util::SetBit(ans.defender[static_cast<uint8_t>(Color::Black)][coord], new_coord);
         }
     }
 }
@@ -77,7 +77,7 @@ constexpr HelperBitboards MakeHelperBitboards() {
             const subcoord_t new_file = GetFile(new_coord);
             AddToFrontspanBitboard(ans, rank, file, new_rank, new_file, coord, new_coord);
             AddToPassedEnemiesBitboard(ans, rank, file, new_rank, new_file, coord, new_coord);
-            AddToConnectedBitboard(ans, rank, file, new_rank, new_file, coord, new_coord);
+            AddToDefenderBitboard(ans, rank, file, new_rank, new_file, coord, new_coord);
             AddToNeighboursBitboard(ans, rank, file, new_rank, new_file, coord, new_coord);
         }
     }
@@ -98,8 +98,8 @@ bool IsPawnPassed(const PawnContext& context) {
     return !(HELPER_BITBOARDS.passed_enemies[static_cast<uint8_t>(context.color)][context.pawn_coord] & context.enemy_pawns);
 }
 
-bool IsPawnConnected(const PawnContext& context) {
-    return HELPER_BITBOARDS.connected[static_cast<uint8_t>(context.color)][context.pawn_coord] & context.our_pawns;
+bool IsPawnDefender(const PawnContext& context) {
+    return HELPER_BITBOARDS.defender[static_cast<uint8_t>(context.color)][context.pawn_coord] & context.our_pawns;
 }
 
 }  // namespace q_eval

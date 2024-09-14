@@ -69,12 +69,24 @@ void EvaluatePawns(const Board& board, typename EvaluationResultType<type>::type
         context.pawn_coord = pawn_coord;
         const subcoord_t half_file =
             GetFile(pawn_coord) <= 3 ? GetFile(pawn_coord) : (7 - GetFile(pawn_coord));
+        const subcoord_t relative_rank =
+            c == q_core::Color::White ? GetRank(pawn_coord) : BOARD_SIDE - GetRank(pawn_coord) - 1;
 
         if (IsPawnIsolated(context)) {
             AddArrayFeature<type, c>(score, Feature::IsolatedPawn, half_file, 1);
         }
         if (IsPawnDoubled(context)) {
             AddArrayFeature<type, c>(score, Feature::DoubledPawn, half_file, 1);
+        }
+        if (IsPawnPassed(context)) {
+            if (relative_rank <= 5) {
+                AddArrayFeature<type, c>(score, Feature::PassedPawn,
+                                         (relative_rank - 1) * (BOARD_SIDE / 2) + half_file, 1);
+            }
+            if (IsPawnDefender(context)) {
+                AddArrayFeature<type, c>(score, Feature::DefendedPassedPawn,
+                                         (relative_rank - 1) * (BOARD_SIDE / 2) + half_file, 1);
+            }
         }
     }
 }
@@ -86,9 +98,9 @@ PawnHashTableEntry EvaluatePawns(const Board& board,
     const uint64_t pawn_hash =
         q_util::GetHash16(board.bb_pieces[MakeCell(Color::White, Piece::Pawn)],
                           board.bb_pieces[MakeCell(Color::Black, Piece::Pawn)]);
-    
+
     PawnHashTableEntry entry;
-    if (!pawn_cache.Get(pawn_hash, entry)) {
+    if (type == EvaluationType::Vector || !pawn_cache.Get(pawn_hash, entry)) {
         typename EvaluationResultType<type>::type score{};
         EvaluatePawns<type, Color::White>(board, score);
         EvaluatePawns<type, Color::Black>(board, score);

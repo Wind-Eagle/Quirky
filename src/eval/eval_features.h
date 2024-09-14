@@ -19,7 +19,7 @@ struct PawnContext {
 bool IsPawnIsolated(const PawnContext& context);
 bool IsPawnDoubled(const PawnContext& context);
 bool IsPawnPassed(const PawnContext& context);
-bool IsPawnConnected(const PawnContext& context);
+bool IsPawnDefender(const PawnContext& context);
 
 }  // namespace q_eval
 

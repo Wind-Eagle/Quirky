@@ -15,7 +15,9 @@ enum class Feature : uint16_t {
     // Array features
     IsolatedPawn = 0,
     DoubledPawn = 4,
-    Count = 8
+    PassedPawn = 8,
+    DefendedPassedPawn = 28,
+    Count = 52
 };
 
 constexpr uint16_t FEATURE_COUNT = static_cast<uint16_t>(Feature::Count);
@@ -44,10 +46,27 @@ inline constexpr std::pair<std::array<ScorePair, q_eval::FEATURE_COUNT>,
 GetModelWeightsAndFeatureSizes() {
     std::array<ScorePair, q_eval::FEATURE_COUNT> weights{};
     std::array<uint8_t, q_eval::FEATURE_COUNT> sizes{};
-    AssignFeatureValues<4>(weights, sizes, Feature::IsolatedPawn,
-                           {ScorePair(-8, 20),ScorePair(-17, -6),ScorePair(-19, 2),ScorePair(-28, -4)});
-    AssignFeatureValues<4>(weights, sizes, Feature::DoubledPawn,
-                           {ScorePair(4, -43),ScorePair(-4, -32),ScorePair(-2, -25),ScorePair(0, -25)});
+    AssignFeatureValues<4>(
+        weights, sizes, Feature::IsolatedPawn,
+        {ScorePair(-11, 3), ScorePair(-17, -9), ScorePair(-20, -3), ScorePair(-29, -3)});
+    AssignFeatureValues<4>(
+        weights, sizes, Feature::DoubledPawn,
+        {ScorePair(8, -32), ScorePair(-2, -16), ScorePair(-5, -19), ScorePair(-3, -24)});
+    AssignFeatureValues<20>(
+        weights, sizes, Feature::PassedPawn,
+        {ScorePair(4, -4),  ScorePair(-5, 14),  ScorePair(-13, -5), ScorePair(-24, -4),
+         ScorePair(11, 2),  ScorePair(13, 5),   ScorePair(-6, 3),   ScorePair(-23, -4),
+         ScorePair(18, 28), ScorePair(-23, 33), ScorePair(-21, 20), ScorePair(-14, 12),
+         ScorePair(0, 59),  ScorePair(10, 57),  ScorePair(12, 38),  ScorePair(7, 37),
+         ScorePair(2, 133), ScorePair(14, 117), ScorePair(0, 103),  ScorePair(-11, 78)});
+    AssignFeatureValues<24>(
+        weights, sizes, Feature::DefendedPassedPawn,
+        {ScorePair(-6, 5),   ScorePair(18, -6),  ScorePair(39, -2), ScorePair(1, 15),
+         ScorePair(4, 0),    ScorePair(-5, 9),   ScorePair(17, 3),  ScorePair(-3, 26),
+         ScorePair(35, -2),  ScorePair(5, 8),    ScorePair(34, 10), ScorePair(-8, 30),
+         ScorePair(60, -16), ScorePair(56, 11),  ScorePair(102, 9), ScorePair(50, 15),
+         ScorePair(25, 26),  ScorePair(90, -17), ScorePair(42, 46), ScorePair(51, 6),
+         ScorePair(3, 75),   ScorePair(16, 109), ScorePair(74, 88), ScorePair(22, 47)});
     return std::make_pair(weights, sizes);
 }
 
