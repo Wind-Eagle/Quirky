@@ -1,199 +1,128 @@
 #include "evaluator.h"
 
-#include <math.h>
-
-#include "../core/moves/magic.h"
 #include "../core/util.h"
-#include "eval_features.h"
 #include "model.h"
-#include "pawns.h"
-#include "psq.h"
-#include "score.h"
 
 using namespace q_core;
 
 namespace q_eval {
 
-template <EvaluationType type, Color c>
-void AddSimpleFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
-                      const int8_t count) {
-    Q_ASSERT(GetModelFeatureSize(feature) == 1);
-    if constexpr (type == EvaluationType::Value) {
-        if constexpr (c == Color::White) {
-            score += GetModelWeight(feature) * count;
-        } else {
-            score -= GetModelWeight(feature) * count;
+void Evaluator::State::Build(const q_core::Board& board) {
+    feature_layer.Clear();
+    stage = 0;
+    auto& feature_layer_array = feature_layer.GetArrayRef();
+    for (coord_t i = 0; i < BOARD_SIZE; i++) {
+        if (board.cells[i] != EMPTY_CELL) {
+            UpdateFeatureLayer(feature_layer_array, board.cells[i], i, 1);
         }
-    } else {
-        if constexpr (c == Color::White) {
-            score[static_cast<uint16_t>(feature)] += count;
-        } else {
-            score[static_cast<uint16_t>(feature)] -= count;
-        }
+        stage += CELL_STAGE_EVAL[board.cells[i]];
     }
 }
 
-template <EvaluationType type, Color c>
-void AddArrayFeature(typename EvaluationResultType<type>::type& score, const Feature feature,
-                     const uint8_t array_index, const int8_t count) {
-    Q_ASSERT(array_index < GetModelFeatureSize(feature) && GetModelFeatureSize(feature) > 1);
-    if constexpr (type == EvaluationType::Value) {
-        if constexpr (c == Color::White) {
-            score += GetModelWeight(feature, array_index) * count;
-        } else {
-            score -= GetModelWeight(feature, array_index) * count;
-        }
-    } else {
-        if constexpr (c == Color::White) {
-            score[static_cast<uint16_t>(feature) + array_index] += count;
-        } else {
-            score[static_cast<uint16_t>(feature) + array_index] -= count;
-        }
-    }
-}
-
-template <EvaluationType type>
-typename EvaluationResultType<type>::type Evaluator<type>::Evaluate(const Board& board) const {
+score_t Evaluator::Evaluate(const q_core::Board& board) const {
     Q_ASSERT(board.IsValid());
     Q_ASSERT([&]() {
-        Tag cur_tag;
-        cur_tag.BuildTag(board);
-        return cur_tag == tag_;
+        State state;
+        state.Build(board);
+        return state == state_;
     }());
-    typename EvaluationResultType<type>::type res = tag_.GetScore();
-    if constexpr (type == EvaluationType::Value) {
-        if (board.move_side == Color::Black) {
-            res *= -1;
-        }
+    score_t res = ApplyModel(state_.feature_layer.GetArrayRef(), state_.stage);
+    if (board.move_side == Color::Black) {
+        res *= -1;
     }
     return res;
 }
 
-template <EvaluationType type>
-score_t Evaluator<type>::GetEvaluationScore(
-    const typename EvaluationResultType<type>::type score) const {
-    ScorePair ans{};
-    if constexpr (type == EvaluationType::Vector) {
-        const auto& features = score.GetFeatures();
-        ans = ApplyModel(features.data(), FEATURE_COUNT);
-        for (size_t i = 0; i < PSQ_SIZE; i++) {
-            ans += PSQ[i] * features[i + FEATURE_COUNT];
+void Evaluator::StartTrackingBoard(const q_core::Board& board) {
+    state_.Build(board);
+}
+
+void Evaluator::UpdateOnMove(const q_core::Board& board,
+                             q_core::Move move,
+                             EvaluatorUpdateInfo& info) {
+    q_util::HeapArray<int16_t, FEATURE_LAYER_SIZE> new_feature_layer = state_.feature_layer;
+    auto& new_feature_layer_array = new_feature_layer.GetArrayRef();
+    stage_t new_stage = state_.stage;
+
+    const MoveBasicType move_basic_type = GetMoveBasicType(move);
+    const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {
+        UpdateFeatureLayer(new_feature_layer_array, src_cell, move.src, -1);
+        UpdateFeatureLayer(new_feature_layer_array, dst_cell, move.dst, -1);
+        new_stage -= CELL_STAGE_EVAL[dst_cell];
+    };
+    switch (move_basic_type) {
+        case MoveBasicType::Simple: {
+            basic_update(board.cells[move.src], board.cells[move.dst]);
+            UpdateFeatureLayer(new_feature_layer_array, board.cells[move.src], move.dst, 1);
+            break;
         }
-    } else {
-        ans = score;
-    }
-    stage_t stage = std::min(tag_.GetStage(), Tag::STAGE_MAX);
-    return (static_cast<int32_t>(ans.GetFirst()) * stage +
-            static_cast<int32_t>(ans.GetSecond()) * (Tag::STAGE_MAX - stage)) /
-           Tag::STAGE_MAX;
-}
-
-template <EvaluationType type>
-void Evaluator<type>::Tag::BuildTag(const Board& board) {
-    for (coord_t i = 0; i < BOARD_SIZE; i++) {
-        if constexpr (type == EvaluationType::Value) {
-            if (board.cells[i] != EMPTY_CELL) {
-                score_ += GetPSQValue(board.cells[i], i);
-                stage_ += CELL_STAGE_EVAL[board.cells[i]];
-            }
-        } else {
-            if (board.cells[i] != EMPTY_CELL) {
-                const uint16_t index = GetPSQIndex(board.cells[i], i);
-                score_[FEATURE_COUNT + index]++;
-                stage_ += CELL_STAGE_EVAL[board.cells[i]];
-            }
+        case MoveBasicType::PawnDouble: {
+            const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
+            basic_update(pawn, EMPTY_CELL);
+            UpdateFeatureLayer(new_feature_layer_array, pawn, move.dst, 1);
+            break;
         }
-    }
-}
-
-template <Color c, CastlingSide s>
-constexpr ScorePair GetCastlingUpdateScorePair() {
-    constexpr auto KING_INITIAL_POSITION =
-        c == Color::White ? WHITE_KING_INITIAL_POSITION : BLACK_KING_INITIAL_POSITION;
-    if constexpr (s == CastlingSide::Kingside) {
-        return GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION + 2) +
-               GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION + 1) -
-               GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION) -
-               GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION + 3);
-    }
-    return GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION - 2) +
-           GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION - 1) -
-           GetPSQValue(MakeCell(c, Piece::King), KING_INITIAL_POSITION) -
-           GetPSQValue(MakeCell(c, Piece::Rook), KING_INITIAL_POSITION - 4);
-}
-
-template <EvaluationType type>
-typename Evaluator<type>::Tag Evaluator<type>::Tag::GetUpdatedTag(const Board& board,
-                                                                  const Move move) const {
-    if constexpr (type == EvaluationType::Value) {
-        typename Evaluator<type>::Tag new_tag = (*this);
-        const MoveBasicType move_basic_type = GetMoveBasicType(move);
-        const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {
-            new_tag.score_ -= GetPSQValue(src_cell, move.src) + GetPSQValue(dst_cell, move.dst);
-            new_tag.stage_ -= CELL_STAGE_EVAL[dst_cell];
-        };
-        switch (move_basic_type) {
-            case MoveBasicType::Simple: {
-                basic_update(board.cells[move.src], board.cells[move.dst]);
-                new_tag.score_ += GetPSQValue(board.cells[move.src], move.dst);
-                break;
-            }
-            case MoveBasicType::PawnDouble: {
-                const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
-                basic_update(pawn, EMPTY_CELL);
-                new_tag.score_ += GetPSQValue(pawn, move.dst);
-                break;
-            }
-            case MoveBasicType::EnPassant: {
-                const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
-                basic_update(pawn, EMPTY_CELL);
-                new_tag.score_ += GetPSQValue(pawn, move.dst);
-                const coord_t taken_coord =
-                    (board.move_side == Color::White ? move.dst - BOARD_SIDE
-                                                     : move.dst + BOARD_SIDE);
-                const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);
-                new_tag.score_ -= GetPSQValue(enemy_pawn, taken_coord);
-                break;
-            }
-            case MoveBasicType::Castling: {
-                if (GetCastlingSide(move) == CastlingSide::Kingside) {
-                    new_tag.score_ +=
-                        board.move_side == Color::White
-                            ? GetCastlingUpdateScorePair<q_core::Color::White,
-                                                         q_core::CastlingSide::Kingside>()
-                            : GetCastlingUpdateScorePair<q_core::Color::Black,
-                                                         q_core::CastlingSide::Kingside>();
-                } else {
-                    new_tag.score_ +=
-                        board.move_side == Color::White
-                            ? GetCastlingUpdateScorePair<q_core::Color::White,
-                                                         q_core::CastlingSide::Queenside>()
-                            : GetCastlingUpdateScorePair<q_core::Color::Black,
-                                                         q_core::CastlingSide::Queenside>();
-                }
-                return new_tag;
-            }
-            case MoveBasicType::KnightPromotion:
-            case MoveBasicType::BishopPromotion:
-            case MoveBasicType::RookPromotion:
-            case MoveBasicType::QueenPromotion: {
-                const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
-                basic_update(pawn, board.cells[move.dst]);
-                cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));
-                new_tag.score_ += GetPSQValue(promotion_cell, move.dst);
-                new_tag.stage_ += CELL_STAGE_EVAL[promotion_cell];
-                break;
-            }
-            default:
-                Q_UNREACHABLE();
+        case MoveBasicType::EnPassant: {
+            const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
+            basic_update(pawn, EMPTY_CELL);
+            UpdateFeatureLayer(new_feature_layer_array, pawn, move.dst, 1);
+            const coord_t taken_coord =
+                (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
+            const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);
+            UpdateFeatureLayer(new_feature_layer_array, enemy_pawn, taken_coord, -1);
+            break;
         }
-        return new_tag;
+        case MoveBasicType::Castling: {
+            const auto king_initial_position = board.move_side == Color::White
+                                                   ? WHITE_KING_INITIAL_POSITION
+                                                   : BLACK_KING_INITIAL_POSITION;
+            if (GetCastlingSide(move) == CastlingSide::Kingside) {
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::King),
+                                   king_initial_position + 2, 1);
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::King),
+                                   king_initial_position, -1);
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::Rook),
+                                   king_initial_position + 1, 1);
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::Rook),
+                                   king_initial_position + 3, -1);
+            } else {
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::King),
+                                   king_initial_position - 2, 1);
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::King),
+                                   king_initial_position, -1);
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::Rook),
+                                   king_initial_position - 1, 1);
+                UpdateFeatureLayer(new_feature_layer_array, MakeCell(board.move_side, Piece::Rook),
+                                   king_initial_position - 4, -1);
+            }
+            break;
+        }
+        case MoveBasicType::KnightPromotion:
+        case MoveBasicType::BishopPromotion:
+        case MoveBasicType::RookPromotion:
+        case MoveBasicType::QueenPromotion: {
+            const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
+            basic_update(pawn, board.cells[move.dst]);
+            cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));
+            UpdateFeatureLayer(new_feature_layer_array, promotion_cell, move.dst, 1);
+            new_stage += CELL_STAGE_EVAL[promotion_cell];
+            break;
+        }
+        default:
+            Q_UNREACHABLE();
     }
-    Q_ASSERT(false);
-    return *this;
+
+    info.old_feature_layer = std::move(state_.feature_layer);
+    info.old_stage = state_.stage;
+    state_.feature_layer = std::move(new_feature_layer);
+    state_.stage = new_stage;
 }
 
-template struct Evaluator<EvaluationType::Value>;
-template struct Evaluator<EvaluationType::Vector>;
+void Evaluator::RevertOnMove(const q_core::Board&,
+                             q_core::Move,
+                             EvaluatorUpdateInfo&& info) {
+    state_.feature_layer = std::move(info.old_feature_layer);
+    state_.stage = info.old_stage;
+}
 
 }  // namespace q_eval
