@@ -8,9 +8,9 @@ using namespace q_core;
 namespace q_eval {
 
 void Evaluator::State::Build(const q_core::Board& board) {
-    feature_layer.Clear();
+    feature_layer.fill(0);
     stage = 0;
-    auto& feature_layer_array = feature_layer.GetArrayRef();
+    auto& feature_layer_array = feature_layer;
     for (coord_t i = 0; i < BOARD_SIZE; i++) {
         if (board.cells[i] != EMPTY_CELL) {
             UpdateFeatureLayer(feature_layer_array, board.cells[i], i, 1);
@@ -26,7 +26,7 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
         state.Build(board);
         return state == state_;
     }());
-    score_t res = ApplyModel(state_.feature_layer.GetArrayRef(), state_.stage);
+    score_t res = ApplyModel(state_.feature_layer, state_.stage);
     if (board.move_side == Color::Black) {
         res *= -1;
     }
@@ -40,8 +40,8 @@ void Evaluator::StartTrackingBoard(const q_core::Board& board) {
 void Evaluator::UpdateOnMove(const q_core::Board& board,
                              q_core::Move move,
                              EvaluatorUpdateInfo& info) {
-    q_util::HeapArray<int16_t, FEATURE_LAYER_SIZE> new_feature_layer = state_.feature_layer;
-    auto& new_feature_layer_array = new_feature_layer.GetArrayRef();
+    auto new_feature_layer = state_.feature_layer;
+    auto& new_feature_layer_array = new_feature_layer;
     stage_t new_stage = state_.stage;
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
@@ -112,16 +112,16 @@ void Evaluator::UpdateOnMove(const q_core::Board& board,
             Q_UNREACHABLE();
     }
 
-    info.old_feature_layer = std::move(state_.feature_layer);
+    info.old_feature_layer = state_.feature_layer;
     info.old_stage = state_.stage;
-    state_.feature_layer = std::move(new_feature_layer);
+    state_.feature_layer = new_feature_layer;
     state_.stage = new_stage;
 }
 
 void Evaluator::RevertOnMove(const q_core::Board&,
                              q_core::Move,
-                             EvaluatorUpdateInfo&& info) {
-    state_.feature_layer = std::move(info.old_feature_layer);
+                             EvaluatorUpdateInfo& info) {
+    state_.feature_layer = info.old_feature_layer;
     state_.stage = info.old_stage;
 }
 

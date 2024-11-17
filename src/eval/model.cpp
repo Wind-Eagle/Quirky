@@ -142,7 +142,8 @@ void UpdateFeatureLayer(std::array<int16_t, FEATURE_LAYER_SIZE>& feature_layer,
 }
 
 score_t ApplyModel(const std::array<int16_t, FEATURE_LAYER_SIZE>& feature_layer, stage_t stage) {
-    return (stage * feature_layer[0] + (24 - stage) * feature_layer[1]) / 24;
+    stage = std::min(stage, static_cast<stage_t>(24));
+    return (static_cast<int32_t>(feature_layer[0]) * stage + static_cast<int32_t>(feature_layer[1]) * (24 - stage)) / 24;
 }
 
 }  // namespace q_eval

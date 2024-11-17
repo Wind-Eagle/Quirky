@@ -81,7 +81,7 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
     if (!_legal) {                                                          \
         continue;                                                           \
     }                                                                       \
-    Q_DEFER { position.UnmakeMove(move, _make_move_info, std::move(_evaluator_update_info)); }
+    Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;

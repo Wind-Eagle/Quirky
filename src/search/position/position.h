@@ -22,7 +22,7 @@ struct Position {
     bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
                   q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
     void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
-                    q_eval::Evaluator::EvaluatorUpdateInfo&& evaluator_update_info);
+                    q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
 
     void MakeNullMove(q_core::coord_t& old_en_passant_coord);
     void UnmakeNullMove(const q_core::coord_t& old_en_passant_coord);

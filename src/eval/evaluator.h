@@ -15,7 +15,7 @@ namespace q_eval {
 class Evaluator {
   public:
     struct EvaluatorUpdateInfo {
-        q_util::HeapArray<int16_t, FEATURE_LAYER_SIZE> old_feature_layer;
+        std::array<int16_t, FEATURE_LAYER_SIZE> old_feature_layer;
         stage_t old_stage;
     };
 
@@ -23,7 +23,7 @@ class Evaluator {
 
     void StartTrackingBoard(const q_core::Board& board);
     void UpdateOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo& info);
-    void RevertOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo&& info);
+    void RevertOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo& info);
 
   private:
     static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0,
@@ -31,10 +31,10 @@ class Evaluator {
     struct State {
       void Build(const q_core::Board& board);
       bool operator==(const State& rhs) const {
-        return feature_layer.GetArrayRef() == rhs.feature_layer.GetArrayRef() && stage == rhs.stage;
+        return feature_layer == rhs.feature_layer && stage == rhs.stage;
       }
       
-      q_util::HeapArray<int16_t, FEATURE_LAYER_SIZE> feature_layer;
+      std::array<int16_t, FEATURE_LAYER_SIZE> feature_layer;
       stage_t stage;
     };
     State state_;

@@ -67,7 +67,7 @@ q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
         if (!legal) {
             continue;
         }
-        position.UnmakeMove(move_list.moves[i], make_move_info, std::move(evaluator_update_info));
+        position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_update_info);
         if (!q_core::IsMoveNull(random_move)) {
             has_two_legal_moves = true;
             return random_move;
