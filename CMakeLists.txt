@@ -41,6 +41,13 @@ target_link_libraries(api core eval search util)
 add_executable(Quirky src/main.cpp)
 target_link_libraries(Quirky core api util eval search)
 
+add_executable(model_sampler
+    tools/model_sampler/main.cpp
+    tools/model_sampler/reader.cpp
+    tools/model_sampler/writer.cpp
+)
+target_link_libraries(model_sampler core eval util)
+
 find_package(GTest)
 if(GTest_FOUND)
     include(GoogleTest)

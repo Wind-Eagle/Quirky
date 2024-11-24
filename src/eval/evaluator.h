@@ -15,9 +15,12 @@ namespace q_eval {
 class Evaluator {
   public:
     struct EvaluatorUpdateInfo {
-        std::array<int16_t, FEATURE_LAYER_SIZE> old_feature_layer;
+        std::array<float, MODEL_INPUT_SIZE> old_model_input;
         stage_t old_stage;
     };
+    
+    static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0,
+                                                                             0, 1, 1, 2, 4, 0};
 
     score_t Evaluate(const q_core::Board& board) const;
 
@@ -26,15 +29,18 @@ class Evaluator {
     void RevertOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo& info);
 
   private:
-    static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0,
-                                                                             0, 1, 1, 2, 4, 0};
     struct State {
       void Build(const q_core::Board& board);
-      bool operator==(const State& rhs) const {
-        return feature_layer == rhs.feature_layer && stage == rhs.stage;
+      bool operator == (const State& rhs) const {
+        for (size_t i = 0; i < MODEL_INPUT_SIZE; i++) {
+          if (std::abs(model_input[i] - rhs.model_input[i]) > 1e-4) {
+            return false;
+          }
+        }
+        return stage == rhs.stage;
       }
-      
-      std::array<int16_t, FEATURE_LAYER_SIZE> feature_layer;
+
+      std::array<float, MODEL_INPUT_SIZE> model_input;
       stage_t stage;
     };
     State state_;

@@ -16,6 +16,8 @@ constexpr score_t SCORE_UNKNOWN = 31000;
 constexpr score_t SCORE_MATE = SCORE_MIN + 1;
 constexpr score_t SCORE_ALMOST_MATE = -25000;
 
+constexpr stage_t STAGE_MAX = 24;
+
 inline constexpr bool IsScoreMate(const score_t score) {
     return q_util::Abs(score) > -SCORE_ALMOST_MATE;
 }

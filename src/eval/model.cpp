@@ -1,149 +1,122 @@
 #include "model.h"
 
+#include "../core/util.h"
+
+#include <fstream>
+
 namespace q_eval {
 
-static constexpr std::array<score_t, 832 * 2> WEIGHTS = {
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     91,
-    91,    91,    91,    91,    91,    91,    91,    50,    93,    76,    71,    90,    118,
-    147,   85,    53,    80,    89,    83,    101,   79,    127,   83,    48,    86,    81,
-    103,   101,   91,    95,    47,    68,    90,    86,    98,    111,   92,    96,    66,
-    53,    83,    98,    95,    119,   148,   91,    68,    122,   118,   114,   142,   151,
-    141,   92,    79,    91,    91,    91,    91,    91,    91,    91,    91,    332,   382,
-    347,   369,   369,   387,   378,   315,   379,   372,   400,   404,   405,   411,   400,
-    396,   384,   399,   423,   414,   426,   417,   426,   380,   390,   402,   418,   417,
-    429,   427,   406,   377,   407,   421,   416,   463,   429,   452,   407,   424,   398,
-    418,   430,   473,   488,   505,   456,   392,   326,   368,   475,   422,   475,   468,
-    395,   393,   167,   323,   347,   362,   414,   284,   265,   268,   444,   423,   442,
-    425,   417,   423,   428,   430,   419,   474,   451,   448,   450,   471,   483,   455,
-    462,   462,   464,   455,   462,   461,   457,   462,   431,   445,   452,   475,   480,
-    458,   451,   414,   410,   440,   459,   472,   474,   444,   452,   437,   430,   445,
-    491,   462,   502,   492,   484,   479,   411,   455,   430,   430,   450,   494,   445,
-    461,   408,   390,   397,   371,   319,   398,   380,   352,   544,   547,   564,   565,
-    570,   558,   537,   558,   517,   542,   536,   544,   550,   556,   577,   515,   523,
-    537,   557,   561,   557,   555,   576,   562,   527,   527,   532,   548,   556,   550,
-    560,   559,   531,   549,   570,   580,   567,   580,   591,   596,   562,   564,   568,
-    596,   619,   614,   627,   603,   566,   564,   598,   623,   590,   644,   635,   608,
-    591,   591,   600,   616,   630,   615,   568,   579,   918,   906,   914,   933,   908,
-    888,   852,   900,   898,   927,   925,   924,   930,   947,   948,   931,   906,   925,
-    918,   920,   915,   926,   928,   914,   902,   915,   910,   914,   925,   917,   930,
-    911,   896,   900,   907,   911,   914,   917,   909,   935,   899,   901,   923,   947,
-    951,   990,   1024,  982,   896,   887,   890,   861,   874,   995,   936,   1032,  868,
-    842,   899,   901,   902,   886,   827,   841,   -41,   32,    3,     -74,   1,     -38,
-    46,    41,    43,    -7,    -26,   -85,   -66,   -29,   33,    34,    12,    26,    -61,
-    -77,   -75,   -51,   -1,    -24,   26,    21,    13,    -72,   -35,   -66,   -28,   -65,
-    14,    28,    49,    0,     -7,    -10,   11,    -23,   66,    134,   49,    76,    21,
-    74,    87,    -16,   55,    109,   84,    52,    41,    112,   4,     -18,   53,    75,
-    56,    66,    72,    95,    42,    26,    -91,   -91,   -91,   -91,   -91,   -91,   -91,
-    -91,   -122,  -118,  -114,  -142,  -151,  -141,  -92,   -79,   -53,   -83,   -98,   -95,
-    -119,  -148,  -91,   -68,   -68,   -90,   -86,   -98,   -111,  -92,   -96,   -66,   -48,
-    -86,   -81,   -103,  -101,  -91,   -95,   -47,   -53,   -80,   -89,   -83,   -101,  -79,
-    -127,  -83,   -50,   -93,   -76,   -71,   -90,   -118,  -147,  -85,   -91,   -91,   -91,
-    -91,   -91,   -91,   -91,   -91,   -167,  -323,  -347,  -362,  -414,  -284,  -265,  -268,
-    -326,  -368,  -475,  -422,  -475,  -468,  -395,  -393,  -398,  -418,  -430,  -473,  -488,
-    -505,  -456,  -392,  -407,  -421,  -416,  -463,  -429,  -452,  -407,  -424,  -390,  -402,
-    -418,  -417,  -429,  -427,  -406,  -377,  -384,  -399,  -423,  -414,  -426,  -417,  -426,
-    -380,  -379,  -372,  -400,  -404,  -405,  -411,  -400,  -396,  -332,  -382,  -347,  -369,
-    -369,  -387,  -378,  -315,  -408,  -390,  -397,  -371,  -319,  -398,  -380,  -352,  -411,
-    -455,  -430,  -430,  -450,  -494,  -445,  -461,  -430,  -445,  -491,  -462,  -502,  -492,
-    -484,  -479,  -410,  -440,  -459,  -472,  -474,  -444,  -452,  -437,  -431,  -445,  -452,
-    -475,  -480,  -458,  -451,  -414,  -462,  -462,  -464,  -455,  -462,  -461,  -457,  -462,
-    -419,  -474,  -451,  -448,  -450,  -471,  -483,  -455,  -444,  -423,  -442,  -425,  -417,
-    -423,  -428,  -430,  -591,  -591,  -600,  -616,  -630,  -615,  -568,  -579,  -566,  -564,
-    -598,  -623,  -590,  -644,  -635,  -608,  -562,  -564,  -568,  -596,  -619,  -614,  -627,
-    -603,  -531,  -549,  -570,  -580,  -567,  -580,  -591,  -596,  -527,  -527,  -532,  -548,
-    -556,  -550,  -560,  -559,  -523,  -537,  -557,  -561,  -557,  -555,  -576,  -562,  -517,
-    -542,  -536,  -544,  -550,  -556,  -577,  -515,  -544,  -547,  -564,  -565,  -570,  -558,
-    -537,  -558,  -868,  -842,  -899,  -901,  -902,  -886,  -827,  -841,  -896,  -887,  -890,
-    -861,  -874,  -995,  -936,  -1032, -899,  -901,  -923,  -947,  -951,  -990,  -1024, -982,
-    -896,  -900,  -907,  -911,  -914,  -917,  -909,  -935,  -902,  -915,  -910,  -914,  -925,
-    -917,  -930,  -911,  -906,  -925,  -918,  -920,  -915,  -926,  -928,  -914,  -898,  -927,
-    -925,  -924,  -930,  -947,  -948,  -931,  -918,  -906,  -914,  -933,  -908,  -888,  -852,
-    -900,  -53,   -75,   -56,   -66,   -72,   -95,   -42,   -26,   -55,   -109,  -84,   -52,
-    -41,   -112,  -4,    18,    -66,   -134,  -49,   -76,   -21,   -74,   -87,   16,    -14,
-    -28,   -49,   0,     7,     10,    -11,   23,    -26,   -21,   -13,   72,    35,    66,
-    28,    65,    -12,   -26,   61,    77,    75,    51,    1,     24,    -43,   7,     26,
-    85,    66,    29,    -33,   -34,   41,    -32,   -3,    74,    -1,    38,    -46,   -41,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     108,
-    108,   108,   108,   108,   108,   108,   108,   117,   107,   108,   108,   100,   96,
-    90,    89,    107,   104,   86,    98,    92,    94,    91,    91,    114,   105,   89,
-    85,    85,    85,    95,    95,    134,   123,   110,   97,    88,    98,    111,   114,
-    208,   203,   185,   165,   151,   146,   172,   187,   279,   273,   260,   223,   216,
-    233,   269,   259,   108,   108,   108,   108,   108,   108,   108,   108,   196,   200,
-    233,   239,   231,   236,   205,   209,   214,   229,   232,   247,   242,   239,   222,
-    214,   223,   244,   239,   265,   263,   244,   231,   221,   235,   244,   265,   269,
-    271,   257,   238,   237,   233,   259,   263,   276,   270,   259,   255,   226,   220,
-    233,   261,   255,   233,   237,   226,   227,   217,   231,   221,   241,   219,   218,
-    221,   191,   226,   195,   221,   233,   216,   222,   215,   161,   234,   249,   234,
-    260,   260,   249,   241,   245,   256,   239,   254,   263,   267,   252,   250,   233,
-    241,   260,   267,   272,   280,   266,   251,   242,   256,   265,   276,   269,   273,
-    277,   253,   255,   272,   274,   270,   279,   279,   269,   263,   252,   267,   267,
-    261,   272,   260,   271,   260,   251,   247,   261,   262,   260,   259,   247,   262,
-    225,   257,   248,   248,   267,   270,   256,   250,   266,   475,   482,   478,   489,
-    472,   470,   477,   441,   480,   478,   484,   482,   478,   475,   464,   471,   473,
-    478,   472,   476,   475,   468,   459,   458,   481,   488,   491,   488,   480,   475,
-    469,   460,   489,   481,   484,   478,   483,   477,   472,   463,   487,   488,   487,
-    478,   466,   474,   471,   464,   491,   502,   489,   484,   480,   474,   470,   466,
-    494,   487,   488,   484,   482,   476,   481,   480,   998,   985,   991,   962,   1004,
-    991,   984,   947,   1008,  1001,  999,   1018,  1010,  959,   947,   954,   976,   982,
-    1033,  1024,  1033,  1024,  1029,  994,   1007,  1015,  1033,  1055,  1044,  1026,  1030,
-    1013,  990,   1032,  1028,  1059,  1073,  1067,  1045,  1021,  984,   1007,  1042,  1027,
-    1071,  1012,  990,   980,   1015,  1027,  1039,  1084,  1063,  1053,  1043,  924,   1028,
-    1061,  1045,  1060,  1055,  1061,  1042,  1066,  -34,   -31,   -15,   -6,    -31,   -8,
-    -40,   -64,   -32,   -7,    10,    30,    26,    20,    -2,    -22,   -31,   -7,    19,
-    32,    37,    29,    9,     -2,    -38,   -5,    11,    30,    30,    35,    17,    2,
-    -27,   -3,    5,     17,    18,    27,    19,    7,     -20,   0,     7,     3,     13,
-    21,    26,    17,    -24,   -5,    -7,    -3,    3,     11,    28,    13,    -58,   -32,
-    -20,   -28,   -15,   -5,    -5,    -34,   -108,  -108,  -108,  -108,  -108,  -108,  -108,
-    -108,  -279,  -273,  -260,  -223,  -216,  -233,  -269,  -259,  -208,  -203,  -185,  -165,
-    -151,  -146,  -172,  -187,  -134,  -123,  -110,  -97,   -88,   -98,   -111,  -114,  -114,
-    -105,  -89,   -85,   -85,   -85,   -95,   -95,   -107,  -104,  -86,   -98,   -92,   -94,
-    -91,   -91,   -117,  -107,  -108,  -108,  -100,  -96,   -90,   -89,   -108,  -108,  -108,
-    -108,  -108,  -108,  -108,  -108,  -226,  -195,  -221,  -233,  -216,  -222,  -215,  -161,
-    -217,  -231,  -221,  -241,  -219,  -218,  -221,  -191,  -220,  -233,  -261,  -255,  -233,
-    -237,  -226,  -227,  -233,  -259,  -263,  -276,  -270,  -259,  -255,  -226,  -235,  -244,
-    -265,  -269,  -271,  -257,  -238,  -237,  -223,  -244,  -239,  -265,  -263,  -244,  -231,
-    -221,  -214,  -229,  -232,  -247,  -242,  -239,  -222,  -214,  -196,  -200,  -233,  -239,
-    -231,  -236,  -205,  -209,  -257,  -248,  -248,  -267,  -270,  -256,  -250,  -266,  -247,
-    -261,  -262,  -260,  -259,  -247,  -262,  -225,  -267,  -267,  -261,  -272,  -260,  -271,
-    -260,  -251,  -272,  -274,  -270,  -279,  -279,  -269,  -263,  -252,  -256,  -265,  -276,
-    -269,  -273,  -277,  -253,  -255,  -241,  -260,  -267,  -272,  -280,  -266,  -251,  -242,
-    -256,  -239,  -254,  -263,  -267,  -252,  -250,  -233,  -234,  -249,  -234,  -260,  -260,
-    -249,  -241,  -245,  -494,  -487,  -488,  -484,  -482,  -476,  -481,  -480,  -491,  -502,
-    -489,  -484,  -480,  -474,  -470,  -466,  -487,  -488,  -487,  -478,  -466,  -474,  -471,
-    -464,  -489,  -481,  -484,  -478,  -483,  -477,  -472,  -463,  -481,  -488,  -491,  -488,
-    -480,  -475,  -469,  -460,  -473,  -478,  -472,  -476,  -475,  -468,  -459,  -458,  -480,
-    -478,  -484,  -482,  -478,  -475,  -464,  -471,  -475,  -482,  -478,  -489,  -472,  -470,
-    -477,  -441,  -1028, -1061, -1045, -1060, -1055, -1061, -1042, -1066, -1015, -1027, -1039,
-    -1084, -1063, -1053, -1043, -924,  -984,  -1007, -1042, -1027, -1071, -1012, -990,  -980,
-    -990,  -1032, -1028, -1059, -1073, -1067, -1045, -1021, -1007, -1015, -1033, -1055, -1044,
-    -1026, -1030, -1013, -976,  -982,  -1033, -1024, -1033, -1024, -1029, -994,  -1008, -1001,
-    -999,  -1018, -1010, -959,  -947,  -954,  -998,  -985,  -991,  -962,  -1004, -991,  -984,
-    -947,  58,    32,    20,    28,    15,    5,     5,     34,    24,    5,     7,     3,
-    -3,    -11,   -28,   -13,   20,    0,     -7,    -3,    -13,   -21,   -26,   -17,   27,
-    3,     -5,    -17,   -18,   -27,   -19,   -7,    38,    5,     -11,   -30,   -30,   -35,
-    -17,   -2,    31,    7,     -19,   -32,   -37,   -29,   -9,    2,     32,    7,     -10,
-    -30,   -26,   -20,   2,     22,    34,    31,    15,    6,     31,    8,     40,    64};
+template <size_t INPUT_SIZE, size_t OUTPUT_SIZE>
+struct FeatureLayer {
+    std::array<std::array<float, OUTPUT_SIZE>, INPUT_SIZE> weights;
+    std::array<float, OUTPUT_SIZE> biases;
 
-void UpdateFeatureLayer(std::array<int16_t, FEATURE_LAYER_SIZE>& feature_layer,
-                        const q_core::cell_t cell, const q_core::coord_t coord,
-                        const int8_t delta) {
-    Q_ASSERT(q_core::IsCellValid(cell));
-    Q_ASSERT(q_core::IsCoordValidAndDefined(coord));
-    feature_layer[0] += WEIGHTS[cell * q_core::BOARD_SIZE + coord] * delta;
-    feature_layer[1] += WEIGHTS[cell * q_core::BOARD_SIZE + coord + 832] * delta;
+    void Update(float* input, size_t position, int8_t delta) {
+        for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
+            input[i] += weights[position][i] * delta;
+        }
+    }
+};
+
+template <size_t INPUT_SIZE, size_t OUTPUT_SIZE, bool APPLY_RELU>
+struct LinearLayer {
+    std::array<std::array<float, OUTPUT_SIZE>, INPUT_SIZE> weights;
+    std::array<float, OUTPUT_SIZE> biases;
+
+    void Process(const float* input, float* output) {
+        std::copy(biases.begin(), biases.end(), output);
+        for (uint16_t i = 0; i < INPUT_SIZE; i++) {
+            for (uint16_t j = 0; j < OUTPUT_SIZE; j++) {
+                output[j] += weights[i][j] * input[i];
+            }
+        }
+        if constexpr (APPLY_RELU) {
+            for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
+                output[i] = std::min(std::max(output[i], static_cast<float>(0.0)), static_cast<float>(1.0));
+            }
+        }
+    }
+};
+
+static constexpr uint16_t INPUT_LAYER_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2;
+static constexpr uint16_t FEATURE_LAYER_SIZE = 8;
+static constexpr uint16_t HIDDEN_LAYER_SIZE = 8;
+
+template <size_t INPUT_SIZE, size_t OUTPUT_SIZE>
+void ReadWeights(std::array<std::array<float, OUTPUT_SIZE>, INPUT_SIZE>& weights, std::fstream& in) {
+    for (size_t i = 0; i < INPUT_SIZE; i++) {
+        for (size_t j = 0; j < OUTPUT_SIZE; j++) {
+            in >> weights[i][j];
+        }
+    }
 }
 
-score_t ApplyModel(const std::array<int16_t, FEATURE_LAYER_SIZE>& feature_layer, stage_t stage) {
-    stage = std::min(stage, static_cast<stage_t>(24));
-    return (static_cast<int32_t>(feature_layer[0]) * stage + static_cast<int32_t>(feature_layer[1]) * (24 - stage)) / 24;
+template <size_t INPUT_SIZE>
+void ReadBiases(std::array<float, INPUT_SIZE>& biases, std::fstream& in) {
+    for (size_t i = 0; i < INPUT_SIZE; i++) {
+         in >> biases[i];
+    }
+}
+
+struct LayerStorage {
+    LayerStorage() {
+        std::fstream in("/home/wind-eagle/Quirky/build/model.qnne");
+        ReadWeights(feature_layer_first.weights, in);
+        ReadWeights(hidden_layer_first.weights, in);
+        ReadWeights(output_layer_first.weights, in);
+        ReadBiases(feature_layer_first.biases, in);
+        ReadBiases(hidden_layer_first.biases, in);
+        ReadBiases(output_layer_first.biases, in);
+        ReadWeights(feature_layer_second.weights, in);
+        ReadWeights(hidden_layer_second.weights, in);
+        ReadWeights(output_layer_second.weights, in);
+        ReadBiases(feature_layer_second.biases, in);
+        ReadBiases(hidden_layer_second.biases, in);
+        ReadBiases(output_layer_second.biases, in);
+    }
+
+    FeatureLayer<INPUT_LAYER_SIZE, FEATURE_LAYER_SIZE> feature_layer_first;
+    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_SIZE, true> hidden_layer_first;
+    LinearLayer<HIDDEN_LAYER_SIZE, 1, false> output_layer_first;
+
+    FeatureLayer<INPUT_LAYER_SIZE, FEATURE_LAYER_SIZE> feature_layer_second;
+    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_SIZE, true> hidden_layer_second;
+    LinearLayer<HIDDEN_LAYER_SIZE, 1, false> output_layer_second;
+};
+
+static LayerStorage layer_storage{};
+
+void InitializeModelInput(std::array<float, MODEL_INPUT_SIZE>& input) {
+    std::copy(layer_storage.feature_layer_first.biases.begin(),
+              layer_storage.feature_layer_first.biases.end(), input.begin());
+    std::copy(layer_storage.feature_layer_second.biases.begin(),
+              layer_storage.feature_layer_second.biases.end(), input.begin() + FEATURE_LAYER_SIZE);
+}
+
+void UpdateModelInput(std::array<float, MODEL_INPUT_SIZE>& input, const q_core::cell_t cell,
+                      const q_core::coord_t coord, const int8_t delta) {
+    Q_ASSERT(q_core::IsCellValid(cell));
+    Q_ASSERT(q_core::IsCoordValidAndDefined(coord));
+    if (cell == q_core::EMPTY_CELL) {
+        return;
+    }
+    const size_t pos = (static_cast<size_t>(cell) - 1) * q_core::BOARD_SIZE + coord;
+    layer_storage.feature_layer_first.Update(input.data(), pos, delta);
+    layer_storage.feature_layer_second.Update(input.data() + FEATURE_LAYER_SIZE, pos, delta);
+}
+
+score_t ApplyModel(const std::array<float, MODEL_INPUT_SIZE>& input, stage_t stage) {
+    std::array<float, MODEL_INPUT_SIZE> clamped_input;
+    for (uint16_t i = 0; i < MODEL_INPUT_SIZE; i++) {
+        clamped_input[i] = std::min(std::max(input[i], static_cast<float>(0.0)), static_cast<float>(1.0));
+    }
+    std::array<float, (HIDDEN_LAYER_SIZE + 1) * 2> buffer;
+    layer_storage.hidden_layer_first.Process(clamped_input.data(), buffer.data());
+    layer_storage.hidden_layer_second.Process(clamped_input.data() + HIDDEN_LAYER_SIZE, buffer.data() + HIDDEN_LAYER_SIZE);
+    layer_storage.output_layer_first.Process(buffer.data(), buffer.data() + HIDDEN_LAYER_SIZE * 2);
+    layer_storage.output_layer_second.Process(buffer.data() + HIDDEN_LAYER_SIZE, buffer.data() + HIDDEN_LAYER_SIZE * 2 + 1);
+    stage = std::min(stage, STAGE_MAX);
+    return (buffer[HIDDEN_LAYER_SIZE * 2] * stage + buffer[HIDDEN_LAYER_SIZE * 2 + 1] * (24 - stage)) * 100 / 24;
 }
 
 }  // namespace q_eval
