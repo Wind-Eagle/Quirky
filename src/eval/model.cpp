@@ -54,43 +54,31 @@ void ReadWeights(std::array<std::array<float, OUTPUT_SIZE>, INPUT_SIZE>& weights
 template <size_t INPUT_SIZE>
 void ReadBiases(std::array<float, INPUT_SIZE>& biases, std::fstream& in) {
     for (size_t i = 0; i < INPUT_SIZE; i++) {
-         in >> biases[i];
+        in >> biases[i];
     }
 }
 
 struct LayerStorage {
     LayerStorage() {
         std::fstream in("/home/wind-eagle/Quirky/build/model.qnne");
-        ReadWeights(feature_layer_first.weights, in);
-        ReadWeights(hidden_layer_first.weights, in);
-        ReadWeights(output_layer_first.weights, in);
-        ReadBiases(feature_layer_first.biases, in);
-        ReadBiases(hidden_layer_first.biases, in);
-        ReadBiases(output_layer_first.biases, in);
-        ReadWeights(feature_layer_second.weights, in);
-        ReadWeights(hidden_layer_second.weights, in);
-        ReadWeights(output_layer_second.weights, in);
-        ReadBiases(feature_layer_second.biases, in);
-        ReadBiases(hidden_layer_second.biases, in);
-        ReadBiases(output_layer_second.biases, in);
+        ReadWeights(feature_layer.weights, in);
+        ReadWeights(hidden_layer.weights, in);
+        ReadWeights(output_layer.weights, in);
+        ReadBiases(feature_layer.biases, in);
+        ReadBiases(hidden_layer.biases, in);
+        ReadBiases(output_layer.biases, in);
     }
 
-    FeatureLayer<INPUT_LAYER_SIZE, FEATURE_LAYER_SIZE> feature_layer_first;
-    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_SIZE, true> hidden_layer_first;
-    LinearLayer<HIDDEN_LAYER_SIZE, 1, false> output_layer_first;
-
-    FeatureLayer<INPUT_LAYER_SIZE, FEATURE_LAYER_SIZE> feature_layer_second;
-    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_SIZE, true> hidden_layer_second;
-    LinearLayer<HIDDEN_LAYER_SIZE, 1, false> output_layer_second;
+    FeatureLayer<INPUT_LAYER_SIZE, FEATURE_LAYER_SIZE> feature_layer;
+    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_SIZE, true> hidden_layer;
+    LinearLayer<HIDDEN_LAYER_SIZE, 1, false> output_layer;
 };
 
 static LayerStorage layer_storage{};
 
 void InitializeModelInput(std::array<float, MODEL_INPUT_SIZE>& input) {
-    std::copy(layer_storage.feature_layer_first.biases.begin(),
-              layer_storage.feature_layer_first.biases.end(), input.begin());
-    std::copy(layer_storage.feature_layer_second.biases.begin(),
-              layer_storage.feature_layer_second.biases.end(), input.begin() + FEATURE_LAYER_SIZE);
+    std::copy(layer_storage.feature_layer.biases.begin(),
+              layer_storage.feature_layer.biases.end(), input.begin());
 }
 
 void UpdateModelInput(std::array<float, MODEL_INPUT_SIZE>& input, const q_core::cell_t cell,
@@ -101,22 +89,18 @@ void UpdateModelInput(std::array<float, MODEL_INPUT_SIZE>& input, const q_core::
         return;
     }
     const size_t pos = (static_cast<size_t>(cell) - 1) * q_core::BOARD_SIZE + coord;
-    layer_storage.feature_layer_first.Update(input.data(), pos, delta);
-    layer_storage.feature_layer_second.Update(input.data() + FEATURE_LAYER_SIZE, pos, delta);
+    layer_storage.feature_layer.Update(input.data(), pos, delta);
 }
 
-score_t ApplyModel(const std::array<float, MODEL_INPUT_SIZE>& input, stage_t stage) {
+score_t ApplyModel(const std::array<float, MODEL_INPUT_SIZE>& input, stage_t) {
     std::array<float, MODEL_INPUT_SIZE> clamped_input;
     for (uint16_t i = 0; i < MODEL_INPUT_SIZE; i++) {
         clamped_input[i] = std::min(std::max(input[i], static_cast<float>(0.0)), static_cast<float>(1.0));
     }
-    std::array<float, (HIDDEN_LAYER_SIZE + 1) * 2> buffer;
-    layer_storage.hidden_layer_first.Process(clamped_input.data(), buffer.data());
-    layer_storage.hidden_layer_second.Process(clamped_input.data() + HIDDEN_LAYER_SIZE, buffer.data() + HIDDEN_LAYER_SIZE);
-    layer_storage.output_layer_first.Process(buffer.data(), buffer.data() + HIDDEN_LAYER_SIZE * 2);
-    layer_storage.output_layer_second.Process(buffer.data() + HIDDEN_LAYER_SIZE, buffer.data() + HIDDEN_LAYER_SIZE * 2 + 1);
-    stage = std::min(stage, STAGE_MAX);
-    return (buffer[HIDDEN_LAYER_SIZE * 2] * stage + buffer[HIDDEN_LAYER_SIZE * 2 + 1] * (24 - stage)) * 100 / 24;
+    std::array<float, HIDDEN_LAYER_SIZE + 1> buffer;
+    layer_storage.hidden_layer.Process(clamped_input.data(), buffer.data());
+    layer_storage.output_layer.Process(buffer.data(), buffer.data() + HIDDEN_LAYER_SIZE);
+    return buffer[HIDDEN_LAYER_SIZE] * 80;
 }
 
 }  // namespace q_eval

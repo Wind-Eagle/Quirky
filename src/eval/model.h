@@ -9,7 +9,7 @@
 
 namespace q_eval {
 
-static constexpr uint16_t MODEL_INPUT_SIZE = 16;
+static constexpr uint16_t MODEL_INPUT_SIZE = 8;
 
 void InitializeModelInput(std::array<float, MODEL_INPUT_SIZE>& input);
 void UpdateModelInput(std::array<float, MODEL_INPUT_SIZE>& input, q_core::cell_t cell, q_core::coord_t coord, int8_t delta);
