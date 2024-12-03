@@ -9,12 +9,10 @@ namespace q_eval {
 
 void Evaluator::State::Build(const q_core::Board& board) {
     InitializeModelInput(model_input);
-    stage = 0;
     for (coord_t i = 0; i < BOARD_SIZE; i++) {
         if (board.cells[i] != EMPTY_CELL) {
             UpdateModelInput(model_input, board.cells[i], i, 1);
         }
-        stage += CELL_STAGE_EVAL[board.cells[i]];
     }
 }
 
@@ -25,7 +23,7 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
         state.Build(board);
         return state == state_;
     }());
-    score_t res = ApplyModel(state_.model_input, state_.stage);
+    score_t res = ApplyModel(state_.model_input);
     if (board.move_side == Color::Black) {
         res *= -1;
     }
@@ -39,14 +37,12 @@ void Evaluator::StartTrackingBoard(const q_core::Board& board) {
 void Evaluator::UpdateOnMove(const q_core::Board& board,
                              q_core::Move move,
                              EvaluatorUpdateInfo& info) {
-    auto new_model_input = state_.model_input;
-    stage_t new_stage = state_.stage;
+    alignas(32) auto new_model_input = state_.model_input;
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
     const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {
         UpdateModelInput(new_model_input, src_cell, move.src, -1);
         UpdateModelInput(new_model_input, dst_cell, move.dst, -1);
-        new_stage -= CELL_STAGE_EVAL[dst_cell];
     };
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
@@ -103,7 +99,6 @@ void Evaluator::UpdateOnMove(const q_core::Board& board,
             basic_update(pawn, board.cells[move.dst]);
             cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));
             UpdateModelInput(new_model_input, promotion_cell, move.dst, 1);
-            new_stage += CELL_STAGE_EVAL[promotion_cell];
             break;
         }
         default:
@@ -111,16 +106,13 @@ void Evaluator::UpdateOnMove(const q_core::Board& board,
     }
 
     info.old_model_input = state_.model_input;
-    info.old_stage = state_.stage;
     state_.model_input = new_model_input;
-    state_.stage = new_stage;
 }
 
 void Evaluator::RevertOnMove(const q_core::Board&,
                              q_core::Move,
                              EvaluatorUpdateInfo& info) {
     state_.model_input = info.old_model_input;
-    state_.stage = info.old_stage;
 }
 
 }  // namespace q_eval

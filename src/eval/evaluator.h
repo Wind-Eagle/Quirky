@@ -15,12 +15,8 @@ namespace q_eval {
 class Evaluator {
   public:
     struct EvaluatorUpdateInfo {
-        std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
-        stage_t old_stage;
+        alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
     };
-    
-    static constexpr stage_t CELL_STAGE_EVAL[q_core::NUMBER_OF_CELLS] = {0, 0, 1, 1, 2, 4, 0,
-                                                                             0, 1, 1, 2, 4, 0};
 
     score_t Evaluate(const q_core::Board& board) const;
 
@@ -37,11 +33,10 @@ class Evaluator {
             return false;
           }
         }
-        return stage == rhs.stage;
+        return true;
       }
 
-      std::array<int16_t, MODEL_INPUT_SIZE> model_input;
-      stage_t stage;
+      alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
     };
     State state_;
 };

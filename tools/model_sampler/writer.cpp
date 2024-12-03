@@ -41,9 +41,9 @@ void WriteBoardsToCSV(const GameSet& game_set, std::ofstream& out) {
                 if (board.cells[i] != q_core::EMPTY_CELL) {
                     input_features[(static_cast<size_t>(board.cells[i]) - 1) * q_core::BOARD_SIZE + i]++;
                 }
-                stage += q_eval::Evaluator::CELL_STAGE_EVAL[board.cells[i]];
             }
-            stage = std::min(stage, q_eval::STAGE_MAX);
+            // Stage is unused
+            stage = 0;
             out << static_cast<int>(stage) << "," << game.boards.size() << ",1";
             for (size_t i = 0; i < q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2; i++) {
                 out << "," << static_cast<int>(input_features[i]);

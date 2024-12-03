@@ -6,8 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -msse -msse2 -msse3 -mssse3
 
 add_compile_options(
     -Wall -Wextra -Wpedantic
-    -Wnon-virtual-dtor -Woverloaded-virtual
-    -Wold-style-cast -Wcast-qual -Wsign-promo
+    -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wsign-promo
     -Wzero-as-null-pointer-constant -Wextra-semi
     -Werror
 )
@@ -29,7 +28,7 @@ target_link_libraries(util)
 add_library(core src/core/board/board.cpp src/core/board/geometry.h src/core/board/types.h src/core/util.h src/core/moves/movegen.cpp src/core/moves/attack.cpp src/core/moves/board_manipulation.cpp src/core/moves/magic.cpp src/core/moves/move.cpp)
 target_link_libraries(core util)
 
-add_library(eval src/eval/evaluator.cpp src/eval/model.cpp src/eval/score.h)
+add_library(eval src/eval/evaluator.cpp src/eval/model.cpp src/eval/score.h src/eval/layers.h)
 target_link_libraries(eval core util)
 
 add_library(search src/search/control/control.cpp src/search/control/stat.cpp src/search/control/time.cpp src/search/position/move_picker.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp src/search/searcher/launcher.cpp src/search/searcher/searcher.cpp)
