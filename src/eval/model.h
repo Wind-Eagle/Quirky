@@ -9,11 +9,11 @@
 
 namespace q_eval {
 
-static constexpr uint16_t MODEL_INPUT_SIZE = 8;
+static constexpr uint16_t MODEL_INPUT_SIZE = 16;
 
-void InitializeModelInput(std::array<float, MODEL_INPUT_SIZE>& input);
-void UpdateModelInput(std::array<float, MODEL_INPUT_SIZE>& input, q_core::cell_t cell, q_core::coord_t coord, int8_t delta);
-score_t ApplyModel(const std::array<float, MODEL_INPUT_SIZE>& input, stage_t stage);
+void InitializeModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input);
+void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell, q_core::coord_t coord, int8_t delta);
+score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, stage_t stage);
 
 }  // namespace q_eval
 

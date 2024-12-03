@@ -15,7 +15,7 @@ namespace q_eval {
 class Evaluator {
   public:
     struct EvaluatorUpdateInfo {
-        std::array<float, MODEL_INPUT_SIZE> old_model_input;
+        std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
         stage_t old_stage;
     };
     
@@ -40,7 +40,7 @@ class Evaluator {
         return stage == rhs.stage;
       }
 
-      std::array<float, MODEL_INPUT_SIZE> model_input;
+      std::array<int16_t, MODEL_INPUT_SIZE> model_input;
       stage_t stage;
     };
     State state_;

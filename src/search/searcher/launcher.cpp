@@ -85,6 +85,9 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     Position position = start_position;
     ProcessPositionMoves(position, moves, rt);
 
+    std::cerr << "Eval: " << position.GetEvaluatorScore() << std::endl;
+    return;
+
     bool has_two_legal_moves = false;
     const q_core::Move random_move = GetRandomMove(position, has_two_legal_moves);
     if (q_core::IsMoveNull(random_move)) {
