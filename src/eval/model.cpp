@@ -64,7 +64,7 @@ static constexpr float OUTPUT_SCALE = 64;
 
 struct LayerStorage {
     LayerStorage() {
-        std::fstream in("/home/wind-eagle/Quirky/build/big_model2.qnne");
+        std::fstream in("/home/wind-eagle/Quirky/build/avx2_model.qnne");
         ReadWeights(feature_layer.weights, in, ACTIVATION_SCALE);
         ReadWeightsReverse<32, 8, int8_t>(hidden_layer.weights, in, WEIGHT_SCALE);
         ReadWeights(output_layer.weights, in, WEIGHT_SCALE * OUTPUT_SCALE / ACTIVATION_SCALE);
@@ -99,13 +99,13 @@ void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, const q_core
 score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input) {
     alignas(32) std::array<int8_t, 32> clamped_input{};
     for (uint16_t i = 0; i < FEATURE_LAYER_SIZE; i++) {
-        clamped_input[i] = std::min(std::max(input[i], static_cast<int16_t>(0)), static_cast<int16_t>(127));
+        clamped_input[i] = std::min(std::max(input[i], static_cast<int16_t>(0)), static_cast<int16_t>(ACTIVATION_SCALE));
     }
     alignas(32) std::array<int32_t, HIDDEN_LAYER_SIZE> buffer;
     alignas(32) std::array<int8_t, HIDDEN_LAYER_SIZE> hidden_output;
     layer_storage.hidden_layer.Process(clamped_input.data(), buffer.data());
     for (uint16_t i = 0; i < HIDDEN_LAYER_SIZE; i++) {
-        hidden_output[i] = std::min(std::max(buffer[i] / static_cast<int32_t>(64), static_cast<int32_t>(0)), static_cast<int32_t>(127));
+        hidden_output[i] = std::min(std::max(buffer[i] / static_cast<int32_t>(WEIGHT_SCALE), static_cast<int32_t>(0)), static_cast<int32_t>(ACTIVATION_SCALE));
     }
     layer_storage.output_layer.Process(hidden_output.data(), buffer.data());
     return buffer[0] / WEIGHT_SCALE;
