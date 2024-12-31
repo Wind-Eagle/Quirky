@@ -4,7 +4,7 @@
 #include <fstream>
 #include <vector>
 
-#include "../../../src/core/board/board.h"
+#include "../../src/core/board/board.h"
 
 enum class Result : int8_t { WhiteWins = -1, Draw = 0, BlackWins = 1 };
 

@@ -24,8 +24,8 @@ void ProcessPositionMoves(Position& position, const std::vector<q_core::Move>& m
             helper_rt.Insert(position.board.hash);
         }
         q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
-        position.MakeMove(move, make_move_info, evaluator_tag);
+        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
+        position.MakeMove(move, make_move_info, evaluator_update_info);
     }
 }
 
@@ -62,12 +62,12 @@ q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     q_core::Move random_move = q_core::NULL_MOVE;
     for (size_t i = 0; i < move_list.size; i++) {
         q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
-        bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_tag);
+        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
+        bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_update_info);
         if (!legal) {
             continue;
         }
-        position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_tag);
+        position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_update_info);
         if (!q_core::IsMoveNull(random_move)) {
             has_two_legal_moves = true;
             return random_move;

@@ -22,10 +22,10 @@ std::vector<q_core::Move> Searcher::GetPV() {
     RepetitionTable rt(10);
     Position position = position_;
     q_core::MakeMoveInfo make_move_info;
-    q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag evaluator_tag;
+    q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
     std::vector<q_core::Move> pv;
 
-    position.MakeMove(global_context_.best_move, make_move_info, evaluator_tag);
+    position.MakeMove(global_context_.best_move, make_move_info, evaluator_update_info);
     for (;;) {
         const q_core::hash_t position_hash = position.board.hash;
         if (!rt.Insert(position_hash)) {
@@ -36,7 +36,7 @@ std::vector<q_core::Move> Searcher::GetPV() {
         if (tt_entry_found) {
             const q_core::Move tt_move = q_core::GetDecompressedMove(tt_entry.move);
             if (q_core::IsMovePseudolegal(position.board, tt_move)) {
-                if (position.MakeMove(tt_move, make_move_info, evaluator_tag)) {
+                if (position.MakeMove(tt_move, make_move_info, evaluator_update_info)) {
                     pv.push_back(tt_move);
                     continue;
                 }
@@ -76,12 +76,12 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 
 #define MAKE_MOVE(position, move)                                           \
     q_core::MakeMoveInfo _make_move_info;                                   \
-    q_eval::Evaluator<q_eval::EvaluationType::Value>::Tag _evaluator_tag;   \
-    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_tag); \
+    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;   \
+    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info); \
     if (!_legal) {                                                          \
         continue;                                                           \
     }                                                                       \
-    Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_tag); }
+    Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;
