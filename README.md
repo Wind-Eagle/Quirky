@@ -4,7 +4,7 @@
 Quirky is a chess project, aiming at creating tools for analyzing chess games. Currently there is only an engine, but much more is planned.
 
 ### Engine
-Quirky engine has estimated strength of ~2400-2500 Elo, but there is still much space for improvement. It can be loaded into GUI, but supports only UCI protocol for now. Current version is beta-2.
+Quirky engine has estimated strength of ~2600 Elo, but there is still much space for improvement. It can be loaded into GUI, but supports only UCI protocol for now. Current version is beta-3.
 
 ## Building from source
 The project is using [CMake](https://cmake.org) as a build system. You will also need a C++20-compatible compiler.
@@ -26,3 +26,4 @@ $ make -j8
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page), for many useful articles
   and descriptions of various useful heuristics.
 - [alex65536](https://github.com/alex65536) for providing [useful chess engine tools](https://github.com/alex65536/sofcheck-engine-tester)
+- [Dataset used for model tuning](https://bitbucket.org/zurichess/tuner/downloads)
