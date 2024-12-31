@@ -1,11 +1,9 @@
 #include <cstddef>
 #include <map>
 
-#include "../../../src/util/error.h"
-#include "../../../src/util/io.h"
-#include "calcer.h"
+#include "../../src/util/error.h"
+#include "../../src/util/io.h"
 #include "reader.h"
-#include "weighter.h"
 #include "writer.h"
 
 void PrintHelp() {
@@ -31,14 +29,12 @@ void Make(const SamplerArguments& args) {
         if (game_set.games.empty()) {
             break;
         }
-        BoardSetWithFeatures raw_boards = CalcFeatures(std::move(game_set));
-        BoardSetWithFeatures boards = AddWeightsToBoards(std::move(raw_boards));
         std::string out_file_name = std::to_string(pos++);
         if (out_file_name.size() == 1) {
             out_file_name = "0" + out_file_name;
         }
         std::ofstream out(std::string(args.output_file) + "/" + out_file_name + ".csv");
-        WriteBoardsToCSV(std::move(boards), out);
+        WriteBoardsToCSV(std::move(game_set), out);
     }
 }
 

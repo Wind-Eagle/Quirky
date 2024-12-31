@@ -6,8 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -msse -msse2 -msse3 -mssse3
 
 add_compile_options(
     -Wall -Wextra -Wpedantic
-    -Wnon-virtual-dtor -Woverloaded-virtual
-    -Wold-style-cast -Wcast-qual -Wsign-promo
+    -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wsign-promo
     -Wzero-as-null-pointer-constant -Wextra-semi
     -Werror
 )
@@ -21,7 +20,16 @@ else()
     message(STATUS "LTO not supported: <${error}>")
 endif()
 
-add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h src/util/channel.h src/util/processor.h)
+include_directories("${PROJECT_BINARY_DIR}")
+include_directories(src)
+
+add_custom_command(
+    COMMAND ${PROJECT_SOURCE_DIR}/src/incbin/embed.py --input ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne --output ${PROJECT_BINARY_DIR}/embed/model_weights.h
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/incbin/embed.py  ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne
+    OUTPUT ${PROJECT_BINARY_DIR}/embed/model_weights.h
+)
+
+add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h src/util/channel.h src/util/processor.h src/util/heaparray.h)
 
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(util)
@@ -29,7 +37,7 @@ target_link_libraries(util)
 add_library(core src/core/board/board.cpp src/core/board/geometry.h src/core/board/types.h src/core/util.h src/core/moves/movegen.cpp src/core/moves/attack.cpp src/core/moves/board_manipulation.cpp src/core/moves/magic.cpp src/core/moves/move.cpp)
 target_link_libraries(core util)
 
-add_library(eval src/eval/evaluator.cpp src/eval/model.h src/eval/pawns.cpp src/eval/score.h src/eval/eval_features.cpp src/eval/psq.h)
+add_library(eval src/eval/evaluator.cpp src/eval/model.cpp src/eval/score.h src/eval/layers.h ${PROJECT_BINARY_DIR}/embed/model_weights.h)
 target_link_libraries(eval core util)
 
 add_library(search src/search/control/control.cpp src/search/control/stat.cpp src/search/control/time.cpp src/search/position/move_picker.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp src/search/searcher/launcher.cpp src/search/searcher/searcher.cpp)
@@ -41,24 +49,12 @@ target_link_libraries(api core eval search util)
 add_executable(Quirky src/main.cpp)
 target_link_libraries(Quirky core api util eval search)
 
-add_executable(eval_sampler
-    tools/eval/sampler/main.cpp
-    tools/eval/sampler/reader.cpp
-    tools/eval/sampler/calcer.cpp
-    tools/eval/sampler/weighter.cpp
-    tools/eval/sampler/writer.cpp
+add_executable(model_sampler
+    tools/model_sampler/main.cpp
+    tools/model_sampler/reader.cpp
+    tools/model_sampler/writer.cpp
 )
-target_link_libraries(eval_sampler eval)
-
-add_executable(eval_tuner
-    tools/eval/tuner/main.cpp
-    tools/eval/tuner/reader.cpp
-    tools/eval/tuner/dataset.cpp
-    tools/eval/tuner/calcer.cpp
-    tools/eval/tuner/learner.cpp
-)
-target_link_libraries(eval_tuner search)
-target_compile_definitions(eval_tuner PUBLIC CHANGE_EVAL_CONSTS)
+target_link_libraries(model_sampler core eval util)
 
 find_package(GTest)
 if(GTest_FOUND)
@@ -66,10 +62,6 @@ if(GTest_FOUND)
     add_executable(test_core test/core/fen_parse_test.cpp test/core/simple_movegen_test.cpp test/core/util.h test/core/util.cpp test/core/board_manipulation_test.cpp)
     target_link_libraries(test_core core)
     target_link_libraries(test_core GTest::GTest GTest::Main)
-
-    add_executable(test_eval test/eval/evaluator_test.cpp)
-    target_link_libraries(test_eval eval)
-    target_link_libraries(test_eval GTest::GTest GTest::Main)
 endif()
 
 find_package(benchmark)

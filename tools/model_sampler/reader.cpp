@@ -2,9 +2,9 @@
 
 #include <fstream>
 
-#include "../../../src/core/moves/board_manipulation.h"
-#include "../../../src/core/moves/move.h"
-#include "../../../src/util/string.h"
+#include "../../src/core/moves/board_manipulation.h"
+#include "../../src/core/moves/move.h"
+#include "../../src/util/string.h"
 
 Result CastStringToResult(const std::string_view str) {
     if (str == "W") {
