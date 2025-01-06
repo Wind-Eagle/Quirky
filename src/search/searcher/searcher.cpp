@@ -140,6 +140,12 @@ template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
                                  q_eval::score_t beta) {
     CHECK_STOP;
+
+    // Checking fifty move rule
+    if (position_.board.fifty_rule_move_count >= FIFTY_MOVES_RULE_LIMIT) {
+        return 0;
+    }
+
     // Checking repetition table
     const q_core::hash_t position_hash = position_.board.hash;
     if (!rt_.Insert(position_hash)) {
