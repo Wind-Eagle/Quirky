@@ -127,10 +127,10 @@ inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 3;
 inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
 
 inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
-inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 35, 90};
+inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
 
 inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
-inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 35, 90};
+inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
 
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
 inline static constexpr depth_t LMR_DEPTH_REDUCTION = 1;
