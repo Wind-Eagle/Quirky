@@ -21,9 +21,15 @@ struct SearchResult {
     std::vector<q_core::Move> pv;
 };
 
+struct RootMove {
+    depth_t depth;
+    q_core::Move move;
+    size_t number;
+};
+
 class SearchControl {
   public:
-    enum class Event { Timeout, Stop, NewResult };
+    enum class Event { Timeout, Stop, NewResult, RootMove };
     void Stop();
     template <class Rep, class Period>
     Event Wait(const std::chrono::duration<Rep, Period> time) {
@@ -35,17 +41,23 @@ class SearchControl {
         return GetEvent();
     }
     void Reset();
+    void EnableDetailedResults();
     bool IsStopped() const;
     depth_t GetDepth() const;
     bool FinishDepth(depth_t depth);
     void AddResult(SearchResult result);
     std::vector<SearchResult> GetResults();
+    void AddRootMove(RootMove root_move);
+    std::vector<RootMove> GetRootMoves();
 
   private:
+    bool AreDetailedResultsEnabled();
     Event GetEvent();
     std::vector<SearchResult> results_;
+    std::vector<RootMove> root_moves_;
     std::atomic<depth_t> depth_;
     std::atomic<uint8_t> is_stopped_;
+    std::atomic<uint8_t> detailed_results_enabled_;
     std::condition_variable event_;
     std::mutex lock_;
 };
