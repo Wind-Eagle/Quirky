@@ -46,7 +46,7 @@ void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, const q_core
 }
 
 score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input) {
-    alignas(32) std::array<int8_t, 32> clamped_input{};
+    alignas(32) std::array<int8_t, FEATURE_LAYER_SIZE> clamped_input{};
     for (uint16_t i = 0; i < MODEL_INPUT_SIZE; i++) {
         clamped_input[i] = std::min(std::max(input[i], static_cast<int16_t>(0)), static_cast<int16_t>(ACTIVATION_SCALE));
     }

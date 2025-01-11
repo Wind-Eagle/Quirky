@@ -89,10 +89,6 @@ struct LinearLayer {
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE; j++) {
-                if (i >= 16) {
-                    weights_[j * INPUT_SIZE + i] = 0;
-                    continue;
-                }
                 weights_[j * INPUT_SIZE + i] = reader.ReadWeight<int8_t>(WEIGHT_SCALE);
             }
         }
