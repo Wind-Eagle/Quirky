@@ -49,8 +49,8 @@ struct FeatureLayer {
         }
     }
 
-    void GetResultOnEmptyBoard(std::array<int16_t, OUTPUT_SIZE>& output) {
-        std::copy(biases_.begin(), biases_.end(), output.begin());
+    void GetResultOnEmptyBoard(int16_t* output) {
+        std::copy(biases_.begin(), biases_.end(), output);
     }
 
     void Update(int16_t* input, size_t position, int8_t delta) {
@@ -161,13 +161,13 @@ struct OutputLayer {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             weights_[i] = reader.ReadWeight<int8_t>(WEIGHT_SCALE * OUTPUT_SCALE / ACTIVATION_SCALE);
         }
-        bias_ = reader.ReadWeight<int16_t>(WEIGHT_SCALE * OUTPUT_SCALE);
+        bias_ = reader.ReadWeight<int32_t>(WEIGHT_SCALE * OUTPUT_SCALE);
     }
 
     int32_t Process(const int8_t* input) {
         int32_t ans = 0;
         for (uint16_t i = 0; i < INPUT_SIZE; i++) {
-            ans += static_cast<int16_t>(input[i]) * weights_[i];
+            ans += static_cast<int32_t>(input[i]) * static_cast<int32_t>(weights_[i]);
         }
         ans += bias_;
         return ans;

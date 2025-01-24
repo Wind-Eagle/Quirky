@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "core/board/geometry.h"
+#include "core/board/types.h"
 #include "reader.h"
 
 #include "../../src/core/board/board.h"
