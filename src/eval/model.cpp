@@ -53,10 +53,19 @@ void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, const q_core
     layer_storage.feature_layer.Update(input.data() + MODEL_INPUT_SIZE / 2, pos_second, delta);
 }
 
-score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input) {
+score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::Color move_side) {
     alignas(32) std::array<int8_t, FEATURE_LAYER_SIZE> clamped_input{};
-    for (uint16_t i = 0; i < MODEL_INPUT_SIZE; i++) {
-        clamped_input[i] = std::min(std::max(input[i], static_cast<int16_t>(0)), static_cast<int16_t>(ACTIVATION_SCALE));
+    if (move_side == q_core::Color::White) {
+        for (uint16_t i = 0; i < MODEL_INPUT_SIZE; i++) {
+            clamped_input[i] = std::min(std::max(input[i], static_cast<int16_t>(0)), static_cast<int16_t>(ACTIVATION_SCALE));
+        }
+    } else {
+        for (uint16_t i = 0; i < MODEL_INPUT_SIZE / 2; i++) {
+            clamped_input[i] = std::min(std::max(input[i + MODEL_INPUT_SIZE / 2], static_cast<int16_t>(0)), static_cast<int16_t>(ACTIVATION_SCALE));
+        }
+        for (uint16_t i = 0; i < MODEL_INPUT_SIZE / 2; i++) {
+            clamped_input[i + MODEL_INPUT_SIZE / 2] = std::min(std::max(input[i], static_cast<int16_t>(0)), static_cast<int16_t>(ACTIVATION_SCALE));
+        }
     }
     alignas(32) std::array<int32_t, FIRST_HIDDEN_LAYER_SIZE> buffer;
     alignas(32) std::array<int8_t, FIRST_HIDDEN_LAYER_SIZE> first_hidden_output;

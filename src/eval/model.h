@@ -4,6 +4,7 @@
 #include <array>
 
 #include "../core/board/board.h"
+#include "core/board/types.h"
 #include "score.h"
 #include "../util/heaparray.h"
 
@@ -13,7 +14,7 @@ static constexpr uint16_t MODEL_INPUT_SIZE = 32;
 
 void InitializeModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input);
 void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell, q_core::coord_t coord, int8_t delta);
-score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input);
+score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::Color move_side);
 
 }  // namespace q_eval
 

@@ -11,16 +11,16 @@
 #include "../../src/eval/evaluator.h"
 #include "../../src/eval/model.h"
 
-std::string GetTarget(Result result) {
+std::string GetTarget(Result result, q_core::Color c) {
     switch (result) {
         case Result::WhiteWins: {
-            return "1";
+            return c == q_core::Color::White ? "1" : "-1";
         }
         case Result::Draw: {
             return "0";
         }
         case Result::BlackWins: {
-            return "-1";
+            return c == q_core::Color::White ? "-1" : "1";
         }
         default: {
             q_util::ExitWithError(QuirkyError::UnexpectedValue);
@@ -41,7 +41,11 @@ void WriteBoardsToCSV(const GameSet& game_set, std::ofstream& out) {
             q_eval::stage_t stage = 0;
             for (q_core::coord_t i = 0; i < q_core::BOARD_SIZE; i++) {
                 if (board.cells[i] != q_core::EMPTY_CELL) {
-                    input_features[(static_cast<size_t>(board.cells[i]) - 1) * q_core::BOARD_SIZE + i]++;
+                    if (board.move_side == q_core::Color::White) {
+                        input_features[(static_cast<size_t>(board.cells[i]) - 1) * q_core::BOARD_SIZE + i]++;
+                    } else {
+                         input_features[(static_cast<size_t>(q_core::FlipCellColor(board.cells[i])) - 1) * q_core::BOARD_SIZE + q_core::FlipCoord(i)]++;
+                    }
                 }
             }
             // Stage is unused
@@ -50,7 +54,7 @@ void WriteBoardsToCSV(const GameSet& game_set, std::ofstream& out) {
             for (size_t i = 0; i < q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2; i++) {
                 out << "," << static_cast<int>(input_features[i]);
             }
-            out << "," << GetTarget(game.header.result);
+            out << "," << GetTarget(game.header.result, board.move_side);
             out << '\n';
         }
     }
