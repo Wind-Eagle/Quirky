@@ -159,9 +159,9 @@ struct OutputLayer {
   public:
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
-            weights_[i] = reader.ReadWeight<int16_t>(WEIGHT_SCALE * OUTPUT_SCALE / ACTIVATION_SCALE);
+            weights_[i] = reader.ReadWeight<int8_t>(WEIGHT_SCALE * OUTPUT_SCALE / ACTIVATION_SCALE);
         }
-        bias_ = reader.ReadWeight<int32_t>(WEIGHT_SCALE * OUTPUT_SCALE);
+        bias_ = reader.ReadWeight<int16_t>(WEIGHT_SCALE * OUTPUT_SCALE);
     }
 
     int32_t Process(const int8_t* input) {
@@ -174,7 +174,7 @@ struct OutputLayer {
     }
 
   private:
-    alignas(32) std::array<int16_t, INPUT_SIZE> weights_;
+    alignas(32) std::array<int8_t, INPUT_SIZE> weights_;
     int32_t bias_;
 };
 
