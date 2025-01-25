@@ -38,6 +38,11 @@ inline constexpr Color GetCellColor(const cell_t c) {
     return c <= COLOR_OFFSET ? Color::White : Color::Black;
 }
 
+inline constexpr cell_t FlipCellColor(const cell_t c) {
+    Q_ASSERT(IsCellValid(c) && IsCellWithPiece(c));
+    return c <= COLOR_OFFSET ? c + COLOR_OFFSET : c - COLOR_OFFSET;
+}
+
 inline constexpr bool IsAnyCastlingAllowed(const Castling c) {
     Q_ASSERT(IsCastlingValid(c));
     return c != Castling::None;

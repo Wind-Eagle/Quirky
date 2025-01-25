@@ -1,6 +1,9 @@
 #include "searcher.h"
 
 #include "../../core/moves/attack.h"
+#include "core/board/types.h"
+#include "core/util.h"
+#include "search/control/control.h"
 
 namespace q_search {
 
@@ -74,13 +77,13 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 #define CHECK_STOP \
     if (ShouldStop()) return 0
 
-#define MAKE_MOVE(position, move)                                           \
-    q_core::MakeMoveInfo _make_move_info;                                   \
-    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;   \
+#define MAKE_MOVE(position, move)                                                   \
+    q_core::MakeMoveInfo _make_move_info;                                           \
+    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
     bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info); \
-    if (!_legal) {                                                          \
-        continue;                                                           \
-    }                                                                       \
+    if (!_legal) {                                                                  \
+        continue;                                                                   \
+    }                                                                               \
     Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
@@ -116,7 +119,14 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 }
 
 #define SAVE_ROOT_BEST_MOVE \
-    if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move
+    if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move;
+
+#define SEND_ROOT_LOWERBOUND \
+    if constexpr (node_type == NodeType::Root) control_.AddResult(SearchResult{.bound_type = Lower, .score = alpha, .best_move = best_move, .depth = depth, .pv = {}})
+
+#define SEND_ROOT_MOVE \
+    if constexpr (node_type == NodeType::Root) control_.AddRootMove(RootMove{.depth = depth, .move = move, .number = moves_done})
+
 
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
@@ -138,6 +148,12 @@ template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
                                  q_eval::score_t beta) {
     CHECK_STOP;
+
+    // Checking fifty move rule
+    if (position_.board.fifty_rule_move_count >= FIFTY_MOVES_RULE_LIMIT) {
+        return 0;
+    }
+
     // Checking repetition table
     const q_core::hash_t position_hash = position_.board.hash;
     if (!rt_.Insert(position_hash)) {
@@ -250,15 +266,21 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         !q_core::IsKingInCheck(position_.board) && !q_eval::IsScoreMate(alpha) &&
         !q_eval::IsScoreMate(beta) && !IsMoveNull(local_context_[idepth - 1].current_move) &&
         !IsMoveCapture(local_context_[idepth - 1].current_move)) {
-        q_core::coord_t old_en_passant_coord;
-        position_.MakeNullMove(old_en_passant_coord);
-        Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
+        // Do not apply this pruning in endgame without pawns
+        if (position_.board
+                    .bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Pawn)] != 0 &&
+            position_.board
+                    .bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Pawn)] != 0) {
+            q_core::coord_t old_en_passant_coord;
+            position_.MakeNullMove(old_en_passant_coord);
+            Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
 
-        const q_eval::score_t new_score = -Search<NodeType::Simple>(depth - NMP_DEPTH_REDUCTION - 1,
-                                                                    idepth + 1, -beta, -beta + 1);
-        CHECK_STOP;
-        if (new_score >= beta) {
-            return beta;
+            const q_eval::score_t new_score = -Search<NodeType::Simple>(
+                depth - NMP_DEPTH_REDUCTION - 1, idepth + 1, -beta, -beta + 1);
+            CHECK_STOP;
+            if (new_score >= beta) {
+                return beta;
+            }
         }
     }
 
@@ -272,6 +294,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
+        SEND_ROOT_MOVE;
 
         // Late move reduction
         const bool do_lmr = (node_type == NodeType::Simple) && (moves_done > 0) &&
@@ -311,6 +334,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             if (depth == 1) {
                 SAVE_ROOT_BEST_MOVE;
             }
+            SEND_ROOT_LOWERBOUND;
         }
         if (alpha >= beta) {
             SAVE_ROOT_BEST_MOVE;

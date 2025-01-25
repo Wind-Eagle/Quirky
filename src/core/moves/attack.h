@@ -4,21 +4,19 @@
 #include <array>
 
 #include "../board/board.h"
+#include "core/board/types.h"
+#include "move.h"
 
 namespace q_core {
-
-using see_score_t = int16_t;
 
 template <Color c>
 bool IsCellAttacked(const Board& board, coord_t src);
 
 template <Color c>
 bool IsKingInCheck(const Board& board);
-
 bool IsKingInCheck(const Board& board);
 
-template <Color c>
-bitboard_t GetPawnAttacks(bitboard_t pawns);
+bool IsSEENotNegative(const Board& board, Move move, int16_t min_score, const std::array<int16_t, NUMBER_OF_CELLS>& see_cells_cost);
 
 }  // namespace q_core
 
