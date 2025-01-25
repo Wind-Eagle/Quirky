@@ -86,9 +86,6 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
     }                                                                               \
     Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
-/*const std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
-    0, 10, 32, 35, 53, 101, 3000, 10, 32, 35, 53, 101, 3000};*/
-
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;
     stat_.IncNodesCount();
@@ -104,11 +101,6 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
         CHECK_STOP;
         Q_ASSERT(q_core::IsMoveEnPassant(move) || q_core::IsMovePromotion(move) ||
                  position_.board.cells[move.dst] != q_core::EMPTY_CELL);
-        /*if (alpha > q_eval::SCORE_ALMOST_MATE) {
-            if (!q_core::IsSEENotNegative(position_.board, move, 0, SEE_CELLS_VALUE)) {
-                continue;
-            }
-        }*/
         MAKE_MOVE(position_, move);
         q_eval::score_t new_score = -QuiescenseSearch(-beta, -alpha);
         alpha = std::max(alpha, new_score);
