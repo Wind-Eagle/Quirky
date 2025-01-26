@@ -6,6 +6,8 @@
 #include "../../util/string.h"
 #include "../control/control.h"
 #include "../control/stat.h"
+#include "core/board/board.h"
+#include "core/moves/move.h"
 #include "searcher.h"
 
 namespace q_search {
@@ -39,18 +41,34 @@ void SearchLauncher::Start(const Position& start_position, const std::vector<q_c
     });
 }
 
-void PrintSearchResult(const SearchResult& result, time_t time_since_start) {
+uint64_t GetNPS(const SearchStat& stat, time_t time_since_start) {
+    return time_since_start == 0 ? stat.GetNodesCount() : stat.GetNodesCount() * 1000 / time_since_start;
+}
+
+void PrintSearchResult(const SearchResult& result, const SearchStat& stat, time_t time_since_start) {
     std::vector<std::string> moves;
     moves.push_back(q_core::CastMoveToString(result.best_move));
     for (const auto& move : result.pv) {
         moves.push_back(q_core::CastMoveToString(move));
     }
     std::string pv_str = q_util::ConcatenateStrings(moves.begin(), moves.end());
+    std::string score_str =
+        std::to_string(result.score) + (result.bound_type == Lower
+                                            ? " lowerbound"
+                                            : (result.bound_type == Upper ? " upperbound" : ""));
     q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start,
-                  "score cp", result.score, "pv", pv_str);
+                  "score cp", score_str, "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv", pv_str);
 }
 
-void PrintNodes(const SearchStat& stat) { q_util::Print("info nodes", stat.GetNodesCount()); }
+void PrintRootMove(const RootMove& root_move) {
+    q_util::Print("info depth", root_move.depth, "currmove",
+                  q_core::CastMoveToString(root_move.move), "currmovenumber", root_move.number + 1);
+}
+
+void PrintNodes(const SearchStat& stat, time_t time_since_start) {
+    q_util::Print("info nodes", stat.GetNodesCount());
+    q_util::Print("info nps", GetNPS(stat, time_since_start));
+}
 
 void PrintBestMove(const q_core::Move move) {
     q_util::Print("bestmove", q_core::CastMoveToString(move));
@@ -111,10 +129,11 @@ void SearchLauncher::StartMainThread(const Position& start_position,
             break;
         }
         time_t time_since_start = timer.GetTimeSinceStart();
+
         if (event == SearchControl::Event::NewResult) {
             std::vector<SearchResult> results = control_.GetResults();
             for (auto& result : results) {
-                PrintSearchResult(result, time_since_start);
+                PrintSearchResult(result, stat, time_since_start);
                 if (result.bound_type == Exact && result.depth > final_result.depth) {
                     final_result = std::move(result);
                     timer.ProcessNextDepth(result);
@@ -125,11 +144,19 @@ void SearchLauncher::StartMainThread(const Position& start_position,
             }
         }
 
+        if (event == SearchControl::Event::RootMove) {
+            std::vector<RootMove> root_moves = control_.GetRootMoves();
+            for (auto& root_move : root_moves) {
+                PrintRootMove(root_move);
+            }
+        }
+
         if (time_left == std::chrono::milliseconds(0)) {
             control_.Stop();
         }
         if (time_since_start >= nodes_update_timer + NODES_UPDATE_TICK) {
-            PrintNodes(stat);
+            control_.EnableDetailedResults();
+            PrintNodes(stat, time_since_start);
             while (time_since_start >= nodes_update_timer + NODES_UPDATE_TICK) {
                 nodes_update_timer += NODES_UPDATE_TICK;
             }

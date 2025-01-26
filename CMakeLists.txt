@@ -55,26 +55,3 @@ add_executable(model_sampler
     tools/model_sampler/writer.cpp
 )
 target_link_libraries(model_sampler core eval util)
-
-find_package(GTest)
-if(GTest_FOUND)
-    include(GoogleTest)
-    add_executable(test_core test/core/fen_parse_test.cpp test/core/simple_movegen_test.cpp test/core/util.h test/core/util.cpp test/core/board_manipulation_test.cpp)
-    target_link_libraries(test_core core)
-    target_link_libraries(test_core GTest::GTest GTest::Main)
-endif()
-
-find_package(benchmark)
-if(benchmark_FOUND)
-    add_executable(bench_core_movegen bench/core/bench_movegen.cpp)
-    target_link_libraries(bench_core_movegen core)
-    target_link_libraries(bench_core_movegen benchmark::benchmark)
-
-    add_executable(bench_core_board_manipulation bench/core/bench_board_manipulation.cpp)
-    target_link_libraries(bench_core_board_manipulation core)
-    target_link_libraries(bench_core_board_manipulation benchmark::benchmark)
-
-    add_executable(bench_core_mock_search bench/core/bench_mock_search.cpp)
-    target_link_libraries(bench_core_mock_search core)
-    target_link_libraries(bench_core_mock_search benchmark::benchmark)
-endif()

@@ -23,10 +23,7 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
         state.Build(board);
         return state == state_;
     }());
-    score_t res = ApplyModel(state_.model_input);
-    if (board.move_side == Color::Black) {
-        res *= -1;
-    }
+    score_t res = ApplyModel(state_.model_input, board.move_side);
     return res;
 }
 

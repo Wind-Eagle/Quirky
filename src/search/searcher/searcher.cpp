@@ -3,6 +3,7 @@
 #include "../../core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/util.h"
+#include "search/control/control.h"
 
 namespace q_search {
 
@@ -118,7 +119,14 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 }
 
 #define SAVE_ROOT_BEST_MOVE \
-    if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move
+    if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move;
+
+#define SEND_ROOT_LOWERBOUND \
+    if constexpr (node_type == NodeType::Root) control_.AddResult(SearchResult{.bound_type = Lower, .score = alpha, .best_move = best_move, .depth = depth, .pv = {}})
+
+#define SEND_ROOT_MOVE \
+    if constexpr (node_type == NodeType::Root) control_.AddRootMove(RootMove{.depth = depth, .move = move, .number = moves_done})
+
 
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
@@ -286,6 +294,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
+        SEND_ROOT_MOVE;
 
         // Late move reduction
         const bool do_lmr = (node_type == NodeType::Simple) && (moves_done > 0) &&
@@ -325,6 +334,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             if (depth == 1) {
                 SAVE_ROOT_BEST_MOVE;
             }
+            SEND_ROOT_LOWERBOUND;
         }
         if (alpha >= beta) {
             SAVE_ROOT_BEST_MOVE;
