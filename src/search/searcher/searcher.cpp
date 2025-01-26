@@ -3,6 +3,7 @@
 #include "../../core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/util.h"
+#include "eval/score.h"
 #include "search/control/control.h"
 
 namespace q_search {
@@ -86,6 +87,9 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
     }                                                                               \
     Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
+const std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
+    0, 100, 300, 300, 500, 900, 3000, 100, 300, 300, 500, 900, 3000};
+
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;
     stat_.IncNodesCount();
@@ -101,6 +105,13 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
         CHECK_STOP;
         Q_ASSERT(q_core::IsMoveEnPassant(move) || q_core::IsMovePromotion(move) ||
                  position_.board.cells[move.dst] != q_core::EMPTY_CELL);
+
+        if (!q_eval::IsScoreMate(alpha) && position_.HasNonPawns()) {
+            if (!q_core::IsSEENotNegative(position_.board, move, 0, SEE_CELLS_VALUE)) {
+                continue;
+            }
+        }
+
         MAKE_MOVE(position_, move);
         q_eval::score_t new_score = -QuiescenseSearch(-beta, -alpha);
         alpha = std::max(alpha, new_score);

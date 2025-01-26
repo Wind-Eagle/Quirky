@@ -27,6 +27,7 @@ struct Position {
     void MakeNullMove(q_core::coord_t& old_en_passant_coord);
     void UnmakeNullMove(const q_core::coord_t& old_en_passant_coord);
 
+    bool HasNonPawns() const;
     bool IsCheck() const;
 
     q_eval::score_t GetEvaluatorScore() const;
