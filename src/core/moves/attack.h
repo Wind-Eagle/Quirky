@@ -13,6 +13,9 @@ template <Color c>
 bool IsCellAttacked(const Board& board, coord_t src);
 
 template <Color c>
+bitboard_t GetCellAttackers(const Board& board, coord_t src);
+
+template <Color c>
 bool IsKingInCheck(const Board& board);
 bool IsKingInCheck(const Board& board);
 

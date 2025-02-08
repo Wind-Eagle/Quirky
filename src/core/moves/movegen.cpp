@@ -1,8 +1,12 @@
 #include "movegen.h"
 
+#include <linux/limits.h>
+
 #include "../../util/bit.h"
 #include "../board/geometry.h"
 #include "../util.h"
+#include "core/board/types.h"
+#include "core/moves/attack.h"
 #include "magic.h"
 #include "move.h"
 
@@ -20,31 +24,37 @@ inline constexpr bitboard_t MoveAllPiecesByDelta(const bitboard_t b) {
 template <MoveBasicType basic_type, bool is_capture, bool is_promotion>
 void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size) {
     if constexpr (is_promotion) {
-        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
-        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
-        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::RookPromotion>(is_capture));
-        list[size++] = ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
+        list[size++] =
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
+        list[size++] =
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
+        list[size++] =
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::RookPromotion>(is_capture));
+        list[size++] =
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
     } else {
         list[size++] = ConstructMove(src, dst, GetMoveType<basic_type>(is_capture));
     }
 }
 
 template <Color c, bool p>
-void GeneratePawnSimpleMoves(Move* list, const bitboard_t src, const bitboard_t dst, size_t& size) {
+void GeneratePawnSimpleMoves(Move* list, const bitboard_t src, const bitboard_t dst, size_t& size,
+                             bitboard_t dst_mask) {
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta(c);
-    bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
+    bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst & dst_mask;
     while (move_dst) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
-        AddPawnMoves<MoveBasicType::Simple, false, p>(
-            dst_coord - CURRENT_PAWN_MOVE_DELTA, dst_coord, list, size);
+        AddPawnMoves<MoveBasicType::Simple, false, p>(dst_coord - CURRENT_PAWN_MOVE_DELTA,
+                                                      dst_coord, list, size);
     }
 }
 
 template <Color c>
-void GeneratePawnDoubleMoves(Move* list, const bitboard_t src, const bitboard_t dst, size_t& size) {
+void GeneratePawnDoubleMoves(Move* list, const bitboard_t src, const bitboard_t dst, size_t& size,
+                             bitboard_t dst_mask) {
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta(c);
     bitboard_t move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(src) & dst;
-    move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst;
+    move_dst = MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA>(move_dst) & dst & dst_mask;
     while (move_dst) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
         AddPawnMoves<MoveBasicType::PawnDouble, false, false>(
@@ -54,7 +64,7 @@ void GeneratePawnDoubleMoves(Move* list, const bitboard_t src, const bitboard_t 
 
 template <Color c, bool p>
 void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
-                          const bitboard_t dst, size_t& size) {
+                          const bitboard_t dst, size_t& size, bitboard_t dst_mask) {
     if constexpr (p) {
         if (Q_LIKELY(src == 0)) {
             return;
@@ -63,30 +73,30 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
     constexpr int8_t CURRENT_PAWN_MOVE_DELTA = GetPawnMoveDelta(c);
     const bitboard_t move_left =
         MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA - 1>(src & (~FILE_BITBOARD[0]));
-    bitboard_t move_dst_left = move_left & dst;
+    bitboard_t move_dst_left = move_left & dst & dst_mask;
     while (move_dst_left) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_left);
-        AddPawnMoves<MoveBasicType::Simple, true, p>(
-            dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list, size);
+        AddPawnMoves<MoveBasicType::Simple, true, p>(dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1),
+                                                     dst_coord, list, size);
     }
     const bitboard_t move_right =
         MoveAllPiecesByDelta<CURRENT_PAWN_MOVE_DELTA + 1>(src & (~FILE_BITBOARD[BOARD_SIDE - 1]));
-    bitboard_t move_dst_right = move_right & dst;
+    bitboard_t move_dst_right = move_right & dst & dst_mask;
     while (move_dst_right) {
         const coord_t dst_coord = q_util::ExtractLowestBit(move_dst_right);
-        AddPawnMoves<MoveBasicType::Simple, true, p>(
-            dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1), dst_coord, list, size);
+        AddPawnMoves<MoveBasicType::Simple, true, p>(dst_coord - (CURRENT_PAWN_MOVE_DELTA + 1),
+                                                     dst_coord, list, size);
     }
     if constexpr (!p) {
         Q_ASSERT(IsCoordValidAndDefined(board.en_passant_coord));
         if (Q_UNLIKELY(board.en_passant_coord != NO_ENPASSANT_COORD)) {
-            move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord);
+            move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord) & dst_mask;
             if (Q_UNLIKELY(move_dst_left)) {
                 const coord_t dst_coord = board.en_passant_coord;
                 AddPawnMoves<MoveBasicType::EnPassant, true, false>(
                     dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list, size);
             }
-            move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord);
+            move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord) & dst_mask;
             if (Q_UNLIKELY(move_dst_right)) {
                 const coord_t dst_coord = board.en_passant_coord;
                 AddPawnMoves<MoveBasicType::EnPassant, true, false>(
@@ -97,36 +107,41 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
 }
 
 template <Color c, bool p>
-void GenerateAllPawnCaptures(const Board& board, Move* list, const bitboard_t src, size_t& size) {
+void GenerateAllPawnCaptures(const Board& board, Move* list, const bitboard_t src, size_t& size,
+                             bitboard_t dst_mask) {
     GeneratePawnCaptures<c, p>(board, list, src,
-                               board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))], size);
+                               board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))], size,
+                               dst_mask);
 }
 
 template <Color c, bool p>
-void GenerateAllPawnSimpleMoves(const Board& board, Move* list, const bitboard_t src,
-                                size_t& size) {
+void GenerateAllPawnSimpleMoves(const Board& board, Move* list, const bitboard_t src, size_t& size,
+                                bitboard_t dst_mask) {
     const bitboard_t dst = board.bb_pieces[EMPTY_CELL];
-    GeneratePawnSimpleMoves<c, p>(list, src, dst, size);
+    GeneratePawnSimpleMoves<c, p>(list, src, dst, size, dst_mask);
     if constexpr (!p) {
-        GeneratePawnDoubleMoves<c>(list, src & RANK_BITBOARD[GetPawnDoubleMoveRank(c)], dst, size);
+        GeneratePawnDoubleMoves<c>(list, src & RANK_BITBOARD[GetPawnDoubleMoveRank(c)], dst, size,
+                                   dst_mask);
     }
 }
 
 template <Color c, CapturePolicy cp, PromotionPolicy pp>
-void GenerateAllPawnMoves(const Board& board, Move* list, size_t& size) {
+void GenerateAllPawnMoves(const Board& board, Move* list, size_t& size, bitboard_t dst_mask) {
     if constexpr (pp == PromotionPolicy::All) {
-        GenerateAllPawnMoves<c, cp, PromotionPolicy::None>(board, list, size);
-        GenerateAllPawnMoves<c, cp, PromotionPolicy::OnlyPromotions>(board, list, size);
+        GenerateAllPawnMoves<c, cp, PromotionPolicy::None>(board, list, size, dst_mask);
+        GenerateAllPawnMoves<c, cp, PromotionPolicy::OnlyPromotions>(board, list, size, dst_mask);
     } else {
         const bitboard_t src =
             board.bb_pieces[MakeCell(c, Piece::Pawn)] &
             (pp == PromotionPolicy::None ? (~RANK_BITBOARD[GetPawnPromotionRank(c)])
                                          : RANK_BITBOARD[GetPawnPromotionRank(c)]);
         if constexpr (cp != CapturePolicy::OnlyCaptures) {
-            GenerateAllPawnSimpleMoves<c, pp != PromotionPolicy::None>(board, list, src, size);
+            GenerateAllPawnSimpleMoves<c, pp != PromotionPolicy::None>(board, list, src, size,
+                                                                       dst_mask);
         }
         if constexpr (cp != CapturePolicy::None) {
-            GenerateAllPawnCaptures<c, pp != PromotionPolicy::None>(board, list, src, size);
+            GenerateAllPawnCaptures<c, pp != PromotionPolicy::None>(board, list, src, size,
+                                                                    dst_mask);
         }
     }
 }
@@ -187,7 +202,8 @@ void GenerateCastling(const Board& board, Move* list, size_t& size) {
 }
 
 template <Color c, Piece p, CapturePolicy cp>
-void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, size_t& size) {
+void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, size_t& size,
+                          bitboard_t dst_mask) {
     Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::Bishop || p == Piece::Rook ||
                     p == Piece::King);
     bitboard_t pieces_src = src;
@@ -204,8 +220,9 @@ void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, 
             move_dst_init = GetRookAttackBitboard(~board.bb_pieces[EMPTY_CELL], src_coord);
         }
         if constexpr (cp != CapturePolicy::None) {
-            bitboard_t move_dst =
-                move_dst_init & board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))];
+            bitboard_t move_dst = move_dst_init &
+                                  board.bb_colors[static_cast<uint8_t>(GetInvertedColor(c))] &
+                                  dst_mask;
             while (move_dst) {
                 const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
                 list[size++] =
@@ -213,7 +230,7 @@ void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, 
             }
         }
         if constexpr (cp != CapturePolicy::OnlyCaptures) {
-            bitboard_t move_dst = move_dst_init & board.bb_pieces[EMPTY_CELL];
+            bitboard_t move_dst = move_dst_init & board.bb_pieces[EMPTY_CELL] & dst_mask;
             while (move_dst) {
                 const coord_t dst_coord = q_util::ExtractLowestBit(move_dst);
                 list[size++] =
@@ -227,70 +244,111 @@ void GenerateAllKNBRMoves(const Board& board, Move* list, const bitboard_t src, 
 }
 
 template <Color c, Piece p, CapturePolicy cp>
-void GenerateAllKNBRQMoves(const Board& board, Move* list, size_t& size) {
+void GenerateAllKNBRQMoves(const Board& board, Move* list, size_t& size, bitboard_t dst_mask) {
     Q_STATIC_ASSERT(p == Piece::Knight || p == Piece::Bishop || p == Piece::Rook ||
                     p == Piece::King);
     if constexpr (p == Piece::Bishop) {
         GenerateAllKNBRMoves<c, Piece::Bishop, cp>(board, list,
                                                    board.bb_pieces[MakeCell(c, Piece::Bishop)] |
                                                        board.bb_pieces[MakeCell(c, Piece::Queen)],
-                                                   size);
+                                                   size, dst_mask);
     } else if constexpr (p == Piece::Rook) {
         GenerateAllKNBRMoves<c, Piece::Rook, cp>(
             board, list,
             board.bb_pieces[MakeCell(c, Piece::Rook)] | board.bb_pieces[MakeCell(c, Piece::Queen)],
-            size);
+            size, dst_mask);
     } else {
-        GenerateAllKNBRMoves<c, p, cp>(board, list, board.bb_pieces[MakeCell(c, p)], size);
+        GenerateAllKNBRMoves<c, p, cp>(board, list, board.bb_pieces[MakeCell(c, p)], size,
+                                       dst_mask);
     }
 }
 
 template <CapturePolicy cp, PromotionPolicy pp>
-void GenerateMoves(const Board& board, MoveList& list) {
+void GenerateMoves(const Board& board, MoveList& list, bitboard_t dst_mask, bool double_check) {
     Q_ASSERT(board.IsValid());
     size_t size = list.size;
     if (board.move_side == q_core::Color::White) {
-        q_core::GenerateAllPawnMoves<q_core::Color::White, cp, pp>(board, list.moves, size);
-        if constexpr (pp != PromotionPolicy::OnlyPromotions) {
-            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Knight, cp>(
-                board, list.moves, size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Bishop, cp>(
-                board, list.moves, size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Rook, cp>(board, list.moves,
-                                                                                 size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::King, cp>(board, list.moves,
-                                                                                 size);
+        if (double_check) {
+            if constexpr (pp != PromotionPolicy::OnlyPromotions) {
+                q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::King, cp>(
+                    board, list.moves, size, FULL_BITBOARD);
+            }
+        } else {
+            q_core::GenerateAllPawnMoves<q_core::Color::White, cp, pp>(board, list.moves, size,
+                                                                       dst_mask);
+            if constexpr (pp != PromotionPolicy::OnlyPromotions) {
+                q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Knight, cp>(
+                    board, list.moves, size, dst_mask);
+                q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Bishop, cp>(
+                    board, list.moves, size, dst_mask);
+                q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::Rook, cp>(
+                    board, list.moves, size, dst_mask);
+                q_core::GenerateAllKNBRQMoves<q_core::Color::White, Piece::King, cp>(
+                    board, list.moves, size, FULL_BITBOARD);
+            }
         }
     } else {
-        q_core::GenerateAllPawnMoves<q_core::Color::Black, cp, pp>(board, list.moves, size);
-        if constexpr (pp != PromotionPolicy::OnlyPromotions) {
-            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Knight, cp>(
-                board, list.moves, size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Bishop, cp>(
-                board, list.moves, size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Rook, cp>(board, list.moves,
-                                                                                 size);
-            q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::King, cp>(board, list.moves,
-                                                                                 size);
+        if (double_check) {
+            if constexpr (pp != PromotionPolicy::OnlyPromotions) {
+                q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::King, cp>(
+                    board, list.moves, size, FULL_BITBOARD);
+            }
+        } else {
+            q_core::GenerateAllPawnMoves<q_core::Color::Black, cp, pp>(board, list.moves, size,
+                                                                       dst_mask);
+            if constexpr (pp != PromotionPolicy::OnlyPromotions) {
+                q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Knight, cp>(
+                    board, list.moves, size, dst_mask);
+                q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Bishop, cp>(
+                    board, list.moves, size, dst_mask);
+                q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::Rook, cp>(
+                    board, list.moves, size, dst_mask);
+                q_core::GenerateAllKNBRQMoves<q_core::Color::Black, Piece::King, cp>(
+                    board, list.moves, size, FULL_BITBOARD);
+            }
         }
     }
     list.size = size;
 }
 
-void GenerateAllMoves(const Board& board, MoveList& list) {
-    GenerateMoves<CapturePolicy::All, PromotionPolicy::All>(board, list);
+Movegen::Movegen(const Board& board) {
+    bitboard_t attackers =
+        board.move_side == Color::White
+            ? GetCellAttackers<Color::Black>(
+                  board, q_util::GetLowestBit(board.bb_pieces[MakeCell(Color::White, Piece::King)]))
+            : GetCellAttackers<Color::White>(
+                  board,
+                  q_util::GetLowestBit(board.bb_pieces[MakeCell(Color::Black, Piece::King)]));
+    if (attackers == 0) {
+        check_kind_ = CheckKind::None;
+    } else if (q_util::GetBitCount(attackers) > 1) {
+        check_kind_ = CheckKind::Double;
+    } else {
+        check_kind_ = CheckKind::Single;
+        dst_mask_ = GetBitboardBetween(
+            q_util::GetLowestBit(attackers),
+            q_util::GetLowestBit(board.bb_pieces[MakeCell(board.move_side, Piece::King)]));
+    }
 }
 
-void GenerateAllCaptures(const Board& board, MoveList& list) {
-    GenerateMoves<CapturePolicy::OnlyCaptures, PromotionPolicy::All>(board, list);
+void Movegen::GenerateAllMoves(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::All, PromotionPolicy::All>(board, list, dst_mask_,
+                                                            check_kind_ == CheckKind::Double);
 }
 
-void GenerateAllPromotions(const Board& board, MoveList& list) {
-    GenerateMoves<CapturePolicy::None, PromotionPolicy::OnlyPromotions>(board, list);
+void Movegen::GenerateAllCaptures(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::OnlyCaptures, PromotionPolicy::All>(
+        board, list, dst_mask_, check_kind_ == CheckKind::Double);
 }
 
-void GenerateAllSimpleMoves(const Board& board, MoveList& list) {
-    GenerateMoves<CapturePolicy::None, PromotionPolicy::None>(board, list);
+void Movegen::GenerateAllPromotions(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::None, PromotionPolicy::OnlyPromotions>(
+        board, list, dst_mask_, check_kind_ == CheckKind::Double);
+}
+
+void Movegen::GenerateAllSimpleMoves(const Board& board, MoveList& list) {
+    GenerateMoves<CapturePolicy::None, PromotionPolicy::None>(board, list, dst_mask_,
+                                                              check_kind_ == CheckKind::Double);
 }
 
 // This function works only and only with moves, generated with movegen.cpp.

@@ -8,6 +8,7 @@
 #include "../control/stat.h"
 #include "core/board/board.h"
 #include "core/moves/move.h"
+#include "core/moves/movegen.h"
 #include "searcher.h"
 
 namespace q_search {
@@ -76,7 +77,8 @@ void PrintBestMove(const q_core::Move move) {
 
 q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     q_core::MoveList move_list;
-    q_core::GenerateAllMoves(position.board, move_list);
+    q_core::Movegen movegen(position.board);
+    movegen.GenerateAllMoves(position.board, move_list);
     q_core::Move random_move = q_core::NULL_MOVE;
     for (size_t i = 0; i < move_list.size; i++) {
         q_core::MakeMoveInfo make_move_info;

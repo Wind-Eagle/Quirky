@@ -50,6 +50,7 @@ class MovePicker {
     q_core::Move tt_move_;
     const KillerMoves& killer_moves_;
     const HistoryTable& history_table_;
+    q_core::Movegen movegen_;
     size_t pos_ = 0;
     Stage stage_ = Stage::Start;
 };
@@ -65,6 +66,7 @@ class QuiescenseMovePicker {
     void GetNewMoves();
     const Position& position_;
     q_core::MoveList list_;
+    q_core::Movegen movegen_;
     size_t pos_ = 0;
     Stage stage_ = Stage::Start;
 };

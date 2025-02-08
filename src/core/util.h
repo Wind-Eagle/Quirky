@@ -28,11 +28,6 @@ inline constexpr Color GetInvertedColor(const Color c) {
     return c == Color::White ? Color::Black : Color::White;
 }
 
-inline constexpr bitboard_t MakeBitboardFromCoord(const coord_t c) {
-    Q_ASSERT(IsCoordValidAndDefined(c));
-    return static_cast<bitboard_t>(1ULL << static_cast<uint8_t>(c));
-}
-
 inline constexpr Color GetCellColor(const cell_t c) {
     Q_ASSERT(IsCellValid(c) && IsCellWithPiece(c));
     return c <= COLOR_OFFSET ? Color::White : Color::Black;
