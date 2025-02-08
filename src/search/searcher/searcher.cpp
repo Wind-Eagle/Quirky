@@ -96,7 +96,10 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
     CHECK_STOP;
     stat_.IncNodesCount();
     const q_eval::score_t score = position_.GetEvaluatorScore();
-    if (!q_core::IsKingInCheck(position_.board)) {
+
+    bool in_check = position_.IsCheck();
+
+    if (!in_check) {
         alpha = std::max(alpha, score);
         if (alpha >= beta) {
             return beta;
@@ -108,7 +111,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
          move_picker.GetStage() != QuiescenseMovePicker::Stage::End;
          move = move_picker.GetNextMove()) {
         CHECK_STOP;
-        if (!q_core::IsKingInCheck(position_.board) && q_core::IsMoveCapture(move) && !q_eval::IsScoreMate(alpha) && position_.HasNonPawns()) {
+        if (!in_check && q_core::IsMoveCapture(move) && !q_eval::IsScoreMate(alpha) && position_.HasNonPawns()) {
             if (!q_core::IsSEENotNegative(position_.board, move, 0, SEE_CELLS_VALUE)) {
                 continue;
             }
@@ -121,7 +124,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
             return beta;
         }
     }
-    if (q_core::IsKingInCheck(position_.board) && moves_done == 0) {
+    if (in_check && moves_done == 0) {
         return q_eval::SCORE_ALMOST_MATE;
     }
     return alpha;
