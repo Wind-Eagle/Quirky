@@ -1,4 +1,5 @@
 #include "searcher.h"
+#include <cstddef>
 
 #include "../../core/moves/attack.h"
 #include "core/board/types.h"
@@ -95,26 +96,33 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
     CHECK_STOP;
     stat_.IncNodesCount();
     const q_eval::score_t score = position_.GetEvaluatorScore();
-    alpha = std::max(alpha, score);
-    if (alpha >= beta) {
-        return beta;
+    if (!q_core::IsKingInCheck(position_.board)) {
+        alpha = std::max(alpha, score);
+        if (alpha >= beta) {
+            return beta;
+        }
     }
     QuiescenseMovePicker move_picker(position_);
+    size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != QuiescenseMovePicker::Stage::End;
          move = move_picker.GetNextMove()) {
         CHECK_STOP;
-        if (!q_eval::IsScoreMate(alpha) && position_.HasNonPawns()) {
+        if (!q_core::IsKingInCheck(position_.board) && q_core::IsMoveCapture(move) && !q_eval::IsScoreMate(alpha) && position_.HasNonPawns()) {
             if (!q_core::IsSEENotNegative(position_.board, move, 0, SEE_CELLS_VALUE)) {
                 continue;
             }
         }
         MAKE_MOVE(position_, move);
+        moves_done++;
         q_eval::score_t new_score = -QuiescenseSearch(-beta, -alpha);
         alpha = std::max(alpha, new_score);
         if (alpha >= beta) {
             return beta;
         }
+    }
+    if (q_core::IsKingInCheck(position_.board) && moves_done == 0) {
+        return q_eval::SCORE_ALMOST_MATE;
     }
     return alpha;
 }

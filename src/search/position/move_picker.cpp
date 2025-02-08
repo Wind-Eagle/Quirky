@@ -179,6 +179,12 @@ void QuiescenseMovePicker::GetNewMoves() {
                 movegen_.GenerateAllPromotions(position_.board, list_);
                 break;
             }
+            case Stage::Evasions: {
+                if (q_core::IsKingInCheck(position_.board)) {
+                    movegen_.GenerateAllSimpleMoves(position_.board, list_);
+                }
+                break;
+            }
             case Stage::End: {
                 return;
             }

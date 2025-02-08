@@ -58,7 +58,7 @@ class MovePicker {
 class QuiescenseMovePicker {
   public:
     explicit QuiescenseMovePicker(const Position& position);
-    enum class Stage : uint8_t { Start = 0, Capture = 1, Promotion = 2, End = 3 };
+    enum class Stage : uint8_t { Start = 0, Capture = 1, Promotion = 2, Evasions = 3, End = 4 };
     q_core::Move GetNextMove();
     Stage GetStage() const;
 
