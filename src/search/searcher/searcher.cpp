@@ -337,11 +337,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
 
         depth_t new_depth = depth - depth_reduction;
-        if (node_type == NodeType::PV) {
-            if (position_.IsCheck()) {
-                new_depth++;
-            }
-        }
 
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
