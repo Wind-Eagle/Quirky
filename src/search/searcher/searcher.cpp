@@ -291,10 +291,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         get_node_evaluation();
         q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
         if (local_context_[idepth].eval <= threshold) {
-            q_eval::score_t q_score = QuiescenseSearch(threshold, threshold + 1);
-            if (q_score <= threshold) {
-                return alpha;
-            }
+            return QuiescenseSearch(alpha, beta);
         }
     }
 
