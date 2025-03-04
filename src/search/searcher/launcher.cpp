@@ -122,6 +122,8 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
     SearchResult final_result{};
+    final_result.depth = 0;
+
     static constexpr time_t NODES_UPDATE_TICK = 3000;
     time_t nodes_update_timer = 0;
     for (;;) {
@@ -135,10 +137,15 @@ void SearchLauncher::StartMainThread(const Position& start_position,
         if (event == SearchControl::Event::NewResult) {
             std::vector<SearchResult> results = control_.GetResults();
             for (auto& result : results) {
-                PrintSearchResult(result, stat, time_since_start);
-                if (result.bound_type == Exact && result.depth > final_result.depth) {
+                if (result.bound_type == Exact && result.depth >= final_result.depth) {
+                    PrintSearchResult(result, stat, time_since_start);
                     final_result = std::move(result);
                     timer.ProcessNextDepth(result);
+                } else if (result.bound_type == Lower && result.depth >= final_result.depth) {
+                    if (control_.AreDetailedResultsEnabled()) {
+                        PrintSearchResult(result, stat, time_since_start);
+                    }
+                    final_result = std::move(result);
                 }
             }
             if (final_result.depth >= max_depth) {

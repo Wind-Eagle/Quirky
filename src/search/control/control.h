@@ -42,6 +42,7 @@ class SearchControl {
     }
     void Reset();
     void EnableDetailedResults();
+    bool AreDetailedResultsEnabled();
     bool IsStopped() const;
     depth_t GetDepth() const;
     bool FinishDepth(depth_t depth);
@@ -51,7 +52,6 @@ class SearchControl {
     std::vector<RootMove> GetRootMoves();
 
   private:
-    bool AreDetailedResultsEnabled();
     Event GetEvent();
     std::vector<SearchResult> results_;
     std::vector<RootMove> root_moves_;
