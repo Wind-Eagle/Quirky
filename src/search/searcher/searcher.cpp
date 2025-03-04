@@ -8,6 +8,7 @@
 #include "core/util.h"
 #include "eval/score.h"
 #include "search/control/control.h"
+#include "search/position/move_picker.h"
 #include "search/position/transposition_table.h"
 
 namespace q_search {
@@ -115,7 +116,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
             return beta;
         }
     }
-    QuiescenseMovePicker move_picker(position_);
+    QuiescenseMovePicker move_picker(position_, in_check);
     size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != QuiescenseMovePicker::Stage::End;
