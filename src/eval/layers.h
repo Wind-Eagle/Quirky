@@ -92,7 +92,7 @@ struct LinearLayer {
                 weights_[j * INPUT_SIZE + i] = reader.ReadWeight<int8_t>(WEIGHT_SCALE);
             }
         }
-        for (size_t i = 0; i < OUTPUT_SIZE; i++) { 
+        for (size_t i = 0; i < OUTPUT_SIZE; i++) {
             biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE);
         }
     }

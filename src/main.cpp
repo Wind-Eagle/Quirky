@@ -1,5 +1,3 @@
 #include "api/api.h"
 
-int main() {
-    q_api::StartCommunication();
-}
+int main() { q_api::StartCommunication(); }

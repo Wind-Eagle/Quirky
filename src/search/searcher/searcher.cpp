@@ -253,7 +253,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             score = AdjustCheckmate(score, -static_cast<depth_t>(idepth));
             if (!IsMoveNull(best_move)) {
                 tt_.Store(*tt_entry, position_hash, best_move, score, depth, tt_node_type,
-                        node_type != NodeType::Simple);
+                          node_type != NodeType::Simple);
             }
         }
     };
@@ -263,7 +263,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         const bool is_cutoff_allowed =
             (node_type != NodeType::Root) & (tt_entry->depth >= depth) &
             (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT) &
-            (node_type == NodeType::Simple || tt_entry->info.GetGeneration() == tt_.GetGeneration());
+            (node_type == NodeType::Simple ||
+             tt_entry->info.GetGeneration() == tt_.GetGeneration());
         if (is_cutoff_allowed) {
             const q_eval::score_t score = AdjustCheckmate(tt_entry->score, idepth);
             const auto tt_node_type = tt_entry->info.GetNodeType();
@@ -329,7 +330,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     size_t history_moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
-
         if (move == local_context_[idepth].skip_move) {
             continue;
         }
@@ -394,7 +394,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
     if (moves_done == 0) {
         if (q_core::IsKingInCheck(position_.board)) {
-            return IsMoveNull(local_context_[idepth].skip_move) ? q_eval::SCORE_MATE + idepth : alpha;
+            return IsMoveNull(local_context_[idepth].skip_move) ? q_eval::SCORE_MATE + idepth
+                                                                : alpha;
         }
         return 0;
     }

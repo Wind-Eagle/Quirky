@@ -19,7 +19,8 @@ template <Color c>
 bool IsKingInCheck(const Board& board);
 bool IsKingInCheck(const Board& board);
 
-bool IsSEENotNegative(const Board& board, Move move, int16_t min_score, const std::array<int16_t, NUMBER_OF_CELLS>& see_cells_cost);
+bool IsSEENotNegative(const Board& board, Move move, int16_t min_score,
+                      const std::array<int16_t, NUMBER_OF_CELLS>& see_cells_cost);
 
 }  // namespace q_core
 
