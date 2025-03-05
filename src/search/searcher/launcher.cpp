@@ -9,6 +9,7 @@
 #include "core/board/board.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
+#include "eval/score.h"
 #include "searcher.h"
 
 namespace q_search {

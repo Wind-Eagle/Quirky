@@ -8,6 +8,7 @@
 #include "core/util.h"
 #include "eval/score.h"
 #include "search/control/control.h"
+#include "search/position/move_picker.h"
 #include "search/position/transposition_table.h"
 
 namespace q_search {
@@ -115,7 +116,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
             return beta;
         }
     }
-    QuiescenseMovePicker move_picker(position_);
+    QuiescenseMovePicker move_picker(position_, in_check);
     size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != QuiescenseMovePicker::Stage::End;
@@ -252,7 +253,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             score = AdjustCheckmate(score, -static_cast<depth_t>(idepth));
             if (!IsMoveNull(best_move)) {
                 tt_.Store(*tt_entry, position_hash, best_move, score, depth, tt_node_type,
-                        node_type != NodeType::Simple);
+                          node_type != NodeType::Simple);
             }
         }
     };
@@ -262,7 +263,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         const bool is_cutoff_allowed =
             (node_type != NodeType::Root) & (tt_entry->depth >= depth) &
             (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT) &
-            (node_type == NodeType::Simple || tt_entry->info.GetGeneration() == tt_.GetGeneration());
+            (node_type == NodeType::Simple ||
+             tt_entry->info.GetGeneration() == tt_.GetGeneration());
         if (is_cutoff_allowed) {
             const q_eval::score_t score = AdjustCheckmate(tt_entry->score, idepth);
             const auto tt_node_type = tt_entry->info.GetNodeType();
@@ -291,10 +293,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         get_node_evaluation();
         q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
         if (local_context_[idepth].eval <= threshold) {
-            q_eval::score_t q_score = QuiescenseSearch(threshold, threshold + 1);
-            if (q_score <= threshold) {
-                return alpha;
-            }
+            return QuiescenseSearch(alpha, beta);
         }
     }
 
@@ -331,7 +330,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     size_t history_moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
-
         if (move == local_context_[idepth].skip_move) {
             continue;
         }
@@ -396,7 +394,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
     if (moves_done == 0) {
         if (q_core::IsKingInCheck(position_.board)) {
-            return IsMoveNull(local_context_[idepth].skip_move) ? q_eval::SCORE_MATE + idepth : alpha;
+            return IsMoveNull(local_context_[idepth].skip_move) ? q_eval::SCORE_MATE + idepth
+                                                                : alpha;
         }
         return 0;
     }
