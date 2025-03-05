@@ -9,6 +9,7 @@
 #include "core/board/board.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
+#include "eval/score.h"
 #include "searcher.h"
 
 namespace q_search {
@@ -53,12 +54,20 @@ void PrintSearchResult(const SearchResult& result, const SearchStat& stat, time_
         moves.push_back(q_core::CastMoveToString(move));
     }
     std::string pv_str = q_util::ConcatenateStrings(moves.begin(), moves.end());
-    std::string score_str =
-        std::to_string(result.score) + (result.bound_type == Lower
-                                            ? " lowerbound"
-                                            : (result.bound_type == Upper ? " upperbound" : ""));
+    std::string score_str;
+    if (result.bound_type != Exact || !q_eval::IsScoreMate(result.score)) {
+        score_str = "score cp " + std::to_string(result.score) + (result.bound_type == Lower
+                                                ? " lowerbound"
+                                                : (result.bound_type == Upper ? " upperbound" : ""));
+    } else {
+        int num_of_moves_to_mate = (std::abs(q_eval::SCORE_MATE) - std::abs(result.score)) / 2;
+        if (result.score < 0) {
+            num_of_moves_to_mate *= -1;
+        }
+        score_str = "score mate " + std::to_string(num_of_moves_to_mate);
+    }
     q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start,
-                  "score cp", score_str, "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv", pv_str);
+                  score_str, "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv", pv_str);
 }
 
 void PrintRootMove(const RootMove& root_move) {
