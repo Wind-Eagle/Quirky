@@ -152,7 +152,8 @@ QuiescenseMovePicker::Stage GetNextStage(QuiescenseMovePicker::Stage stage) {
     return static_cast<QuiescenseMovePicker::Stage>(static_cast<uint8_t>(stage) + 1);
 }
 
-QuiescenseMovePicker::QuiescenseMovePicker(const Position& position) : position_(position), movegen_(position.board) {}
+QuiescenseMovePicker::QuiescenseMovePicker(const Position& position, bool in_check)
+    : position_(position), movegen_(position.board), in_check_(in_check) {}
 
 q_core::Move QuiescenseMovePicker::GetNextMove() {
     GetNewMoves();
@@ -180,7 +181,7 @@ void QuiescenseMovePicker::GetNewMoves() {
                 break;
             }
             case Stage::Evasions: {
-                if (q_core::IsKingInCheck(position_.board)) {
+                if (in_check_) {
                     movegen_.GenerateAllSimpleMoves(position_.board, list_);
                 }
                 break;

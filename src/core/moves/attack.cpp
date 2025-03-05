@@ -37,13 +37,18 @@ bool IsCellAttacked(const Board& board, const coord_t src) {
 template <Color c>
 bitboard_t GetCellAttackers(const Board& board, const coord_t src) {
     Q_ASSERT(IsCoordValidAndDefined(src));
-    const bitboard_t pawn_attacks = board.bb_pieces[MakeCell(c, Piece::Pawn)] & (c == Color::White ? WHITE_PAWN_REVERSED_ATTACK_BITBOARD[src]
-                           : BLACK_PAWN_REVERSED_ATTACK_BITBOARD[src]);
-    const bitboard_t knight_attacks = board.bb_pieces[MakeCell(c, Piece::Knight)] & KNIGHT_ATTACK_BITBOARD[src];
-    const bitboard_t king_attacks = board.bb_pieces[MakeCell(c, Piece::King)] & KING_ATTACK_BITBOARD[src];
-    const bitboard_t diagonal_attacks = (board.bb_pieces[MakeCell(c, Piece::Bishop)] | board.bb_pieces[MakeCell(c, Piece::Queen)]) &
+    const bitboard_t pawn_attacks = board.bb_pieces[MakeCell(c, Piece::Pawn)] &
+                                    (c == Color::White ? WHITE_PAWN_REVERSED_ATTACK_BITBOARD[src]
+                                                       : BLACK_PAWN_REVERSED_ATTACK_BITBOARD[src]);
+    const bitboard_t knight_attacks =
+        board.bb_pieces[MakeCell(c, Piece::Knight)] & KNIGHT_ATTACK_BITBOARD[src];
+    const bitboard_t king_attacks =
+        board.bb_pieces[MakeCell(c, Piece::King)] & KING_ATTACK_BITBOARD[src];
+    const bitboard_t diagonal_attacks =
+        (board.bb_pieces[MakeCell(c, Piece::Bishop)] | board.bb_pieces[MakeCell(c, Piece::Queen)]) &
         GetBishopAttackBitboard(~board.bb_pieces[EMPTY_CELL], src);
-    const bitboard_t line_attacks = (board.bb_pieces[MakeCell(c, Piece::Rook)] | board.bb_pieces[MakeCell(c, Piece::Queen)]) &
+    const bitboard_t line_attacks =
+        (board.bb_pieces[MakeCell(c, Piece::Rook)] | board.bb_pieces[MakeCell(c, Piece::Queen)]) &
         GetRookAttackBitboard(~board.bb_pieces[EMPTY_CELL], src);
     return pawn_attacks | knight_attacks | king_attacks | diagonal_attacks | line_attacks;
 }

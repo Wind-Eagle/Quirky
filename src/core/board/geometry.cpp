@@ -1,4 +1,5 @@
 #include "geometry.h"
+
 #include "core/board/types.h"
 #include "util/bit.h"
 
@@ -33,10 +34,9 @@ constexpr std::array<std::array<bitboard_t, BOARD_SIZE>, BOARD_SIZE> GenerateBit
     return res;
 }
 
-inline constexpr std::array<std::array<bitboard_t, BOARD_SIZE>, BOARD_SIZE> BITBOARD_BETWEEN = GenerateBitboardBetween();
+inline constexpr std::array<std::array<bitboard_t, BOARD_SIZE>, BOARD_SIZE> BITBOARD_BETWEEN =
+    GenerateBitboardBetween();
 
-bitboard_t GetBitboardBetween(coord_t src, coord_t dst) {
-    return BITBOARD_BETWEEN[src][dst];
-}
+bitboard_t GetBitboardBetween(coord_t src, coord_t dst) { return BITBOARD_BETWEEN[src][dst]; }
 
 }  // namespace q_core

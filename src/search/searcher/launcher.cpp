@@ -44,22 +44,34 @@ void SearchLauncher::Start(const Position& start_position, const std::vector<q_c
 }
 
 uint64_t GetNPS(const SearchStat& stat, time_t time_since_start) {
-    return time_since_start == 0 ? stat.GetNodesCount() : stat.GetNodesCount() * 1000 / time_since_start;
+    return time_since_start == 0 ? stat.GetNodesCount()
+                                 : stat.GetNodesCount() * 1000 / time_since_start;
 }
 
-void PrintSearchResult(const SearchResult& result, const SearchStat& stat, time_t time_since_start) {
+void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
+                       time_t time_since_start) {
     std::vector<std::string> moves;
     moves.push_back(q_core::CastMoveToString(result.best_move));
     for (const auto& move : result.pv) {
         moves.push_back(q_core::CastMoveToString(move));
     }
     std::string pv_str = q_util::ConcatenateStrings(moves.begin(), moves.end());
-    std::string score_str =
-        std::to_string(result.score) + (result.bound_type == Lower
-                                            ? " lowerbound"
-                                            : (result.bound_type == Upper ? " upperbound" : ""));
-    q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start,
-                  "score cp", score_str, "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv", pv_str);
+    std::string score_str;
+    if (result.bound_type != Exact || !q_eval::IsScoreMate(result.score)) {
+        score_str =
+            "score cp " + std::to_string(result.score) +
+            (result.bound_type == Lower ? " lowerbound"
+                                        : (result.bound_type == Upper ? " upperbound" : ""));
+    } else {
+        int num_of_moves_to_mate = (std::abs(q_eval::SCORE_MATE) - std::abs(result.score)) / 2;
+        if (result.score < 0) {
+            num_of_moves_to_mate *= -1;
+        }
+        score_str = "score mate " + std::to_string(num_of_moves_to_mate);
+    }
+    q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start, score_str,
+                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv",
+                  pv_str);
 }
 
 void PrintRootMove(const RootMove& root_move) {
@@ -123,6 +135,8 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
     SearchResult final_result{};
+    final_result.depth = 0;
+
     static constexpr time_t NODES_UPDATE_TICK = 3000;
     time_t nodes_update_timer = 0;
     for (;;) {
@@ -136,10 +150,15 @@ void SearchLauncher::StartMainThread(const Position& start_position,
         if (event == SearchControl::Event::NewResult) {
             std::vector<SearchResult> results = control_.GetResults();
             for (auto& result : results) {
-                PrintSearchResult(result, stat, time_since_start);
-                if (result.bound_type == Exact && result.depth > final_result.depth) {
+                if (result.bound_type == Exact && result.depth >= final_result.depth) {
+                    PrintSearchResult(result, stat, time_since_start);
                     final_result = std::move(result);
                     timer.ProcessNextDepth(result);
+                } else if (result.bound_type == Lower && result.depth >= final_result.depth) {
+                    if (control_.AreDetailedResultsEnabled()) {
+                        PrintSearchResult(result, stat, time_since_start);
+                    }
+                    final_result = std::move(result);
                 }
             }
             if (final_result.depth >= max_depth) {

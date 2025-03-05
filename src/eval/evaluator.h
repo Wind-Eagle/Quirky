@@ -1,14 +1,13 @@
 #ifndef QUIRKY_SRC_EVAL_EVAL_H
 #define QUIRKY_SRC_EVAL_EVAL_H
 
+#include <vector>
+
 #include "../core/board/board.h"
 #include "../core/moves/board_manipulation.h"
 #include "../core/moves/move.h"
 #include "../core/util.h"
-
 #include "model.h"
-
-#include <vector>
 
 namespace q_eval {
 
@@ -26,17 +25,17 @@ class Evaluator {
 
   private:
     struct State {
-      void Build(const q_core::Board& board);
-      bool operator == (const State& rhs) const {
-        for (size_t i = 0; i < MODEL_INPUT_SIZE; i++) {
-          if (std::abs(model_input[i] - rhs.model_input[i]) > 1e-4) {
-            return false;
-          }
+        void Build(const q_core::Board& board);
+        bool operator==(const State& rhs) const {
+            for (size_t i = 0; i < MODEL_INPUT_SIZE; i++) {
+                if (std::abs(model_input[i] - rhs.model_input[i]) > 1e-4) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
-      }
 
-      alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
+        alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
     };
     State state_;
 };

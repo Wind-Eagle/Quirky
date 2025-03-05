@@ -57,7 +57,7 @@ class MovePicker {
 
 class QuiescenseMovePicker {
   public:
-    explicit QuiescenseMovePicker(const Position& position);
+    QuiescenseMovePicker(const Position& position, bool in_check);
     enum class Stage : uint8_t { Start = 0, Capture = 1, Promotion = 2, Evasions = 3, End = 4 };
     q_core::Move GetNextMove();
     Stage GetStage() const;
@@ -69,6 +69,7 @@ class QuiescenseMovePicker {
     q_core::Movegen movegen_;
     size_t pos_ = 0;
     Stage stage_ = Stage::Start;
+    bool in_check_ = false;
 };
 
 }  // namespace q_search

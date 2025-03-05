@@ -13,8 +13,8 @@ std::string CastMoveToString(const Move move) {
     return ans;
 }
 
-Move TranslatePromotionStringToMove(const Board& board, const std::string_view& str, const coord_t src,
-                                    const coord_t dst) {
+Move TranslatePromotionStringToMove(const Board& board, const std::string_view& str,
+                                    const coord_t src, const coord_t dst) {
     const Piece piece = CastCharToPiece(str[4]);
     Q_ASSERT(piece != Piece::Pawn && piece != Piece::King);
     const bool is_move_capture = board.cells[dst] != EMPTY_CELL;

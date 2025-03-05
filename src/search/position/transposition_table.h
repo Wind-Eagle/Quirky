@@ -50,7 +50,7 @@ class TranspositionTable {
 
       private:
         static constexpr uint8_t PADDING_SIZE = 2;
-        [[maybe_unused]]std::array<char, PADDING_SIZE> padding_;
+        [[maybe_unused]] std::array<char, PADDING_SIZE> padding_;
     };
 
     Q_STATIC_ASSERT(q_util::GetBitCount(sizeof(Cluster)) == 1);

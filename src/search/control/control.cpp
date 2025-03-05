@@ -49,9 +49,6 @@ bool SearchControl::AreDetailedResultsEnabled() {
 }
 
 void SearchControl::AddResult(SearchResult result) {
-    if (result.bound_type != Exact && !AreDetailedResultsEnabled()) {
-        return;
-    }
     std::unique_lock guard(lock_);
     results_.push_back(std::move(result));
     guard.unlock();
