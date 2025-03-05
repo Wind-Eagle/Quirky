@@ -50,6 +50,7 @@ class MovePicker {
     q_core::Move tt_move_;
     const KillerMoves& killer_moves_;
     const HistoryTable& history_table_;
+    q_core::Movegen movegen_;
     size_t pos_ = 0;
     Stage stage_ = Stage::Start;
 };
@@ -57,7 +58,7 @@ class MovePicker {
 class QuiescenseMovePicker {
   public:
     explicit QuiescenseMovePicker(const Position& position);
-    enum class Stage : uint8_t { Start = 0, Capture = 1, Promotion = 2, End = 3 };
+    enum class Stage : uint8_t { Start = 0, Capture = 1, Promotion = 2, Evasions = 3, End = 4 };
     q_core::Move GetNextMove();
     Stage GetStage() const;
 
@@ -65,6 +66,7 @@ class QuiescenseMovePicker {
     void GetNewMoves();
     const Position& position_;
     q_core::MoveList list_;
+    q_core::Movegen movegen_;
     size_t pos_ = 0;
     Stage stage_ = Stage::Start;
 };

@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "core/moves/attack.h"
+#include "core/moves/movegen.h"
 #include "position.h"
 
 namespace q_search {
@@ -70,7 +72,8 @@ MovePicker::MovePicker(const Position& position, const q_core::Move tt_move,
     : position_(position),
       tt_move_(tt_move),
       killer_moves_(killer_moves),
-      history_table_(history_table) {}
+      history_table_(history_table),
+      movegen_(position.board) {}
 
 q_core::Move MovePicker::GetNextMove() {
     GetNewMoves();
@@ -95,13 +98,13 @@ void MovePicker::GetNewMoves() {
             }
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
-                q_core::GenerateAllCaptures(position_.board, list_);
+                movegen_.GenerateAllCaptures(position_.board, list_);
                 SortByMVVLVA(position_.board, list_.moves + list_old_size,
                              list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {
-                q_core::GenerateAllPromotions(position_.board, list_);
+                movegen_.GenerateAllPromotions(position_.board, list_);
                 break;
             }
             case Stage::KillerMoves: {
@@ -115,7 +118,7 @@ void MovePicker::GetNewMoves() {
             }
             case Stage::History: {
                 const size_t list_old_size = list_.size;
-                q_core::GenerateAllSimpleMoves(position_.board, list_);
+                movegen_.GenerateAllSimpleMoves(position_.board, list_);
                 for (size_t i = list_old_size; i < list_.size; i++) {
                     bool is_killer_move = false;
                     for (size_t j = 0; j < KillerMoves::COUNT; j++) {
@@ -149,7 +152,7 @@ QuiescenseMovePicker::Stage GetNextStage(QuiescenseMovePicker::Stage stage) {
     return static_cast<QuiescenseMovePicker::Stage>(static_cast<uint8_t>(stage) + 1);
 }
 
-QuiescenseMovePicker::QuiescenseMovePicker(const Position& position) : position_(position) {}
+QuiescenseMovePicker::QuiescenseMovePicker(const Position& position) : position_(position), movegen_(position.board) {}
 
 q_core::Move QuiescenseMovePicker::GetNextMove() {
     GetNewMoves();
@@ -167,13 +170,19 @@ void QuiescenseMovePicker::GetNewMoves() {
         switch (stage_) {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
-                q_core::GenerateAllCaptures(position_.board, list_);
+                movegen_.GenerateAllCaptures(position_.board, list_);
                 SortByMVVLVA(position_.board, list_.moves + list_old_size,
                              list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {
-                q_core::GenerateAllPromotions(position_.board, list_);
+                movegen_.GenerateAllPromotions(position_.board, list_);
+                break;
+            }
+            case Stage::Evasions: {
+                if (q_core::IsKingInCheck(position_.board)) {
+                    movegen_.GenerateAllSimpleMoves(position_.board, list_);
+                }
                 break;
             }
             case Stage::End: {

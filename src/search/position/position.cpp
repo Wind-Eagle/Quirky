@@ -1,12 +1,13 @@
 #include "position.h"
 
 #include "../../core/moves/attack.h"
+#include "core/board/types.h"
+#include "core/util.h"
 
 namespace q_search {
 
-void Position::UnmakeMove(
-    const q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
-    q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info) {
+void Position::UnmakeMove(const q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
+                          q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info) {
     evaluator.RevertOnMove(board, move, evaluator_update_info);
     q_core::UnmakeMove(board, move, make_move_info);
 }
@@ -30,9 +31,7 @@ void Position::UnmakeNullMove(const q_core::coord_t& old_en_passant_coord) {
     q_core::UnmakeNullMove(board, old_en_passant_coord);
 }
 
-bool Position::IsCheck() const {
-    return q_core::IsKingInCheck(board);
-}
+bool Position::IsCheck() const { return q_core::IsKingInCheck(board); }
 
 q_core::Board::FENParseStatus Position::MakeFromFEN(const std::string_view& fen) {
     auto res = board.MakeFromFEN(fen);
@@ -43,8 +42,17 @@ q_core::Board::FENParseStatus Position::MakeFromFEN(const std::string_view& fen)
     return q_core::Board::FENParseStatus::Ok;
 }
 
-q_eval::score_t Position::GetEvaluatorScore() const {
-    return evaluator.Evaluate(board);
+q_eval::score_t Position::GetEvaluatorScore() const { return evaluator.Evaluate(board); }
+
+bool Position::HasNonPawns() const {
+    return board.bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Knight)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Bishop)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Rook)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Queen)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Knight)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Bishop)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Rook)] |
+           board.bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Queen)];
 }
 
 }  // namespace q_search

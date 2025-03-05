@@ -66,7 +66,7 @@ class TranspositionTable {
 
     void Store(TranspositionTable::Entry& old_entry, q_core::hash_t hash, q_core::Move move,
                q_eval::score_t score, uint8_t depth, NodeType node_type, bool is_pv) const;
-    Entry& GetEntry(q_core::hash_t hash, bool& found) const;
+    Entry* GetEntry(q_core::hash_t hash, bool& found) const;
     void Prefetch(q_core::hash_t hash) const;
 
     uint8_t GetGeneration() const { return generation_; }
