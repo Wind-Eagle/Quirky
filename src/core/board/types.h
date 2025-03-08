@@ -18,6 +18,8 @@ using cell_t = int8_t;
 using bitboard_t = uint64_t;
 using hash_t = uint64_t;
 
+constexpr bitboard_t FULL_BITBOARD = -1;
+
 enum class Castling : uint8_t {
     None = 0,
     WhiteKingside = 1,
@@ -58,6 +60,11 @@ inline constexpr bool IsCoordValid(const subcoord_t c) {
 
 inline constexpr bool IsCoordValidAndDefined(const subcoord_t c) {
     return c >= 0 && c < BOARD_SIZE;
+}
+
+inline constexpr bitboard_t MakeBitboardFromCoord(const coord_t c) {
+    Q_ASSERT(IsCoordValidAndDefined(c));
+    return static_cast<bitboard_t>(1ULL << static_cast<uint8_t>(c));
 }
 
 inline constexpr bool IsColorValid(const Color c) {

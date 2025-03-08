@@ -1,7 +1,16 @@
 #include "evaluator.h"
 
+#include <array>
+
 #include "../core/util.h"
+#include "core/board/board.h"
+#include "core/board/geometry.h"
+#include "core/board/types.h"
+#include "eval/score.h"
 #include "model.h"
+#include "util/bit.h"
+#include "util/macro.h"
+#include "util/math.h"
 
 using namespace q_core;
 
@@ -16,6 +25,50 @@ void Evaluator::State::Build(const q_core::Board& board) {
     }
 }
 
+static constexpr score_t LATE_ENDGAME_SCORE_FIX_THRESHOLD = 200;
+static constexpr score_t KING_DISTANCE_UNIT_SCORE = 5;
+static constexpr score_t KING_CENTER_DISTNACE_UNIT_SCORE = 5;
+
+static constexpr std::array<score_t, BOARD_SIZE> GetKingDistanceBonus() {
+    std::array<score_t, BOARD_SIZE> res{};
+    for (subcoord_t i = 0; i < BOARD_SIDE / 2; i++) {
+        for (subcoord_t j = 0; j < BOARD_SIDE / 2; j++) {
+            res[MakeCoord(i, j)] = (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
+            res[MakeCoord(InvertSubcoord(i), j)] =
+                (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
+            res[MakeCoord(i, InvertSubcoord(j))] =
+                (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
+            res[MakeCoord(InvertSubcoord(i), InvertSubcoord(j))] =
+                (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
+        }
+    }
+    return res;
+}
+
+static constexpr std::array<score_t, BOARD_SIZE> KING_DISTANCE_BONUS = GetKingDistanceBonus();
+
+score_t GetLateEndgameBonus(const q_core::Board board, Color c) {
+    score_t score = 0;
+    if (Q_UNLIKELY(q_util::GetBitCount(board.bb_colors[static_cast<size_t>(c)]) == 1)) {
+        q_core::coord_t weak_king_coord =
+            q_util::GetLowestBit(board.bb_colors[static_cast<size_t>(c)]);
+        q_core::coord_t strong_king_coord =
+            q_util::GetLowestBit(board.bb_colors[static_cast<size_t>(GetInvertedColor(c))]);
+        score += q_util::GetL1Distance(GetFile(weak_king_coord), GetRank(weak_king_coord),
+                                       GetFile(strong_king_coord), GetRank(weak_king_coord)) *
+                 KING_DISTANCE_UNIT_SCORE;
+        score += KING_DISTANCE_BONUS[weak_king_coord];
+    }
+    return score;
+}
+
+void ApplyLateEndgameBonus(const q_core::Board& board, score_t& score) {
+    if (std::abs(score) > LATE_ENDGAME_SCORE_FIX_THRESHOLD) {
+        score += GetLateEndgameBonus(board, board.move_side);
+        score -= GetLateEndgameBonus(board, GetInvertedColor(board.move_side));
+    }
+}
+
 score_t Evaluator::Evaluate(const q_core::Board& board) const {
     Q_ASSERT(board.IsValid());
     Q_ASSERT([&]() {
@@ -24,15 +77,13 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
         return state == state_;
     }());
     score_t res = ApplyModel(state_.model_input, board.move_side);
+    ApplyLateEndgameBonus(board, res);
     return res;
 }
 
-void Evaluator::StartTrackingBoard(const q_core::Board& board) {
-    state_.Build(board);
-}
+void Evaluator::StartTrackingBoard(const q_core::Board& board) { state_.Build(board); }
 
-void Evaluator::UpdateOnMove(const q_core::Board& board,
-                             q_core::Move move,
+void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
                              EvaluatorUpdateInfo& info) {
     alignas(32) auto new_model_input = state_.model_input;
 
@@ -69,22 +120,22 @@ void Evaluator::UpdateOnMove(const q_core::Board& board,
                                                    : BLACK_KING_INITIAL_POSITION;
             if (GetCastlingSide(move) == CastlingSide::Kingside) {
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
-                                   king_initial_position + 2, 1);
+                                 king_initial_position + 2, 1);
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
-                                   king_initial_position, -1);
+                                 king_initial_position, -1);
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
-                                   king_initial_position + 1, 1);
+                                 king_initial_position + 1, 1);
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
-                                   king_initial_position + 3, -1);
+                                 king_initial_position + 3, -1);
             } else {
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
-                                   king_initial_position - 2, 1);
+                                 king_initial_position - 2, 1);
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
-                                   king_initial_position, -1);
+                                 king_initial_position, -1);
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
-                                   king_initial_position - 1, 1);
+                                 king_initial_position - 1, 1);
                 UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
-                                   king_initial_position - 4, -1);
+                                 king_initial_position - 4, -1);
             }
             break;
         }
@@ -106,9 +157,7 @@ void Evaluator::UpdateOnMove(const q_core::Board& board,
     state_.model_input = new_model_input;
 }
 
-void Evaluator::RevertOnMove(const q_core::Board&,
-                             q_core::Move,
-                             EvaluatorUpdateInfo& info) {
+void Evaluator::RevertOnMove(const q_core::Board&, q_core::Move, EvaluatorUpdateInfo& info) {
     state_.model_input = info.old_model_input;
 }
 

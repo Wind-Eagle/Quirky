@@ -24,9 +24,9 @@ include_directories("${PROJECT_BINARY_DIR}")
 include_directories(src)
 
 add_custom_command(
-    COMMAND ${PROJECT_SOURCE_DIR}/src/incbin/embed.py --input ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne --output ${PROJECT_BINARY_DIR}/embed/model_weights.h
+    COMMAND ${PROJECT_SOURCE_DIR}/src/incbin/embed.py --input ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne --output ${PROJECT_BINARY_DIR}/model_weights.h
     DEPENDS ${PROJECT_SOURCE_DIR}/src/incbin/embed.py  ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne
-    OUTPUT ${PROJECT_BINARY_DIR}/embed/model_weights.h
+    OUTPUT ${PROJECT_BINARY_DIR}/model_weights.h
 )
 
 add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h src/util/channel.h src/util/processor.h src/util/heaparray.h)
@@ -34,10 +34,10 @@ add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(util)
 
-add_library(core src/core/board/board.cpp src/core/board/geometry.h src/core/board/types.h src/core/util.h src/core/moves/movegen.cpp src/core/moves/attack.cpp src/core/moves/board_manipulation.cpp src/core/moves/magic.cpp src/core/moves/move.cpp)
+add_library(core src/core/board/board.cpp src/core/board/geometry.cpp src/core/board/types.h src/core/util.h src/core/moves/movegen.cpp src/core/moves/attack.cpp src/core/moves/board_manipulation.cpp src/core/moves/magic.cpp src/core/moves/move.cpp)
 target_link_libraries(core util)
 
-add_library(eval src/eval/evaluator.cpp src/eval/model.cpp src/eval/score.h src/eval/layers.h ${PROJECT_BINARY_DIR}/embed/model_weights.h)
+add_library(eval src/eval/evaluator.cpp src/eval/model.cpp src/eval/score.h src/eval/layers.h ${PROJECT_BINARY_DIR}/model_weights.h)
 target_link_libraries(eval core util)
 
 add_library(search src/search/control/control.cpp src/search/control/stat.cpp src/search/control/time.cpp src/search/position/move_picker.cpp src/search/position/position.cpp src/search/position/repetition_table.cpp src/search/position/transposition_table.cpp src/search/searcher/launcher.cpp src/search/searcher/searcher.cpp)

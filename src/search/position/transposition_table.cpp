@@ -34,7 +34,7 @@ void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_cor
     }
 }
 
-TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t hash,
+TranspositionTable::Entry* TranspositionTable::GetEntry(const q_core::hash_t hash,
                                                         bool& found) const {
     const auto key_hash = GetKeyHash(hash, size_log_);
     const auto value_hash = GetValueHash(hash);
@@ -44,7 +44,7 @@ TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t has
                                     (static_cast<uint32_t>(entry.data[i].hash_high) << 16);
         if (entry_hash == value_hash) {
             found = true;
-            return entry.data[i];
+            return &entry.data[i];
         }
     }
     found = false;
@@ -55,7 +55,7 @@ TranspositionTable::Entry& TranspositionTable::GetEntry(const q_core::hash_t has
             entry_to_replace_index = i;
         }
     }
-    return entry.data[entry_to_replace_index];
+    return &entry.data[entry_to_replace_index];
 }
 
 void TranspositionTable::Prefetch(const q_core::hash_t hash) const {
