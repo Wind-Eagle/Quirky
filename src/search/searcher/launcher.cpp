@@ -111,6 +111,10 @@ q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     return random_move;
 }
 
+SearchLauncher::~SearchLauncher() {
+    Join();
+}
+
 void SearchLauncher::StartMainThread(const Position& start_position,
                                      const std::vector<q_core::Move>& moves,
                                      time_control_t time_control, depth_t max_depth) {

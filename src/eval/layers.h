@@ -12,7 +12,7 @@
 #include <cstdint>
 
 #include "../util/macro.h"
-#include "embed/model_weights.h"
+#include "model_weights.h"
 
 namespace q_eval {
 

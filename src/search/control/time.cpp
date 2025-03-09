@@ -33,7 +33,7 @@ time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control) const {
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
         max_time = player_time.time / time_control.moves_to_go * pv_factor * score_factor +
                    player_time.increment;
-        max_time = std::min(max_time, player_time.time - time_control.moves_to_go * 2);
+        max_time = std::min(max_time, player_time.time - time_control.moves_to_go * 50);
     } else {
         float no_time_factor = player_time.time < 200 ? 5 : player_time.time < 1000 ? 2 : 1;
         uint16_t moves_to_go_imitation = std::max(5, 20 - position_.board.move_count / 5);

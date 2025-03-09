@@ -11,7 +11,7 @@ void LogStart() {
 }
 
 void LogUciResponseInner(const UciInitResponse&) {
-    q_util::Print("id name Quirky");
+    q_util::Print("id name Quirky 1.0");
     q_util::Print("id author Wind_Eagle");
     q_util::Print("uciok");
 }

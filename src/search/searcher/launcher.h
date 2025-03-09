@@ -14,6 +14,7 @@ namespace q_search {
 
 class SearchLauncher {
   public:
+    ~SearchLauncher();
     void Start(const Position& start_position, const std::vector<q_core::Move>& moves,
                time_control_t time_control, depth_t max_depth);
     void Stop();
