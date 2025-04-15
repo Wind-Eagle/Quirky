@@ -278,9 +278,11 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
     }
 
+    const bool is_check = position_.IsCheck();
+
     // Futility pruning
     if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD &&
-        !q_eval::IsScoreMate(beta) && !q_core::IsKingInCheck(position_.board)) {
+        !q_eval::IsScoreMate(beta) && !is_check) {
         get_node_evaluation();
         if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
             return beta;
@@ -299,7 +301,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Null move pruning
     if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD &&
-        !q_core::IsKingInCheck(position_.board) && !q_eval::IsScoreMate(alpha) &&
+        !is_check && !q_eval::IsScoreMate(alpha) &&
         !q_eval::IsScoreMate(beta) && !IsMoveNull(local_context_[idepth - 1].current_move) &&
         !IsMoveCapture(local_context_[idepth - 1].current_move)) {
         // Do not apply this pruning in endgame without pawns
@@ -332,6 +334,14 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         if (move == local_context_[idepth].skip_move) {
             continue;
+        }
+
+        if (moves_done > 0 && !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta) &&
+            depth <= 2 && node_type == NodeType::Simple &&
+            move_picker.GetStage() > MovePicker::Stage::TTMove && !is_check) {
+                if (!q_core::IsSEENotNegative(position_.board, move, 0, SEE_CELLS_VALUE)) {
+                    continue;
+                }
         }
 
         depth_t new_depth = depth - depth_reduction;
