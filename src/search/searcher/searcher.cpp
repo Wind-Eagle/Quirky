@@ -1,5 +1,6 @@
 #include "searcher.h"
 
+#include <cmath>
 #include <cstddef>
 
 #include "../../core/moves/attack.h"
@@ -10,6 +11,7 @@
 #include "search/control/control.h"
 #include "search/position/move_picker.h"
 #include "search/position/transposition_table.h"
+#include "util/bit.h"
 
 namespace q_search {
 
@@ -174,8 +176,6 @@ inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
 
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
-inline static constexpr depth_t LMR_DEPTH_REDUCTION = 1;
-inline static constexpr uint16_t LMR_MOVES_NO_REDUCE = 2;
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -278,9 +278,11 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
     }
 
+    const bool is_check = position_.IsCheck();
+
     // Futility pruning
     if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD &&
-        !q_eval::IsScoreMate(beta) && !q_core::IsKingInCheck(position_.board)) {
+        !q_eval::IsScoreMate(beta) && !is_check) {
         get_node_evaluation();
         if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
             return beta;
@@ -298,9 +300,9 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
 
     // Null move pruning
-    if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD &&
-        !q_core::IsKingInCheck(position_.board) && !q_eval::IsScoreMate(alpha) &&
-        !q_eval::IsScoreMate(beta) && !IsMoveNull(local_context_[idepth - 1].current_move) &&
+    if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD && !is_check &&
+        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta) &&
+        !IsMoveNull(local_context_[idepth - 1].current_move) &&
         !IsMoveCapture(local_context_[idepth - 1].current_move)) {
         // Do not apply this pruning in endgame without pawns
         if (position_.board
@@ -320,8 +322,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
     }
 
-    depth_t depth_reduction = 1;
-
     // Try moves one by one
     MovePicker move_picker(position_, tt_move, global_context_.killer_moves[idepth],
                            global_context_.history_table);
@@ -334,46 +334,37 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             continue;
         }
 
-        depth_t new_depth = depth - depth_reduction;
-
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
         SEND_ROOT_MOVE;
 
-        // Late move reduction
-        const bool do_lmr = (node_type == NodeType::Simple) && (moves_done > 0) &&
-                            (depth >= LMR_DEPTH_THRESHOLD) &&
-                            (move_picker.GetStage() == MovePicker::Stage::History) &&
-                            (history_moves_done + 1 > LMR_MOVES_NO_REDUCE) &&
-                            (!q_core::IsKingInCheck(position_.board));
-        if (do_lmr) {
-            const q_eval::score_t score = -Search<NodeType::Simple>(new_depth - LMR_DEPTH_REDUCTION,
-                                                                    idepth + 1, -alpha - 1, -alpha);
-            CHECK_STOP;
-            if (score <= alpha) {
-                continue;
-            }
-        }
-
-        local_context_[idepth].current_move = move;
-        const bool do_pv_search = (node_type != NodeType::Simple) & (moves_done > 0);
         moves_done++;
         history_moves_done += move_picker.GetStage() == MovePicker::Stage::History ? 1 : 0;
-        q_eval::score_t new_score = alpha;
-        if (do_pv_search) {
-            new_score = -Search<NodeType::Simple>(new_depth, idepth + 1, -alpha - 1, -alpha);
-            CHECK_STOP;
-            new_score = (new_score <= alpha ? alpha : alpha + 1);
+        q_eval::score_t score = q_eval::SCORE_UNKNOWN;
+        local_context_[idepth].current_move = move;
+
+        // Late move reduction
+        if (node_type == NodeType::Simple && move_picker.GetStage() >= MovePicker::Stage::History &&
+            depth >= LMR_DEPTH_THRESHOLD && moves_done > 1 && !position_.IsCheck() && history_moves_done > 2) {
+            depth_t depth_reduction = q_util::GetHighestBit(history_moves_done - 1) + 1;
+            depth_reduction = std::min(depth_reduction, static_cast<depth_t>(q_util::GetHighestBit(static_cast<size_t>(depth + 1)) + 1));
+            depth_reduction = std::min(static_cast<depth_t>(depth - 1),
+                                       std::max(depth_reduction, static_cast<depth_t>(1)));
+            score =
+                -Search<NodeType::Simple>(depth - depth_reduction, idepth + 1, -alpha - 1, -alpha);
+            if (score > alpha && depth_reduction > 1) {
+                score = -Search<NodeType::Simple>(depth - 1, idepth + 1, -alpha - 1, -alpha);
+            }
+        } else if (node_type == NodeType::Simple || moves_done > 1) {
+            score = -Search<NodeType::Simple>(depth - 1, idepth + 1, -alpha - 1, -alpha);
         }
-        if (!do_pv_search || (alpha < new_score && new_score < beta)) {
-            const NodeType new_node_type =
-                (node_type == NodeType::Simple ? NodeType::Simple : NodeType::PV);
-            new_score = -Search<new_node_type>(new_depth, idepth + 1, -beta, -alpha);
-            CHECK_STOP;
+        if (node_type != NodeType::Simple &&
+            (moves_done == 1 || (score > alpha && (node_type == NodeType::Root || score < beta)))) {
+            score = -Search<NodeType::PV>(depth - 1, idepth + 1, -beta, -alpha);
         }
 
-        if (new_score > alpha) {
-            alpha = new_score;
+        if (score > alpha) {
+            alpha = score;
             best_move = move;
             if (depth == 1) {
                 SAVE_ROOT_BEST_MOVE;
