@@ -10,6 +10,7 @@
 #include "eval/score.h"
 #include "search/control/control.h"
 #include "search/position/move_picker.h"
+#include "search/position/position.h"
 #include "search/position/transposition_table.h"
 #include "util/bit.h"
 
@@ -163,6 +164,21 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
     if constexpr (node_type == NodeType::Root) \
     control_.AddRootMove(RootMove{.depth = depth, .move = move, .number = moves_done})
 
+std::array<std::array<depth_t, 64>, 32> GetLMRDepthReduction() {
+    std::array<std::array<depth_t, 64>, 32> res{};
+    for (size_t depth = 0; depth < 32; depth++) {
+        for (size_t move = 0; move < 64; move++) {
+            if (depth < 3 || move < 3) {
+                res[depth][move] = 1;
+                continue;
+            }
+            depth_t reduction = std::log(depth) * std::log(std::log(move)) + 2;
+            res[depth][move] = reduction;
+        }
+    }
+    return res;
+}
+
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
 
@@ -176,6 +192,7 @@ inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
 
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
+inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION = GetLMRDepthReduction();
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -345,9 +362,11 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
         // Late move reduction
         if (node_type == NodeType::Simple && move_picker.GetStage() >= MovePicker::Stage::History &&
-            depth >= LMR_DEPTH_THRESHOLD && moves_done > 1 && !position_.IsCheck() && history_moves_done > 2) {
-            depth_t depth_reduction = q_util::GetHighestBit(history_moves_done - 1) + 1;
-            depth_reduction = std::min(depth_reduction, static_cast<depth_t>(q_util::GetHighestBit(static_cast<size_t>(depth + 1)) + 1));
+            depth >= LMR_DEPTH_THRESHOLD && moves_done > 1 && !position_.IsCheck()) {
+            depth_t depth_reduction =
+                LMR_DEPTH_REDUCTION[std::min(depth, static_cast<depth_t>(31))]
+                                   [std::min(static_cast<size_t>(63), history_moves_done)];
+
             depth_reduction = std::min(static_cast<depth_t>(depth - 1),
                                        std::max(depth_reduction, static_cast<depth_t>(1)));
             score =
