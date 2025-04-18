@@ -73,20 +73,58 @@ SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
 }
 
 void Searcher::Run(depth_t max_depth) {
+    q_eval::score_t best_score = q_eval::SCORE_UNKNOWN;
+
     for (uint8_t depth = 1; depth <= max_depth; depth++) {
-        q_eval::score_t score = RunSearch(depth);
-        if (control_.IsStopped()) {
+        q_eval::score_t alpha = q_eval::SCORE_MIN;
+        q_eval::score_t beta = q_eval::SCORE_MAX;
+        q_eval::score_t delta = 0;
+        q_eval::score_t score = q_eval::SCORE_UNKNOWN;
+
+        if (depth > 4) {
+            delta = 20;
+            alpha = std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(best_score - delta));
+            beta = std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(best_score + delta));
+        }
+
+        for (;;) {
+            if (alpha <= -300) {
+                alpha = q_eval::SCORE_MIN;
+            }
+            if (beta >= 300) {
+                beta = q_eval::SCORE_MAX;
+            }
+
+            score = RunSearch(depth, alpha, beta);
+            if (control_.IsStopped()) {
+                break;
+            }
+
+            if (score <= alpha) {
+                beta = (alpha + beta) / 2;
+                alpha = std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(score - delta));
+            } else if (score >= beta) {
+                beta = std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(score + delta));
+            } else {
+                break;
+            }
+
+            delta += delta / 2;
+        }
+        if (depth > 1 && control_.IsStopped()) {
             break;
         }
+        best_score = score;
         if (control_.FinishDepth(depth)) {
             control_.AddResult(GetSearchResult(depth, score));
         }
     }
 }
 
-q_eval::score_t Searcher::RunSearch(depth_t depth) {
+q_eval::score_t Searcher::RunSearch(depth_t depth, q_eval::score_t alpha = q_eval::SCORE_MIN,
+                                    q_eval::score_t beta = q_eval::SCORE_MAX) {
     control_context_.initial_depth = depth;
-    return Search<NodeType::Root>(depth, 0, q_eval::SCORE_MIN, q_eval::SCORE_MAX);
+    return Search<NodeType::Root>(depth, 0, alpha, beta);
 }
 
 bool Searcher::ShouldStop() { return control_.IsStopped(); }
@@ -192,7 +230,8 @@ inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
 
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
-inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION = GetLMRDepthReduction();
+inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
+    GetLMRDepthReduction();
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,

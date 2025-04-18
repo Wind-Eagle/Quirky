@@ -163,6 +163,10 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                         PrintSearchResult(result, stat, time_since_start);
                     }
                     final_result = std::move(result);
+                } else if (result.bound_type == Upper && result.depth >= final_result.depth) {
+                    if (control_.AreDetailedResultsEnabled()) {
+                        PrintSearchResult(result, stat, time_since_start);
+                    }
                 }
             }
             if (final_result.depth >= max_depth) {

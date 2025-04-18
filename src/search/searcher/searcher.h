@@ -23,7 +23,7 @@ class Searcher {
   private:
     enum class NodeType { Root, PV, Simple };
     q_eval::score_t QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta);
-    q_eval::score_t RunSearch(depth_t depth);
+    q_eval::score_t RunSearch(depth_t depth, q_eval::score_t alpha, q_eval::score_t beta);
     template <NodeType node_type>
     q_eval::score_t Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
                            q_eval::score_t beta);
