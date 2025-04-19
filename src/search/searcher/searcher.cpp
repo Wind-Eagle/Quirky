@@ -196,7 +196,12 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 #define SEND_ROOT_LOWERBOUND                   \
     if constexpr (node_type == NodeType::Root) \
     control_.AddResult(SearchResult{           \
-        .bound_type = Lower, .score = alpha, .best_move = best_move, .depth = depth, .pv = {}})
+        .bound_type = Lower, .score = std::min(alpha, beta), .best_move = best_move, .depth = depth, .pv = {}})
+
+#define SEND_ROOT_UPPERBOUND                   \
+    if constexpr (node_type == NodeType::Root) \
+    control_.AddResult(SearchResult{           \
+        .bound_type = Upper, .score = alpha, .best_move = best_move, .depth = depth, .pv = {}})
 
 #define SEND_ROOT_MOVE                         \
     if constexpr (node_type == NodeType::Root) \
@@ -359,7 +364,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD && !is_check &&
         !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta) &&
         !IsMoveNull(local_context_[idepth - 1].current_move) &&
-        !IsMoveCapture(local_context_[idepth - 1].current_move)) {
+        !IsMoveCapture(local_context_[idepth - 1].current_move) &&
+        IsMoveNull(local_context_[idepth].skip_move)) {
         // Do not apply this pruning in endgame without pawns
         if (position_.board
                     .bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Pawn)] != 0 &&
@@ -388,6 +394,24 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         if (move == local_context_[idepth].skip_move) {
             continue;
+        }
+
+        if (move == tt_move && IsMoveNull(local_context_[idepth].skip_move) && idepth > 0 &&
+            depth >= 6 && tt_entry_found &&
+            tt_entry->info.GetNodeType() != TranspositionTable::NodeType::UpperBound &&
+            tt_entry->depth + 2 >= depth && !q_eval::IsScoreMate(tt_entry->score)) {
+            q_eval::score_t singular_beta = tt_entry->score - depth * 3;
+            const auto cur_stack = local_context_[idepth];
+            local_context_[idepth].skip_move = move;
+            const auto new_score =
+                Search<NodeType::Simple>(depth - 3, idepth, singular_beta - 1, singular_beta);
+            local_context_[idepth] = cur_stack;
+            local_context_[idepth].skip_move = q_core::NULL_MOVE;
+            if (new_score < singular_beta) {
+                depth++;
+            } else if (singular_beta >= beta) {
+                return beta;
+            }
         }
 
         q_core::cell_t src_cell = position_.board.cells[move.src];
@@ -449,7 +473,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         return 0;
     }
     SAVE_ROOT_BEST_MOVE;
-    tt_store_move(alpha, best_move);
+    if (q_core::IsMoveNull(best_move)) {
+        SEND_ROOT_UPPERBOUND;
+    }
+    if (IsMoveNull(local_context_[idepth].skip_move)) {
+        tt_store_move(alpha, best_move);
+    }
     return alpha;
 }
 
