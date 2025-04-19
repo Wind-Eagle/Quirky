@@ -51,7 +51,9 @@ uint64_t GetNPS(const SearchStat& stat, time_t time_since_start) {
 void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
                        time_t time_since_start) {
     std::vector<std::string> moves;
-    moves.push_back(q_core::CastMoveToString(result.best_move));
+    if (!IsMoveNull(result.best_move)) {
+        moves.push_back(q_core::CastMoveToString(result.best_move));
+    }
     for (const auto& move : result.pv) {
         moves.push_back(q_core::CastMoveToString(move));
     }
@@ -70,8 +72,7 @@ void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
         score_str = "score mate " + std::to_string(num_of_moves_to_mate);
     }
     q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start, score_str,
-                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv",
-                  pv_str);
+                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), !pv_str.empty() ? "pv " + pv_str : "");
 }
 
 void PrintRootMove(const RootMove& root_move) {
