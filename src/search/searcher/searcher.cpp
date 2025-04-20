@@ -193,10 +193,13 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 #define SAVE_ROOT_BEST_MOVE \
     if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move;
 
-#define SEND_ROOT_LOWERBOUND                   \
-    if constexpr (node_type == NodeType::Root) \
-    control_.AddResult(SearchResult{           \
-        .bound_type = Lower, .score = std::min(alpha, beta), .best_move = best_move, .depth = depth, .pv = {}})
+#define SEND_ROOT_LOWERBOUND                                        \
+    if constexpr (node_type == NodeType::Root)                      \
+    control_.AddResult(SearchResult{.bound_type = Lower,            \
+                                    .score = std::min(alpha, beta), \
+                                    .best_move = best_move,         \
+                                    .depth = depth,                 \
+                                    .pv = {}})
 
 #define SEND_ROOT_UPPERBOUND                   \
     if constexpr (node_type == NodeType::Root) \
@@ -224,9 +227,6 @@ std::array<std::array<depth_t, 64>, 32> GetLMRDepthReduction() {
 
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
-
-inline static constexpr depth_t NMP_DEPTH_THRESHOLD = 3;
-inline static constexpr depth_t NMP_DEPTH_REDUCTION = 2;
 
 inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
 inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
@@ -361,22 +361,18 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
 
     // Null move pruning
-    if (node_type == NodeType::Simple && depth >= NMP_DEPTH_THRESHOLD && !is_check &&
-        !q_eval::IsScoreMate(alpha) && !q_eval::IsScoreMate(beta) &&
+    if (node_type == NodeType::Simple && !is_check &&
         !IsMoveNull(local_context_[idepth - 1].current_move) &&
-        !IsMoveCapture(local_context_[idepth - 1].current_move) &&
-        IsMoveNull(local_context_[idepth].skip_move)) {
-        // Do not apply this pruning in endgame without pawns
-        if (position_.board
-                    .bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Pawn)] != 0 &&
-            position_.board
-                    .bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Pawn)] != 0) {
+        IsMoveNull(local_context_[idepth].skip_move) &&
+        position_.HasNonPawns(position_.board.move_side) && depth > 1) {
+        get_node_evaluation();
+        if (local_context_[idepth].eval >= beta) {
             q_core::coord_t old_en_passant_coord;
             position_.MakeNullMove(old_en_passant_coord);
             Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
 
-            const q_eval::score_t new_score = -Search<NodeType::Simple>(
-                depth - NMP_DEPTH_REDUCTION - 1, idepth + 1, -beta, -beta + 1);
+            const q_eval::score_t new_score =
+                -Search<NodeType::Simple>(depth - 3 - depth / 4, idepth + 1, -beta, -beta + 1);
             CHECK_STOP;
             if (new_score >= beta) {
                 return beta;
@@ -414,13 +410,17 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             }
         }
 
-        if (node_type == NodeType::Simple && depth <= 3 && moves_done > 0 && !q_eval::IsScoreMate(alpha) && move_picker.GetStage() == MovePicker::Stage::Capture) {
-            if (!q_core::IsSEENotNegative(position_.board, move, -depth * depth * 50, SEE_CELLS_VALUE)) {
+        if (node_type == NodeType::Simple && depth <= 3 && moves_done > 0 &&
+            !q_eval::IsScoreMate(alpha) && move_picker.GetStage() == MovePicker::Stage::Capture) {
+            if (!q_core::IsSEENotNegative(position_.board, move, -depth * depth * 50,
+                                          SEE_CELLS_VALUE)) {
                 continue;
             }
         }
 
-        if (node_type == NodeType::Simple && depth <= 3 && moves_done > 0 && !q_eval::IsScoreMate(alpha) && move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
+        if (node_type == NodeType::Simple && depth <= 3 && moves_done > 0 &&
+            !q_eval::IsScoreMate(alpha) &&
+            move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
             if (!q_core::IsSEENotNegative(position_.board, move, -depth * 70, SEE_CELLS_VALUE)) {
                 continue;
             }
