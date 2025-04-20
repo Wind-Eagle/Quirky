@@ -414,6 +414,18 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             }
         }
 
+        if (node_type == NodeType::Simple && depth <= 3 && moves_done > 0 && !q_eval::IsScoreMate(alpha) && move_picker.GetStage() == MovePicker::Stage::Capture) {
+            if (!q_core::IsSEENotNegative(position_.board, move, -depth * depth * 50, SEE_CELLS_VALUE)) {
+                continue;
+            }
+        }
+
+        if (node_type == NodeType::Simple && depth <= 3 && moves_done > 0 && !q_eval::IsScoreMate(alpha) && move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
+            if (!q_core::IsSEENotNegative(position_.board, move, -depth * 70, SEE_CELLS_VALUE)) {
+                continue;
+            }
+        }
+
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
         SEND_ROOT_MOVE;
