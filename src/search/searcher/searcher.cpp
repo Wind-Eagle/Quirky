@@ -388,6 +388,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     size_t history_moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
+            CHECK_STOP;
         if (move == local_context_[idepth].skip_move) {
             continue;
         }
@@ -401,6 +402,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             local_context_[idepth].skip_move = move;
             const auto new_score =
                 Search<NodeType::Simple>(depth - 3, idepth, singular_beta - 1, singular_beta);
+            CHECK_STOP;
             local_context_[idepth] = cur_stack;
             local_context_[idepth].skip_move = q_core::NULL_MOVE;
             if (new_score < singular_beta) {
