@@ -23,12 +23,12 @@ time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control) const {
         (context_.changed_last_move ? 1.5 : 1) * (context_.best_moves.size() <= 2 ? 0.8 : 1) * 1.1;
     float score_factor = 1;
     q_eval::score_t score = context_.last_score;
-    if (score <= -50) {
+    if (score <= -20) {
         score_factor = 1.15;
-    } else if (score <= -75) {
+    } else if (score <= -35) {
         score_factor = 1.25;
-    } else if (score <= -100) {
-        score_factor = 1.375;
+    } else if (score <= -50) {
+        score_factor = 1.35;
     }
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
         max_time = player_time.time / time_control.moves_to_go * pv_factor * score_factor +
