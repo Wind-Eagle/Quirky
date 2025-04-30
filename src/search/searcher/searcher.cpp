@@ -393,25 +393,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             continue;
         }
 
-        if (move == tt_move && IsMoveNull(local_context_[idepth].skip_move) && idepth > 0 &&
-            depth >= 6 && tt_entry_found &&
-            tt_entry->info.GetNodeType() != TranspositionTable::NodeType::UpperBound &&
-            tt_entry->depth + 2 >= depth && !q_eval::IsScoreMate(tt_entry->score)) {
-            q_eval::score_t singular_beta = tt_entry->score - depth * 2;
-            const auto cur_stack = local_context_[idepth];
-            local_context_[idepth].skip_move = move;
-            const auto new_score =
-                Search<NodeType::Simple>((depth - 1) / 2, idepth, singular_beta - 1, singular_beta);
-            CHECK_STOP;
-            local_context_[idepth] = cur_stack;
-            local_context_[idepth].skip_move = q_core::NULL_MOVE;
-            if (new_score < singular_beta) {
-                depth++;
-            } else if (singular_beta >= beta) {
-                return beta;
-            }
-        }
-
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE(position_, move);
         SEND_ROOT_MOVE;
