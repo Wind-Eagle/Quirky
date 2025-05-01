@@ -190,6 +190,9 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
     return score;
 }
 
+#define ON_ROOT_MOVE_SEARCHED \
+    if constexpr (node_type == NodeType::Root) stat_.OnRootMove(move);
+
 #define SAVE_ROOT_BEST_MOVE \
     if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move;
 
@@ -343,7 +346,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Futility pruning
     if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD &&
-        !q_eval::IsScoreMate(beta) && !is_check) {
+        !q_eval::IsScoreMate(beta) && IsMoveNull(local_context_[idepth].skip_move) && !is_check) {
         get_node_evaluation();
         if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
             return beta;
@@ -423,6 +426,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             (moves_done == 1 || (score > alpha && (node_type == NodeType::Root || score < beta)))) {
             score = -Search<NodeType::PV>(depth - 1, idepth + 1, -beta, -alpha);
         }
+
+        ON_ROOT_MOVE_SEARCHED;
 
         if (score > alpha) {
             alpha = score;
