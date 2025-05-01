@@ -23,9 +23,9 @@ time_t SearchTimer::GetSoftTime(const GameTimeControl& time_control) const {
         soft_time = std::min(soft_time, player_time.time - time_control.moves_to_go * 50);
     } else {
         float no_time_factor = player_time.time < 200 ? 5 : player_time.time < 1000 ? 2 : 1;
-        uint16_t moves_to_go_imitation = std::max(5, 20 - position_.board.move_count / 5);
+        uint16_t moves_to_go_imitation = 30;
         soft_time =
-            player_time.time / moves_to_go_imitation / no_time_factor * 0.6 * 0.5 + player_time.increment;
+            player_time.time / moves_to_go_imitation / no_time_factor * 0.5 * 0.6 + player_time.increment;
         soft_time = std::min(soft_time, player_time.time / 2);
     }
     return soft_time;
@@ -46,7 +46,7 @@ time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control, time_t soft_
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
         return std::min(soft_time * std::min(6, (time_control.moves_to_go + 3) / 2), player_time.time - time_control.moves_to_go * 50);
     }
-    return std::min(soft_time * std::min(6, (time_control.moves_to_go + 3) / 2), player_time.time / 2);
+    return std::min(soft_time * 6, player_time.time / 2);
 }
 
 static constexpr std::array<float, 5> PV_STABILITY_FACTOR = {2.5, 1.2, 0.9, 0.8, 0.75};
