@@ -213,7 +213,7 @@ void SearchLauncher::Join() {
 
 void SearchLauncher::NewGame() { tt_.NextGame(); }
 
-void SearchLauncher::ChangeTTSize(uint8_t new_tt_size_mb) {
+void SearchLauncher::ChangeTTSize(size_t new_tt_size_mb) {
     tt_ = TranspositionTable(20 + q_util::GetHighestBit(new_tt_size_mb));
 }
 
