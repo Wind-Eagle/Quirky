@@ -11,6 +11,18 @@ add_compile_options(
     -Werror
 )
 
+option (NO_BMI2 OFF)
+if(NO_BMI2)
+    MESSAGE(STATUS "BMI2 is off")
+    add_definitions(-DNO_BMI2=1)
+endif()
+
+option (NO_AVX2 OFF)
+if(NO_AVX2)
+    MESSAGE(STATUS "AVX2 is off")
+    add_definitions(-DNO_AVX2=1)
+endif()
+
 include(CheckIPOSupported)
 check_ipo_supported(RESULT supported OUTPUT error)
 if(supported)

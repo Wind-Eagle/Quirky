@@ -4,7 +4,9 @@
 // Code is inherited from:
 // https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md
 
+#ifndef NO_AVX2
 #include <immintrin.h>
+#endif
 
 #include <array>
 #include <cmath>
@@ -53,6 +55,7 @@ struct FeatureLayer {
         std::copy(biases_.begin(), biases_.end(), output);
     }
 
+    #ifndef NO_AVX2
     void Update(int16_t* input, size_t position, int8_t delta) {
         static constexpr int REGISTER_WIDTH = 256 / 16;
         constexpr int NUMBER_OF_CHUNKS = OUTPUT_SIZE / REGISTER_WIDTH;
@@ -77,6 +80,20 @@ struct FeatureLayer {
             _mm256_store_si256((__m256i*)(&input[i * REGISTER_WIDTH]), regs[i]);
         }
     }
+    #else
+    void Update(int16_t* __restrict input, size_t position, int8_t delta) {
+        const int16_t* __restrict weights = weights_[position].data();
+        if (delta == -1) {
+            for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
+                input[i] -= weights[i];
+            }
+        } else {
+            for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
+                input[i] += weights[i];
+            }
+        }
+    }
+    #endif
 
   private:
     alignas(32) std::array<std::array<int16_t, OUTPUT_SIZE>, INPUT_SIZE> weights_;
