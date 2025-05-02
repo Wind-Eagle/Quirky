@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.18)
 project(Quirky)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -41,7 +41,7 @@ add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/model_weights.h
 )
 
-add_library(util src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h src/util/channel.h src/util/processor.h src/util/heaparray.h)
+add_library(util INTERFACE src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h)
 
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(util)
