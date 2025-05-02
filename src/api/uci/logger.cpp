@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "interactor.h"
+#include "util/io.h"
 
 namespace q_api {
 

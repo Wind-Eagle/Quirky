@@ -3,8 +3,7 @@
 
 #include <array>
 
-#include "../../util/bit.h"
-#include "move.h"
+#include "core/board/types.h"
 
 namespace q_core {
 

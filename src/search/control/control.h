@@ -7,7 +7,6 @@
 #include "../../core/moves/move.h"
 #include "../../eval/score.h"
 #include "../position/position.h"
-#include "stat.h"
 
 namespace q_search {
 

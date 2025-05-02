@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cstdint>
 #include <limits>
-#include <set>
 #include <variant>
 
 #include "control.h"

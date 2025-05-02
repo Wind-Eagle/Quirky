@@ -1,12 +1,8 @@
 #ifndef QUIRKY_SRC_EVAL_EVAL_H
 #define QUIRKY_SRC_EVAL_EVAL_H
 
-#include <vector>
-
 #include "../core/board/board.h"
-#include "../core/moves/board_manipulation.h"
 #include "../core/moves/move.h"
-#include "../core/util.h"
 #include "model.h"
 
 namespace q_eval {

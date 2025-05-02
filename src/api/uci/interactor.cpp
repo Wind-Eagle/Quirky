@@ -1,7 +1,5 @@
 #include "interactor.h"
 
-#include <memory>
-
 namespace q_api {
 
 constexpr std::string_view STARTPOS_FEN =

@@ -6,13 +6,11 @@
 #include "../../core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/moves/move.h"
-#include "core/util.h"
 #include "eval/score.h"
 #include "search/control/control.h"
 #include "search/position/move_picker.h"
 #include "search/position/position.h"
 #include "search/position/transposition_table.h"
-#include "util/bit.h"
 
 namespace q_search {
 
@@ -389,7 +387,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     size_t history_moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
-            CHECK_STOP;
+        CHECK_STOP;
         if (move == local_context_[idepth].skip_move) {
             continue;
         }

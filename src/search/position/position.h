@@ -5,7 +5,6 @@
 
 #include "../../core/board/board.h"
 #include "../../core/moves/board_manipulation.h"
-#include "../../core/moves/movegen.h"
 #include "../../eval/evaluator.h"
 
 namespace q_search {

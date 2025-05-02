@@ -1,6 +1,5 @@
 #include "launcher.h"
 
-#include <fstream>
 #include <utility>
 
 #include "../../util/string.h"
@@ -13,6 +12,7 @@
 #include "search/position/transposition_table.h"
 #include "searcher.h"
 #include "util/bit.h"
+#include "util/io.h"
 
 namespace q_search {
 
@@ -74,7 +74,8 @@ void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
         score_str = "score mate " + std::to_string(num_of_moves_to_mate);
     }
     q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start, score_str,
-                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), !pv_str.empty() ? "pv " + pv_str : "");
+                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start),
+                  !pv_str.empty() ? "pv " + pv_str : "");
 }
 
 void PrintRootMove(const RootMove& root_move) {
@@ -114,9 +115,7 @@ q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     return random_move;
 }
 
-SearchLauncher::~SearchLauncher() {
-    Join();
-}
+SearchLauncher::~SearchLauncher() { Join(); }
 
 void SearchLauncher::StartMainThread(const Position& start_position,
                                      const std::vector<q_core::Move>& moves,

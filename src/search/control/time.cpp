@@ -1,7 +1,6 @@
 #include "time.h"
 
 #include <chrono>
-#include <fstream>
 
 namespace q_search {
 
@@ -24,8 +23,8 @@ time_t SearchTimer::GetSoftTime(const GameTimeControl& time_control) const {
     } else {
         float no_time_factor = player_time.time < 200 ? 5 : player_time.time < 1000 ? 2 : 1;
         uint16_t moves_to_go_imitation = 30;
-        soft_time =
-            player_time.time / moves_to_go_imitation / no_time_factor * 0.5 * 0.6 + player_time.increment;
+        soft_time = player_time.time / moves_to_go_imitation / no_time_factor * 0.5 * 0.6 +
+                    player_time.increment;
         soft_time = std::min(soft_time, player_time.time / 2);
     }
     return soft_time;
@@ -44,7 +43,8 @@ time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control, time_t soft_
         (position_.board.move_side == q_core::Color::White ? time_control.white_time
                                                            : time_control.black_time);
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
-        return std::min(soft_time * std::min(6, (time_control.moves_to_go + 3) / 2), player_time.time - time_control.moves_to_go * 50);
+        return std::min(soft_time * std::min(6, (time_control.moves_to_go + 3) / 2),
+                        player_time.time - time_control.moves_to_go * 50);
     }
     return std::min(soft_time * 6, player_time.time / 2);
 }
@@ -60,13 +60,14 @@ void SearchTimer::UpdateOnNextDepth(const GameTimeControl&) {
         return;
     }
     float time_adjust_factor = 1;
-    time_adjust_factor *= PV_STABILITY_FACTOR[std::min(context_.pv_stability, static_cast<uint16_t>(4))];
-    float node_frac = static_cast<float>(stat_.GetNodesCount(context_.last_move)) / stat_.GetNodesCount();
+    time_adjust_factor *=
+        PV_STABILITY_FACTOR[std::min(context_.pv_stability, static_cast<uint16_t>(4))];
+    float node_frac =
+        static_cast<float>(stat_.GetNodesCount(context_.last_move)) / stat_.GetNodesCount();
     float node_factor = (1.5 - node_frac) * 1.75;
     time_adjust_factor *= node_factor;
-    
-    if (time_since_start >=
-        context_.estimated_soft_time * time_adjust_factor) {
+
+    if (time_since_start >= context_.estimated_soft_time * time_adjust_factor) {
         context_.should_stop = true;
     }
 }
@@ -89,7 +90,10 @@ void SearchTimer::ProcessNextDepth(const SearchResult& result) {
     context_.estimated_soft_time = std::visit(
         [this](const auto& time_control) { return GetSoftTime(time_control); }, time_control_);
     context_.estimated_max_time = std::visit(
-            [this](const auto& time_control) { return GetMaxTime(time_control, context_.estimated_soft_time); }, time_control_);
+        [this](const auto& time_control) {
+            return GetMaxTime(time_control, context_.estimated_soft_time);
+        },
+        time_control_);
 
     // Update context
     std::visit([this](const auto& time_control) { UpdateOnNextDepth(time_control); },
@@ -103,7 +107,10 @@ std::chrono::milliseconds SearchTimer::GetWaitTime() {
     context_.estimated_soft_time = std::visit(
         [this](const auto& time_control) { return GetSoftTime(time_control); }, time_control_);
     context_.estimated_max_time = std::visit(
-            [this](const auto& time_control) { return GetMaxTime(time_control, context_.estimated_soft_time); }, time_control_);
+        [this](const auto& time_control) {
+            return GetMaxTime(time_control, context_.estimated_soft_time);
+        },
+        time_control_);
     auto time_since_start = GetTimeSinceStart();
     if (time_since_start >= context_.estimated_max_time) {
         return std::chrono::milliseconds(0);

@@ -4,16 +4,17 @@
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
+
 #include "core/moves/move.h"
 
 namespace q_search {
 
 class SearchStat {
   public:
-  uint64_t GetNodesCount() const;
-  uint64_t GetNodesCount(uint16_t move) const;
-  void IncNodesCount();
-  void OnRootMove(q_core::Move move);
+    uint64_t GetNodesCount() const;
+    uint64_t GetNodesCount(uint16_t move) const;
+    void IncNodesCount();
+    void OnRootMove(q_core::Move move);
 
   private:
     std::unordered_map<uint16_t, uint64_t> nodes_by_pv_;

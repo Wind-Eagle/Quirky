@@ -3,8 +3,6 @@
 
 #include <array>
 
-#include "../core/board/board.h"
-#include "../util/heaparray.h"
 #include "core/board/types.h"
 #include "score.h"
 

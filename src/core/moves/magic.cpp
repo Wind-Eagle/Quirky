@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "../../util/bit.h"
-#include "../util.h"
+#include "core/board/geometry.h"
 #include "core/board/types.h"
 
 namespace q_core {
@@ -139,14 +139,14 @@ void MagicBitboard::FillLookupTable(const std::array<uint64_t, 64>& piece_offset
         uint64_t submask_size = (1ULL << q_util::GetBitCount(piece_entry[i].mask));
         for (uint64_t submask = 0; submask < submask_size; submask++) {
             const bitboard_t occupied = q_util::DepositBits(submask, piece_entry[i].mask);
-            #ifndef NO_BMI2
+#ifndef NO_BMI2
             bitboard_t& res = piece_lookup[piece_offset[i] + submask];
-            #else
+#else
             const auto& magics = (p == Piece::Rook) ? ROOK_MAGIC_CONSTS : BISHOP_MAGIC_CONSTS;
             const auto& shifts = (p == Piece::Rook) ? ROOK_SHIFT_CONSTS : BISHOP_SHIFT_CONSTS;
             const auto pos = static_cast<size_t>((occupied * magics[i]) >> shifts[i]);
             bitboard_t& res = piece_lookup[piece_offset[i] + pos];
-            #endif
+#endif
             for (uint8_t dir = 0; dir < 4; dir++) {
                 subcoord_t rank = GetRank(i);
                 subcoord_t file = GetFile(i);

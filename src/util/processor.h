@@ -1,11 +1,8 @@
 #ifndef QUIRKY_SRC_UTIL_PROCESSOR_H
 #define QUIRKY_SRC_UTIL_PROCESSOR_H
 
-#include <condition_variable>
 #include <functional>
-#include <mutex>
 #include <optional>
-#include <queue>
 
 #include "channel.h"
 

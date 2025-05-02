@@ -2,9 +2,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <fstream>
-#include <limits>
-#include <type_traits>
 
 #include "../core/util.h"
 #include "core/board/geometry.h"

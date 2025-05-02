@@ -6,9 +6,7 @@
 #include "../control/control.h"
 #include "../control/time.h"
 #include "../position/position.h"
-#include "../position/repetition_table.h"
 #include "../position/transposition_table.h"
-#include "searcher.h"
 
 namespace q_search {
 

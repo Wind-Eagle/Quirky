@@ -1,10 +1,9 @@
 #include "protocol.h"
 
-#include <memory>
-
 #include "interactor.h"
 #include "logger.h"
 #include "parser.h"
+#include "util/io.h"
 
 namespace q_api {
 

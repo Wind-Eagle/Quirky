@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "../util/macro.h"
 #include "model_weights.h"
 
 namespace q_eval {
@@ -55,7 +54,7 @@ struct FeatureLayer {
         std::copy(biases_.begin(), biases_.end(), output);
     }
 
-    #ifndef NO_AVX2
+#ifndef NO_AVX2
     void Update(int16_t* input, size_t position, int8_t delta) {
         static constexpr int REGISTER_WIDTH = 256 / 16;
         constexpr int NUMBER_OF_CHUNKS = OUTPUT_SIZE / REGISTER_WIDTH;
@@ -80,7 +79,7 @@ struct FeatureLayer {
             _mm256_store_si256((__m256i*)(&input[i * REGISTER_WIDTH]), regs[i]);
         }
     }
-    #else
+#else
     void Update(int16_t* __restrict input, size_t position, int8_t delta) {
         const int16_t* __restrict weights = weights_[position].data();
         if (delta == -1) {
@@ -93,7 +92,7 @@ struct FeatureLayer {
             }
         }
     }
-    #endif
+#endif
 
   private:
     alignas(32) std::array<std::array<int16_t, OUTPUT_SIZE>, INPUT_SIZE> weights_;
@@ -105,7 +104,8 @@ struct OutputLayer {
   public:
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
-            weights_[i] = reader.ReadWeight<int16_t>(WEIGHT_SCALE * OUTPUT_SCALE / ACTIVATION_SCALE);
+            weights_[i] =
+                reader.ReadWeight<int16_t>(WEIGHT_SCALE * OUTPUT_SCALE / ACTIVATION_SCALE);
         }
         bias_ = reader.ReadWeight<int32_t>(WEIGHT_SCALE * OUTPUT_SCALE);
     }

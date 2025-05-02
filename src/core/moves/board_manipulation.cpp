@@ -356,18 +356,18 @@ void MakeMove(Board &board, const Move move, MakeMoveInfo &info) {
             MakeMovePawnDouble<c>(board, move);
             break;
         }
-        [[unlikely]] case MoveBasicType::EnPassant : {
+        [[unlikely]] case MoveBasicType::EnPassant: {
             MakeMoveEnPassant<c>(board, move);
             break;
         }
-        [[unlikely]] case MoveBasicType::Castling : {
+        [[unlikely]] case MoveBasicType::Castling: {
             MakeMoveCastling<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::KnightPromotion:
         [[unlikely]] case MoveBasicType::BishopPromotion:
         [[unlikely]] case MoveBasicType::RookPromotion:
-        [[unlikely]] case MoveBasicType::QueenPromotion : {
+        [[unlikely]] case MoveBasicType::QueenPromotion: {
             MakeMovePromotion<c>(board, move);
             break;
         }
@@ -400,18 +400,18 @@ void UnmakeMove(Board &board, const Move move, const MakeMoveInfo &info) {
             UnmakeMovePawnDouble<c>(board, move);
             break;
         }
-        [[unlikely]] case MoveBasicType::EnPassant : {
+        [[unlikely]] case MoveBasicType::EnPassant: {
             UnmakeMoveEnPassant<c>(board, move);
             break;
         }
-        [[unlikely]] case MoveBasicType::Castling : {
+        [[unlikely]] case MoveBasicType::Castling: {
             UnmakeMoveCastling<c>(board, move);
             break;
         }
         [[unlikely]] case MoveBasicType::KnightPromotion:
         [[unlikely]] case MoveBasicType::BishopPromotion:
         [[unlikely]] case MoveBasicType::RookPromotion:
-        [[unlikely]] case MoveBasicType::QueenPromotion : {
+        [[unlikely]] case MoveBasicType::QueenPromotion: {
             UnmakeMovePromotion<c>(board, move, info.dst_cell);
             break;
         }

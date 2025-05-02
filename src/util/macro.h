@@ -3,8 +3,6 @@
 
 #include <cassert>
 
-#include "io.h"
-
 class QDefer {
   public:
     template <class T>
@@ -26,10 +24,10 @@ class QDefer {
         return static_cast<type>(static_cast<base>(a) op static_cast<base>(b)); \
     }
 
-#define ENUM_ASSIGNMENT_OP(type, op)                               \
-    inline constexpr type &operator op##=(type &a, const type b) { \
-        a = a op b;                                                \
-        return a;                                                  \
+#define ENUM_ASSIGNMENT_OP(type, op)                                \
+    inline constexpr type &operator op##=(type & a, const type b) { \
+        a = a op b;                                                 \
+        return a;                                                   \
     }
 
 #define ENUM_TO_INT(type, base)   \

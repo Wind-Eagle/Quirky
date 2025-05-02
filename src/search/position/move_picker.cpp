@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-#include "core/moves/attack.h"
 #include "core/moves/movegen.h"
 #include "position.h"
 

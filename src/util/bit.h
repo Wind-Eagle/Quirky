@@ -5,9 +5,8 @@
 #include <immintrin.h>
 #endif
 
-#include <bit>
+#include <cstdint>
 #include <concepts>
-#include <limits>
 
 #include "macro.h"
 
