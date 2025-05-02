@@ -4,6 +4,9 @@
 
 namespace q_search {
 
+// Some time management logic and constants come from simbelmyne chess engine
+// https://github.com/sroelants/simbelmyne/tree/main
+
 static constexpr time_t TICK_TIME = 30;
 
 time_t SearchTimer::GetSoftTime(const FixedTimeControl& time_control) const {
