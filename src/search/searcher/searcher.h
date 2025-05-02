@@ -43,9 +43,6 @@ class Searcher {
         q_eval::score_t eval;
         q_core::Move skip_move = q_core::NULL_MOVE;
     };
-    struct ControlContext {
-        depth_t initial_depth;
-    };
 
     TranspositionTable& tt_;
     RepetitionTable& rt_;
@@ -54,7 +51,6 @@ class Searcher {
     SearchStat& stat_;
     GlobalContext global_context_;
     LocalContext local_context_[MAX_IDEPTH];
-    ControlContext control_context_;
 };
 
 }  // namespace q_search

@@ -10,7 +10,9 @@
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "eval/score.h"
+#include "search/position/transposition_table.h"
 #include "searcher.h"
+#include "util/bit.h"
 
 namespace q_search {
 
@@ -210,5 +212,9 @@ void SearchLauncher::Join() {
 }
 
 void SearchLauncher::NewGame() { tt_.NextGame(); }
+
+void SearchLauncher::ChangeTTSize(uint8_t new_tt_size_mb) {
+    tt_ = TranspositionTable(20 + q_util::GetHighestBit(new_tt_size_mb));
+}
 
 }  // namespace q_search

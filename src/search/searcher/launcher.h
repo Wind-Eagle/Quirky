@@ -20,6 +20,7 @@ class SearchLauncher {
     void Stop();
     void Join();
     void NewGame();
+    void ChangeTTSize(uint8_t new_tt_size_mb);
 
   private:
     void StartMainThread(const Position& start_position, const std::vector<q_core::Move>& moves,

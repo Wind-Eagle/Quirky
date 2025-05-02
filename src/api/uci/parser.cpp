@@ -20,7 +20,16 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
     } else if (command_name == "ucinewgame") {
         return UciNewGameCommand{};
     } else if (command_name == "setoption") {
-        return UciSetOptionCommand{};
+        if (args.size() != 5) {
+            return UciUnparsedCommand{.parse_error = "Invalid number of arguments"};
+        }
+        if (args[1] != "key" && args[3] != "value") {
+            return UciUnparsedCommand{.parse_error = "Expected key and value"};
+        }
+        if (args[2] == "Hash") {
+            return UciSetOptionCommand{.type = OptionType::HashTableSize, .value = args[4]};
+        }
+        return UciUnparsedCommand{.parse_error = "No such option"};
     } else if (command_name == "position") {
         if (args.size() == 1) {
             return UciUnparsedCommand{.parse_error = "Expected arguments"};

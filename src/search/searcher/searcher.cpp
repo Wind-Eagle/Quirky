@@ -27,7 +27,6 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& 
     for (size_t i = 0; i < MAX_IDEPTH; i++) {
         local_context_[i] = LocalContext();
     }
-    control_context_.initial_depth = 0;
 }
 
 std::vector<q_core::Move> Searcher::GetPV() {
@@ -123,7 +122,6 @@ void Searcher::Run(depth_t max_depth) {
 
 q_eval::score_t Searcher::RunSearch(depth_t depth, q_eval::score_t alpha = q_eval::SCORE_MIN,
                                     q_eval::score_t beta = q_eval::SCORE_MAX) {
-    control_context_.initial_depth = depth;
     return Search<NodeType::Root>(depth, 0, alpha, beta);
 }
 

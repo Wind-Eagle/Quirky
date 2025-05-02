@@ -20,7 +20,12 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciNewGameComma
     return UciEmptyResponse{};
 }
 
-uci_response_t ProcessUciCommandInner(UciContext&, const UciSetOptionCommand&) {
+uci_response_t ProcessUciCommandInner(UciContext& context, const UciSetOptionCommand& command) {
+    switch (command.type) {
+        case OptionType::HashTableSize: {
+            context.launcher.ChangeTTSize(std::stoll((command.value)));
+        }
+    }
     return UciEmptyResponse{};
 }
 
