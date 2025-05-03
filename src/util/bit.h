@@ -1,7 +1,7 @@
 #ifndef QUIRKY_SRC_UTIL_BIT_H
 #define QUIRKY_SRC_UTIL_BIT_H
 
-#ifndef NO_BMI2
+#ifndef NO_AVX2
 #include <immintrin.h>
 #endif
 
@@ -77,7 +77,7 @@ inline constexpr uint64_t ScatterByte(const uint8_t num) {
     return ans;
 }
 
-#ifndef NO_BMI2
+#ifndef NO_AVX2
 inline uint64_t DepositBits(const uint64_t submask, const uint64_t mask) {
     return _pdep_u64(submask, mask);
 }

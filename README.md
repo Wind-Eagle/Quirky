@@ -17,7 +17,7 @@ $ make -j8
 
 To build the engine without BMI2 and AVX2 instruction sets, use the following command instead of simple cmake:
 ~~~~~
-$ cmake -DNO_BMI2=ON -DNO_AVX2=ON ..
+$ cmake -DNO_AVX2=ON ..
 ~~~~~
 
 ## Thanks

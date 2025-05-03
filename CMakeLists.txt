@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 project(Quirky)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mavx -mavx2 -mbmi -mbmi2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt")
 
 add_compile_options(
     -Wall -Wextra -Wpedantic
@@ -11,16 +11,12 @@ add_compile_options(
     -Werror
 )
 
-option (NO_BMI2 OFF)
-if(NO_BMI2)
-    MESSAGE(STATUS "BMI2 is off")
-    add_definitions(-DNO_BMI2=1)
-endif()
-
 option (NO_AVX2 OFF)
 if(NO_AVX2)
-    MESSAGE(STATUS "AVX2 is off")
+    MESSAGE(STATUS "BMI2 AND AVX2 is off")
     add_definitions(-DNO_AVX2=1)
+else()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mavx2 -mbmi -mbmi2")
 endif()
 
 include(CheckIPOSupported)

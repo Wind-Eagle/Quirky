@@ -9,7 +9,7 @@
 
 namespace q_core {
 
-#ifdef NO_BMI2
+#ifdef NO_AVX2
 static constexpr std::array<uint64_t, BOARD_SIZE> ROOK_MAGIC_CONSTS = {
     0x0080002040001882, 0x08c0009000200241, 0x0080081004816000, 0x0080048010008800,
     0x0200102004020148, 0x2100024400090008, 0x0080020020804500, 0x01800840e0800100,
@@ -139,7 +139,7 @@ void MagicBitboard::FillLookupTable(const std::array<uint64_t, 64>& piece_offset
         uint64_t submask_size = (1ULL << q_util::GetBitCount(piece_entry[i].mask));
         for (uint64_t submask = 0; submask < submask_size; submask++) {
             const bitboard_t occupied = q_util::DepositBits(submask, piece_entry[i].mask);
-#ifndef NO_BMI2
+#ifndef NO_AVX2
             bitboard_t& res = piece_lookup[piece_offset[i] + submask];
 #else
             const auto& magics = (p == Piece::Rook) ? ROOK_MAGIC_CONSTS : BISHOP_MAGIC_CONSTS;
@@ -232,7 +232,7 @@ MagicBitboard::MagicBitboard() {
 
 const MagicBitboard MAGIC_BITBOARD;
 
-#ifndef NO_BMI2
+#ifndef NO_AVX2
 bitboard_t GetBishopAttackBitboard(const bitboard_t occupied, coord_t src) {
     const auto& entry = MAGIC_BITBOARD.bishop_entry[src];
     return entry.lookup[q_util::ExtractBits(occupied, entry.mask)] & entry.postmask;
