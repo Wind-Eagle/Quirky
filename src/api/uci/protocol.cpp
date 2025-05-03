@@ -11,8 +11,11 @@ void StartUciProtocol() {
     UciInteractor interactor;
     LogStart();
     do {
-        const std::string line = q_util::ReadLine();
-        const auto command = ParseUciCommand(line);
+        const auto line = q_util::ReadLine();
+        if (!line) {
+            break;
+        }
+        const auto command = ParseUciCommand(*line);
         const auto response = interactor.ProcessUciCommand(command);
         LogUciResponse(response);
     } while (!interactor.ShouldStop());

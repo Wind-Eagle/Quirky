@@ -187,6 +187,7 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 }
 
 #define ON_ROOT_MOVE_SEARCHED \
+    if constexpr (node_type == NodeType::Root) CHECK_STOP; \
     if constexpr (node_type == NodeType::Root) stat_.OnRootMove(move);
 
 #define SAVE_ROOT_BEST_MOVE \
