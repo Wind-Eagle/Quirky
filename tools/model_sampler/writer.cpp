@@ -2,14 +2,13 @@
 
 #include <fstream>
 
-#include "core/board/geometry.h"
-#include "core/board/types.h"
-#include "reader.h"
-
 #include "../../src/core/board/board.h"
 #include "../../src/core/util.h"
-#include "../../src/eval/evaluator.h"
-#include "../../src/eval/model.h"
+#include "core/board/geometry.h"
+#include "core/board/types.h"
+#include "eval/score.h"
+#include "reader.h"
+#include "util/io.h"
 
 std::string GetTarget(Result result, q_core::Color c) {
     switch (result) {
@@ -35,16 +34,21 @@ void WriteBoardsToCSV(const GameSet& game_set, std::ofstream& out) {
         out << "," << i;
     }
     out << ",target\n";
-    for (const auto& game: game_set.games) {
-        for (const auto& board: game.boards) {
+    for (const auto& game : game_set.games) {
+        for (const auto& board : game.boards) {
             std::array<int8_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2> input_features{};
             q_eval::stage_t stage = 0;
             for (q_core::coord_t i = 0; i < q_core::BOARD_SIZE; i++) {
                 if (board.cells[i] != q_core::EMPTY_CELL) {
                     if (board.move_side == q_core::Color::White) {
-                        input_features[(static_cast<size_t>(board.cells[i]) - 1) * q_core::BOARD_SIZE + i]++;
+                        input_features[(static_cast<size_t>(board.cells[i]) - 1) *
+                                           q_core::BOARD_SIZE +
+                                       i]++;
                     } else {
-                         input_features[(static_cast<size_t>(q_core::FlipCellColor(board.cells[i])) - 1) * q_core::BOARD_SIZE + q_core::FlipCoord(i)]++;
+                        input_features[(static_cast<size_t>(q_core::FlipCellColor(board.cells[i])) -
+                                        1) *
+                                           q_core::BOARD_SIZE +
+                                       q_core::FlipCoord(i)]++;
                     }
                 }
             }

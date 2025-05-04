@@ -1,5 +1,4 @@
 #include <cstddef>
-#include <map>
 
 #include "../../src/util/error.h"
 #include "../../src/util/io.h"
@@ -31,10 +30,10 @@ void Make(const SamplerArguments& args) {
         }
         std::string out_file_name = std::to_string(pos++);
         if (out_file_name.size() == 1) {
-            out_file_name = "0" + out_file_name;
+            out_file_name .insert(out_file_name.begin(), '0');
         }
         std::ofstream out(std::string(args.output_file) + "/" + out_file_name + ".csv");
-        WriteBoardsToCSV(std::move(game_set), out);
+        WriteBoardsToCSV(game_set, out);
     }
 }
 

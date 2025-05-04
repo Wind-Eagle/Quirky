@@ -1,7 +1,6 @@
 #include "geometry.h"
 
 #include "core/board/types.h"
-#include "util/bit.h"
 
 namespace q_core {
 

@@ -1,7 +1,5 @@
 #include "movegen.h"
 
-#include <linux/limits.h>
-
 #include "../../util/bit.h"
 #include "../board/geometry.h"
 #include "../util.h"

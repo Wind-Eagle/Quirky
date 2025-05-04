@@ -2,9 +2,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <fstream>
-#include <limits>
-#include <type_traits>
 
 #include "../core/util.h"
 #include "core/board/geometry.h"
@@ -14,20 +11,17 @@
 namespace q_eval {
 
 static constexpr uint16_t INPUT_LAYER_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2;
-static constexpr uint16_t FEATURE_LAYER_SIZE = 32;
-static constexpr uint16_t FIRST_HIDDEN_LAYER_SIZE = 8;
+static constexpr uint16_t FEATURE_LAYER_SIZE = 64;
 
 struct LayerStorage {
     LayerStorage() {
         ModelReader reader;
         feature_layer.Initialize(reader);
-        hidden_layer.Initialize(reader);
         output_layer.Initialize(reader);
     }
 
     FeatureLayer<INPUT_LAYER_SIZE, MODEL_INPUT_SIZE / 2> feature_layer;
-    LinearLayer<FEATURE_LAYER_SIZE, FIRST_HIDDEN_LAYER_SIZE> hidden_layer;
-    OutputLayer<FIRST_HIDDEN_LAYER_SIZE> output_layer;
+    OutputLayer<MODEL_INPUT_SIZE> output_layer;
 };
 
 static LayerStorage layer_storage{};
@@ -71,15 +65,7 @@ score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::C
                          static_cast<int16_t>(ACTIVATION_SCALE));
         }
     }
-    alignas(32) std::array<int32_t, FIRST_HIDDEN_LAYER_SIZE> buffer;
-    alignas(32) std::array<int8_t, FIRST_HIDDEN_LAYER_SIZE> hidden_output;
-    layer_storage.hidden_layer.Process(clamped_input.data(), buffer.data());
-    for (uint16_t i = 0; i < FIRST_HIDDEN_LAYER_SIZE; i++) {
-        hidden_output[i] = std::min(
-            std::max(buffer[i] / static_cast<int32_t>(WEIGHT_SCALE), static_cast<int32_t>(0)),
-            static_cast<int32_t>(ACTIVATION_SCALE));
-    }
-    int32_t ans = layer_storage.output_layer.Process(hidden_output.data());
+    int32_t ans = layer_storage.output_layer.Process(clamped_input.data());
     return ans / WEIGHT_SCALE;
 }
 

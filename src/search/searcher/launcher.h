@@ -6,19 +6,19 @@
 #include "../control/control.h"
 #include "../control/time.h"
 #include "../position/position.h"
-#include "../position/repetition_table.h"
 #include "../position/transposition_table.h"
-#include "searcher.h"
 
 namespace q_search {
 
 class SearchLauncher {
   public:
+    ~SearchLauncher();
     void Start(const Position& start_position, const std::vector<q_core::Move>& moves,
                time_control_t time_control, depth_t max_depth);
     void Stop();
     void Join();
     void NewGame();
+    void ChangeTTSize(size_t new_tt_size_mb);
 
   private:
     void StartMainThread(const Position& start_position, const std::vector<q_core::Move>& moves,

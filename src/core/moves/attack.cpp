@@ -1,7 +1,6 @@
 #include "attack.h"
 
 #include "../util.h"
-#include "core/board/geometry.h"
 #include "core/board/types.h"
 #include "core/moves/move.h"
 #include "magic.h"

@@ -4,6 +4,7 @@
 
 #include "../../util/string.h"
 #include "interactor.h"
+#include "search/searcher/searcher.h"
 
 namespace q_api {
 
@@ -15,13 +16,26 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
     const std::string_view command_name = args[0];
     if (command_name == "uci") {
         return UciInitCommand{};
-    } else if (command_name == "isready") {
+    }
+    if (command_name == "isready") {
         return UciReadyCommand{};
-    } else if (command_name == "ucinewgame") {
+    }
+    if (command_name == "ucinewgame") {
         return UciNewGameCommand{};
-    } else if (command_name == "setoption") {
-        return UciSetOptionCommand{};
-    } else if (command_name == "position") {
+    }
+    if (command_name == "setoption") {
+        if (args.size() != 5) {
+            return UciUnparsedCommand{.parse_error = "Invalid number of arguments"};
+        }
+        if (args[1] != "key" && args[3] != "value") {
+            return UciUnparsedCommand{.parse_error = "Expected key and value"};
+        }
+        if (args[2] == "Hash") {
+            return UciSetOptionCommand{.type = OptionType::HashTableSize, .value = args[4]};
+        }
+        return UciUnparsedCommand{.parse_error = "No such option"};
+    }
+    if (command_name == "position") {
         if (args.size() == 1) {
             return UciUnparsedCommand{.parse_error = "Expected arguments"};
         }
@@ -43,7 +57,8 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
             }
         }
         return command;
-    } else if (command_name == "go") {
+    }
+    if (command_name == "go") {
         UciGoCommand command;
         command.time_control = q_search::InfiniteTimeControl{};
         command.max_depth = q_search::Searcher::MAX_DEPTH;
@@ -113,9 +128,11 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
             command.time_control = time_control;
         }
         return command;
-    } else if (command_name == "stop") {
+    }
+    if (command_name == "stop") {
         return UciStopCommand{};
-    } else if (command_name == "quit") {
+    }
+    if (command_name == "quit") {
         return UciQuitCommand{};
     }
     return UciUnparsedCommand{.parse_error = "Unknown UCI command"};
