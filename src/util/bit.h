@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <concepts>
+#include <limits>
 
 #include "macro.h"
 
