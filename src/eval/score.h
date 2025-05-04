@@ -1,7 +1,6 @@
 #ifndef QUIRKY_SRC_EVAL_SCORE_H
 #define QUIRKY_SRC_EVAL_SCORE_H
 
-#include "../core/board/board.h"
 #include "../util/math.h"
 
 namespace q_eval {

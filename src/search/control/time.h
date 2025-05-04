@@ -4,10 +4,10 @@
 #include <chrono>
 #include <cstdint>
 #include <limits>
-#include <set>
 #include <variant>
 
 #include "control.h"
+#include "search/position/position.h"
 #include "stat.h"
 
 namespace q_search {
@@ -38,25 +38,27 @@ using time_control_t = std::variant<GameTimeControl, FixedTimeControl, InfiniteT
 
 class SearchTimer {
   public:
-    SearchTimer(time_control_t time_control, Position& position);
+    SearchTimer(time_control_t time_control, Position& position, SearchStat& stat);
     void ProcessNextDepth(const SearchResult& result);
     std::chrono::milliseconds GetWaitTime();
     time_t GetTimeSinceStart() const;
 
   private:
-    time_t GetMaxTime(const FixedTimeControl& time_control) const;
-    time_t GetMaxTime(const InfiniteTimeControl&) const;
-    time_t GetMaxTime(const GameTimeControl& time_control) const;
+    time_t GetSoftTime(const FixedTimeControl& time_control) const;
+    time_t GetSoftTime(const InfiniteTimeControl&) const;
+    time_t GetSoftTime(const GameTimeControl& time_control) const;
+    time_t GetMaxTime(const FixedTimeControl& time_control, time_t soft_time) const;
+    time_t GetMaxTime(const InfiniteTimeControl&, time_t soft_time) const;
+    time_t GetMaxTime(const GameTimeControl& time_control, time_t soft_time) const;
     void UpdateOnNextDepth(const FixedTimeControl& time_control);
     void UpdateOnNextDepth(const InfiniteTimeControl&);
     void UpdateOnNextDepth(const GameTimeControl& time_control);
     struct Context {
-        std::set<uint16_t> best_moves{};
+        uint16_t pv_stability = 0;
         uint16_t last_move = q_core::GetCompressedMove(q_core::NULL_MOVE);
-        q_eval::score_t last_score = 0;
         depth_t depth = 0;
-        bool changed_last_move = false;
 
+        time_t estimated_soft_time = 0;
         time_t estimated_max_time = 0;
         bool should_stop = false;
     };
@@ -64,6 +66,7 @@ class SearchTimer {
     std::chrono::time_point<std::chrono::steady_clock> start_time_;
     const time_control_t time_control_;
     const Position& position_;
+    const SearchStat& stat_;
 };
 
 }  // namespace q_search

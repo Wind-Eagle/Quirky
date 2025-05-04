@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-#include "core/moves/attack.h"
 #include "core/moves/movegen.h"
 #include "position.h"
 
@@ -79,6 +78,15 @@ q_core::Move MovePicker::GetNextMove() {
     GetNewMoves();
     if (Q_UNLIKELY(stage_ == Stage::End)) {
         return q_core::NULL_MOVE;
+    }
+    while (stage_ != Stage::TTMove && list_.moves[pos_] == tt_move_) {
+        pos_++;
+        if (pos_ == list_.size) {
+            GetNewMoves();
+            if (pos_ == list_.size) {
+                return q_core::NULL_MOVE;
+            }
+        }
     }
     return list_.moves[pos_++];
 }

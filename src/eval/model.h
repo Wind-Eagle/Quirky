@@ -3,14 +3,12 @@
 
 #include <array>
 
-#include "../core/board/board.h"
-#include "../util/heaparray.h"
 #include "core/board/types.h"
 #include "score.h"
 
 namespace q_eval {
 
-static constexpr uint16_t MODEL_INPUT_SIZE = 32;
+static constexpr uint16_t MODEL_INPUT_SIZE = 64;
 
 void InitializeModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input);
 void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell,

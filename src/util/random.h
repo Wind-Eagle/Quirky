@@ -2,7 +2,6 @@
 #define QUIRKY_SRC_UTIL_RANDOM_H
 
 #include <cstdint>
-#include <iostream>
 
 namespace q_util {
 

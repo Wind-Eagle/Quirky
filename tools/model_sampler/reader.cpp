@@ -5,6 +5,7 @@
 #include "../../src/core/moves/board_manipulation.h"
 #include "../../src/core/moves/move.h"
 #include "../../src/util/string.h"
+#include "util/io.h"
 
 Result CastStringToResult(const std::string_view str) {
     if (str == "W") {
@@ -45,7 +46,6 @@ GameHeader ReadGameHeader(std::ifstream& in) {
         q_util::PrintError("Expected \"game\" word");
         q_util::ExitWithError(QuirkyError::ParseError);
     }
-    // Title is currently unused
     const std::string title = ReadLine(in);
     return GameHeader{.result = CastStringToResult(words[1]), .name = words[2]};
 }
@@ -80,6 +80,7 @@ GameWithResult ReadGameWithResult(std::ifstream& in) {
     std::vector<q_core::Board> boards = {game_startpos.board};
     q_core::Board cur_board = game_startpos.board;
     q_core::MakeMoveInfo info;
+
     for (size_t i = 1; i < moves.size(); i++) {
         q_core::Move move = q_core::TranslateStringToMove(cur_board, moves[i]);
         q_core::MakeMove(cur_board, move, info);

@@ -2,6 +2,7 @@
 #define QUIRKY_SRC_UTIL_IO_H
 
 #include <iostream>
+#include <optional>
 
 #include "error.h"
 
@@ -22,10 +23,10 @@ inline void PrintToStream(std::ostream& stream, First first, Rest... rest) {
 
 namespace q_util {
 
-inline std::string ReadLine(std::istream& stream = std::cin) {
+inline std::optional<std::string> ReadLine(std::istream& stream = std::cin) {
     std::string line;
-    std::getline(stream, line);
-    return line;
+    bool res = static_cast<bool>(std::getline(stream, line));
+    return res ? std::make_optional(std::move(line)) : std::nullopt;
 }
 
 template <class First, class... Rest>

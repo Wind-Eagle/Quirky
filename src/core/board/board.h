@@ -1,6 +1,7 @@
 #ifndef QUIRKY_SRC_CORE_POSITION_BOARD_H
 #define QUIRKY_SRC_CORE_POSITION_BOARD_H
 
+#include <string>
 #include "types.h"
 
 namespace q_core {

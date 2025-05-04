@@ -1,6 +1,5 @@
 #include "launcher.h"
 
-#include <fstream>
 #include <utility>
 
 #include "../../util/string.h"
@@ -10,7 +9,10 @@
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "eval/score.h"
+#include "search/position/transposition_table.h"
 #include "searcher.h"
+#include "util/bit.h"
+#include "util/io.h"
 
 namespace q_search {
 
@@ -51,7 +53,9 @@ uint64_t GetNPS(const SearchStat& stat, time_t time_since_start) {
 void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
                        time_t time_since_start) {
     std::vector<std::string> moves;
-    moves.push_back(q_core::CastMoveToString(result.best_move));
+    if (!IsMoveNull(result.best_move)) {
+        moves.push_back(q_core::CastMoveToString(result.best_move));
+    }
     for (const auto& move : result.pv) {
         moves.push_back(q_core::CastMoveToString(move));
     }
@@ -70,8 +74,8 @@ void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
         score_str = "score mate " + std::to_string(num_of_moves_to_mate);
     }
     q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start, score_str,
-                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start), "pv",
-                  pv_str);
+                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start),
+                  !pv_str.empty() ? "pv " + pv_str : "");
 }
 
 void PrintRootMove(const RootMove& root_move) {
@@ -111,6 +115,8 @@ q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     return random_move;
 }
 
+SearchLauncher::~SearchLauncher() { Join(); }
+
 void SearchLauncher::StartMainThread(const Position& start_position,
                                      const std::vector<q_core::Move>& moves,
                                      time_control_t time_control, depth_t max_depth) {
@@ -131,7 +137,7 @@ void SearchLauncher::StartMainThread(const Position& start_position,
 
     SearchStat stat;
     Searcher searcher(tt_, rt, position, control_, stat);
-    SearchTimer timer(time_control, position);
+    SearchTimer timer(time_control, position, stat);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
 
     SearchResult final_result{};
@@ -159,6 +165,10 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                         PrintSearchResult(result, stat, time_since_start);
                     }
                     final_result = std::move(result);
+                } else if (result.bound_type == Upper && result.depth >= final_result.depth) {
+                    if (control_.AreDetailedResultsEnabled()) {
+                        PrintSearchResult(result, stat, time_since_start);
+                    }
                 }
             }
             if (final_result.depth >= max_depth) {
@@ -201,5 +211,9 @@ void SearchLauncher::Join() {
 }
 
 void SearchLauncher::NewGame() { tt_.NextGame(); }
+
+void SearchLauncher::ChangeTTSize(size_t new_tt_size_mb) {
+    tt_ = TranspositionTable(20 + q_util::GetHighestBit(new_tt_size_mb));
+}
 
 }  // namespace q_search

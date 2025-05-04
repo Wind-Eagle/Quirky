@@ -5,7 +5,6 @@
 
 #include "../../core/board/board.h"
 #include "../../core/moves/board_manipulation.h"
-#include "../../core/moves/movegen.h"
 #include "../../eval/evaluator.h"
 
 namespace q_search {
@@ -28,6 +27,7 @@ struct Position {
     void UnmakeNullMove(const q_core::coord_t& old_en_passant_coord);
 
     bool HasNonPawns() const;
+    bool HasNonPawns(q_core::Color c) const;
     bool IsCheck() const;
 
     q_eval::score_t GetEvaluatorScore() const;

@@ -23,7 +23,7 @@ class Searcher {
   private:
     enum class NodeType { Root, PV, Simple };
     q_eval::score_t QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta);
-    q_eval::score_t RunSearch(depth_t depth);
+    q_eval::score_t RunSearch(depth_t depth, q_eval::score_t alpha, q_eval::score_t beta);
     template <NodeType node_type>
     q_eval::score_t Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
                            q_eval::score_t beta);
@@ -43,9 +43,6 @@ class Searcher {
         q_eval::score_t eval;
         q_core::Move skip_move = q_core::NULL_MOVE;
     };
-    struct ControlContext {
-        depth_t initial_depth;
-    };
 
     TranspositionTable& tt_;
     RepetitionTable& rt_;
@@ -54,7 +51,6 @@ class Searcher {
     SearchStat& stat_;
     GlobalContext global_context_;
     LocalContext local_context_[MAX_IDEPTH];
-    ControlContext control_context_;
 };
 
 }  // namespace q_search

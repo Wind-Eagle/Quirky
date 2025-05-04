@@ -55,4 +55,11 @@ bool Position::HasNonPawns() const {
            board.bb_pieces[q_core::MakeCell(q_core::Color::Black, q_core::Piece::Queen)];
 }
 
+bool Position::HasNonPawns(q_core::Color c) const {
+    return board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Knight)] |
+           board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Bishop)] |
+           board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Rook)] |
+           board.bb_pieces[q_core::MakeCell(c, q_core::Piece::Queen)];
+}
+
 }  // namespace q_search

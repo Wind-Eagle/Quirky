@@ -5,7 +5,6 @@
 
 #include "../../util/hash.h"
 #include "../../util/macro.h"
-#include "../../util/random.h"
 #include "types.h"
 
 namespace {
@@ -27,7 +26,7 @@ inline constexpr std::array<uint64_t, N> MakeRandomArray64(const std::string_vie
 constexpr std::array<q_core::hash_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_CELLS>
 MakeZobristHashCells(
     const std::array<q_core::hash_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_CELLS> arr) {
-    std::array<q_core::hash_t, q_core::BOARD_SIZE* q_core::NUMBER_OF_CELLS> ans = arr;
+    std::array<q_core::hash_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_CELLS> ans = arr;
     for (q_core::coord_t i = 0; i < q_core::BOARD_SIZE; i++) {
         ans[(q_core::EMPTY_CELL << q_core::BOARD_SIZE_LOG) + i] = 0;
     }
@@ -38,8 +37,9 @@ MakeZobristHashCells(
 
 namespace q_core {
 
-constexpr std::array<hash_t, BOARD_SIZE* NUMBER_OF_CELLS> ZOBRIST_HASH_CELLS = MakeZobristHashCells(
-    MakeRandomArray64<BOARD_SIZE * NUMBER_OF_CELLS>(Q_UNIQUE_STRING("ZOBRIST")));
+constexpr std::array<hash_t, BOARD_SIZE * NUMBER_OF_CELLS> ZOBRIST_HASH_CELLS =
+    MakeZobristHashCells(
+        MakeRandomArray64<BOARD_SIZE * NUMBER_OF_CELLS>(Q_UNIQUE_STRING("ZOBRIST")));
 constexpr std::array<hash_t, BOARD_SIZE> ZOBRIST_HASH_EN_PASSANT_COORD =
     MakeRandomArray64<BOARD_SIZE>(Q_UNIQUE_STRING("ZOBRIST"));
 constexpr std::array<hash_t, static_cast<uint8_t>(Castling::All) + 1> ZOBRIST_HASH_CASTLING =
