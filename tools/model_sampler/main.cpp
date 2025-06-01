@@ -32,7 +32,7 @@ void Make(const SamplerArguments& args) {
         if (out_file_name.size() == 1) {
             out_file_name .insert(out_file_name.begin(), '0');
         }
-        std::ofstream out(std::string(args.output_file) + "/" + out_file_name + ".csv");
+        std::ofstream out(std::string(args.output_file) + "/" + out_file_name + ".qds", std::ios::binary);
         WriteBoardsToCSV(game_set, out);
     }
 }

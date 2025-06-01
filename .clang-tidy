@@ -11,6 +11,7 @@ readability-*, \
 -readability-identifier-length, \
 -readability-function-cognitive-complexity, \
 -readability-use-anyofallof, \
+-readability-math-missing-parentheses, \
 -readability-simplify-boolean-expr"
 
 HeaderFilterRegex: '(src|test)/.+'
