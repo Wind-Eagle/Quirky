@@ -3,6 +3,6 @@
 
 #include "reader.h"
 
-void WriteBoardsToCSV(const GameSet& game_set, std::ofstream& out);
+void WriteBoardsToCSV(const PositionSet& game_set, std::ofstream& out);
 
 #endif  // QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_WRITER_H
