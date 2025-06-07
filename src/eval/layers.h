@@ -54,32 +54,6 @@ struct FeatureLayer {
         std::copy(biases_.begin(), biases_.end(), output);
     }
 
-#ifndef NO_AVX2
-    void Update(int16_t* input, size_t position, int8_t delta) {
-        static constexpr int REGISTER_WIDTH = 256 / 16;
-        constexpr int NUMBER_OF_CHUNKS = OUTPUT_SIZE / REGISTER_WIDTH;
-        __m256i regs[NUMBER_OF_CHUNKS];
-        for (uint16_t i = 0; i < NUMBER_OF_CHUNKS; i++) {
-            regs[i] = _mm256_load_si256((__m256i*)(&input[i * REGISTER_WIDTH]));
-        }
-        if (delta == -1) {
-            for (uint16_t i = 0; i < NUMBER_OF_CHUNKS; i++) {
-                regs[i] = _mm256_sub_epi16(
-                    regs[i],
-                    _mm256_load_si256((__m256i*)(&weights_[position][i * REGISTER_WIDTH])));
-            }
-        } else {
-            for (uint16_t i = 0; i < NUMBER_OF_CHUNKS; i++) {
-                regs[i] = _mm256_add_epi16(
-                    regs[i],
-                    _mm256_load_si256((__m256i*)(&weights_[position][i * REGISTER_WIDTH])));
-            }
-        }
-        for (uint16_t i = 0; i < NUMBER_OF_CHUNKS; i++) {
-            _mm256_store_si256((__m256i*)(&input[i * REGISTER_WIDTH]), regs[i]);
-        }
-    }
-#else
     void Update(int16_t* __restrict input, size_t position, int8_t delta) {
         const int16_t* __restrict weights = weights_[position].data();
         if (delta == -1) {
@@ -92,7 +66,6 @@ struct FeatureLayer {
             }
         }
     }
-#endif
 
   private:
     alignas(32) std::array<std::array<int16_t, OUTPUT_SIZE>, INPUT_SIZE> weights_;
