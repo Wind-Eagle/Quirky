@@ -313,7 +313,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             }
             score = AdjustCheckmate(score, -static_cast<depth_t>(idepth));
             if (!IsMoveNull(best_move)) {
-                tt_.Store(*tt_entry, position_hash, best_move, score, depth, tt_node_type,
+                tt_.Store(*tt_entry, position_hash, best_move, local_context_[idepth].eval, score, depth, tt_node_type,
                           node_type != NodeType::Simple);
             }
         }
@@ -336,6 +336,9 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             if (is_cutoff) {
                 return score;
             }
+        }
+        if (!q_eval::IsScoreMate(tt_entry->eval_score)) {
+            local_context_[idepth].eval = tt_entry->eval_score;
         }
     }
 
