@@ -85,7 +85,7 @@ void Evaluator::StartTrackingBoard(const q_core::Board& board) { state_.Build(bo
 
 void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
                              EvaluatorUpdateInfo& info) {
-    alignas(32) auto new_model_input = state_.model_input;
+    alignas(64) auto new_model_input = state_.model_input;
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
     const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {

@@ -10,7 +10,7 @@ namespace q_eval {
 class Evaluator {
   public:
     struct EvaluatorUpdateInfo {
-        alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
+        alignas(64) std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
     };
 
     score_t Evaluate(const q_core::Board& board) const;
@@ -31,7 +31,7 @@ class Evaluator {
             return true;
         }
 
-        alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
+        alignas(64) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
     };
     State state_;
 };

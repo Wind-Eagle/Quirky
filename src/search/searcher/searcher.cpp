@@ -285,12 +285,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     // Prepare local context
     local_context_[idepth].current_move = q_core::NULL_MOVE;
     local_context_[idepth].eval = q_eval::SCORE_UNKNOWN;
-
-    auto get_node_evaluation = [&]() {
-        if (local_context_[idepth].eval == q_eval::SCORE_UNKNOWN) {
-            local_context_[idepth].eval = position_.GetEvaluatorScore();
-        }
-    };
+    local_context_[idepth].eval = position_.GetEvaluatorScore();
 
     // Checking transposition table
     q_core::Move tt_move = q_core::NULL_MOVE;
@@ -347,7 +342,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     // Futility pruning
     if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD &&
         !q_eval::IsScoreMate(beta) && IsMoveNull(local_context_[idepth].skip_move) && !is_check) {
-        get_node_evaluation();
         if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
             return beta;
         }
@@ -356,7 +350,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     // Razoring
     if (node_type == NodeType::Simple && depth <= RPR_DEPTH_THRESHOLD &&
         !q_eval::IsScoreMate(alpha)) {
-        get_node_evaluation();
         q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
         if (local_context_[idepth].eval <= threshold) {
             return QuiescenseSearch(alpha, beta);
@@ -368,7 +361,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         !IsMoveNull(local_context_[idepth - 1].current_move) &&
         IsMoveNull(local_context_[idepth].skip_move) &&
         position_.HasNonPawns(position_.board.move_side) && depth > 1) {
-        get_node_evaluation();
         if (local_context_[idepth].eval >= beta) {
             q_core::coord_t old_en_passant_coord;
             position_.MakeNullMove(old_en_passant_coord);
