@@ -4,27 +4,30 @@
 #include <cstdint>
 
 #include "../core/util.h"
-#include "core/board/geometry.h"
-#include "core/board/types.h"
+#include "../core/board/geometry.h"
+#include "../core/board/types.h"
 #include "layers.h"
 
 namespace q_eval {
 
 static constexpr uint16_t INPUT_LAYER_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2;
 static constexpr uint16_t FEATURE_LAYER_SIZE = 256;
-static constexpr uint16_t HIDDEN_LAYER_SIZE = 16;
+static constexpr uint16_t HIDDEN_LAYER_FIRST_SIZE = 16;
+static constexpr uint16_t HIDDEN_LAYER_SECOND_SIZE = 32;
 
 struct LayerStorage {
     LayerStorage() {
         ModelReader reader;
         feature_layer.Initialize(reader);
-        hidden_layer.Initialize(reader);
+        hidden_layer_first.Initialize(reader);
+        hidden_layer_second.Initialize(reader);
         output_layer.Initialize(reader);
     }
 
     FeatureLayer<INPUT_LAYER_SIZE, MODEL_INPUT_SIZE / 2> feature_layer;
-    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_SIZE> hidden_layer;
-    OutputLayer<HIDDEN_LAYER_SIZE> output_layer;
+    LinearLayer<FEATURE_LAYER_SIZE, HIDDEN_LAYER_FIRST_SIZE> hidden_layer_first;
+    LinearLayer<HIDDEN_LAYER_FIRST_SIZE * 2, HIDDEN_LAYER_SECOND_SIZE> hidden_layer_second;
+    OutputLayer<HIDDEN_LAYER_SECOND_SIZE> output_layer;
 };
 
 static LayerStorage layer_storage{};
@@ -57,12 +60,19 @@ score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::C
         ClippedReLU16(MODEL_INPUT_SIZE / 2, clamped_input.data(), input.data() + MODEL_INPUT_SIZE / 2);
         ClippedReLU16(MODEL_INPUT_SIZE / 2, clamped_input.data() + MODEL_INPUT_SIZE / 2, input.data());
     }
-    alignas(64) std::array<int32_t, HIDDEN_LAYER_SIZE * 2> buffer;
-    alignas(64) std::array<int8_t, HIDDEN_LAYER_SIZE * 2> hidden_output;
-    layer_storage.hidden_layer.Process(clamped_input.data(), buffer.data());
-    QuantDiv32<WEIGHT_SCALE>(HIDDEN_LAYER_SIZE * 2, buffer.data());
-    ClippedReLU32(HIDDEN_LAYER_SIZE * 2, hidden_output.data(), buffer.data());
-    int32_t ans = layer_storage.output_layer.Process(hidden_output.data());
+
+    alignas(64) std::array<int32_t, HIDDEN_LAYER_FIRST_SIZE * 2> buffer;
+    alignas(64) std::array<int8_t, HIDDEN_LAYER_FIRST_SIZE * 2> hidden_output_first{};
+    layer_storage.hidden_layer_first.Process(clamped_input.data(), buffer.data());
+    QuantDiv32<WEIGHT_SCALE>(HIDDEN_LAYER_FIRST_SIZE * 2, buffer.data());
+    ClippedReLU32(HIDDEN_LAYER_FIRST_SIZE * 2, hidden_output_first.data(), buffer.data());
+
+    alignas(64) std::array<int8_t, HIDDEN_LAYER_SECOND_SIZE> hidden_output_second{};
+    layer_storage.hidden_layer_second.Process(hidden_output_first.data(), buffer.data());
+    QuantDiv32<WEIGHT_SCALE>(HIDDEN_LAYER_SECOND_SIZE, buffer.data());
+    ClippedReLU32(HIDDEN_LAYER_SECOND_SIZE, hidden_output_second.data(), buffer.data());
+
+    int32_t ans = layer_storage.output_layer.Process(hidden_output_second.data());
     return ans / OUTPUT_SCALE;
 }
 
