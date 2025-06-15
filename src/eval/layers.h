@@ -270,7 +270,7 @@ inline void ClippedReLU16(int size, int8_t* output, const int16_t* input) {
 
 inline void ClippedReLU32(int size, int16_t* output, const int32_t* input) {
     const __m256i zero = _mm256_setzero_si256();
-    const __m256i upper = _mm256_set1_epi32(8191);
+    const __m256i upper = _mm256_set1_epi32(32768 * WEIGHT_SCALE / 256 - 1);
 
     for (int i = 0; i < size; i += 16) {
         __m256i in0 = _mm256_loadu_si256((const __m256i*)(input + i));
