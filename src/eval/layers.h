@@ -24,6 +24,7 @@ namespace q_eval {
 static constexpr int WEIGHT_SCALE = 64;
 static constexpr int ACTIVATION_SCALE = 127;
 static constexpr int OUTPUT_SCALE = 64 * 64;
+static constexpr int PRECISE_WEIGHT_SCALE = 64;
 
 struct ModelReader {
   public:
@@ -155,12 +156,12 @@ struct PreciseLinearLayer {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE; j++) {
                 weights_[j * INPUT_SIZE + i] =
-                    reader.ReadWeight<int16_t>(WEIGHT_SCALE * WEIGHT_SCALE);
+                    reader.ReadWeight<int16_t>(WEIGHT_SCALE * PRECISE_WEIGHT_SCALE);
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE; i++) {
             biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE * WEIGHT_SCALE *
-                                                    WEIGHT_SCALE);
+                                                    PRECISE_WEIGHT_SCALE);
         }
     }
 
@@ -195,7 +196,7 @@ struct PreciseLinearLayer {
 
             const __m128i bias = _mm_load_si128((__m128i*)&biases_[i * 4]);
             __m128i outval = Add(sum0, sum1, sum2, sum3, bias);
-            outval = _mm_srai_epi32(outval, q_util::GetHighestBit(static_cast<uint32_t>(WEIGHT_SCALE * WEIGHT_SCALE)));
+            outval = _mm_srai_epi32(outval, q_util::GetHighestBit(static_cast<uint32_t>(WEIGHT_SCALE * PRECISE_WEIGHT_SCALE)));
             _mm_store_si128((__m128i*)&output[i * 4], outval);
         }
     }
