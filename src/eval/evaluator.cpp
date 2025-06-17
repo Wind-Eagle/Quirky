@@ -8,9 +8,7 @@
 #include "core/board/types.h"
 #include "eval/score.h"
 #include "model.h"
-#include "util/bit.h"
 #include "util/macro.h"
-#include "util/math.h"
 
 using namespace q_core;
 
@@ -25,50 +23,6 @@ void Evaluator::State::Build(const q_core::Board& board) {
     }
 }
 
-static constexpr score_t LATE_ENDGAME_SCORE_FIX_THRESHOLD = 200;
-static constexpr score_t KING_DISTANCE_UNIT_SCORE = 5;
-static constexpr score_t KING_CENTER_DISTNACE_UNIT_SCORE = 5;
-
-static constexpr std::array<score_t, BOARD_SIZE> GetKingDistanceBonus() {
-    std::array<score_t, BOARD_SIZE> res{};
-    for (subcoord_t i = 0; i < BOARD_SIDE / 2; i++) {
-        for (subcoord_t j = 0; j < BOARD_SIDE / 2; j++) {
-            res[MakeCoord(i, j)] = (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
-            res[MakeCoord(InvertSubcoord(i), j)] =
-                (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
-            res[MakeCoord(i, InvertSubcoord(j))] =
-                (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
-            res[MakeCoord(InvertSubcoord(i), InvertSubcoord(j))] =
-                (i + j - BOARD_SIDE / 2 - 1) * KING_CENTER_DISTNACE_UNIT_SCORE;
-        }
-    }
-    return res;
-}
-
-static constexpr std::array<score_t, BOARD_SIZE> KING_DISTANCE_BONUS = GetKingDistanceBonus();
-
-score_t GetLateEndgameBonus(const q_core::Board board, Color c) {
-    score_t score = 0;
-    if (Q_UNLIKELY(q_util::GetBitCount(board.bb_colors[static_cast<size_t>(c)]) == 1)) {
-        q_core::coord_t weak_king_coord =
-            q_util::GetLowestBit(board.bb_colors[static_cast<size_t>(c)]);
-        q_core::coord_t strong_king_coord =
-            q_util::GetLowestBit(board.bb_colors[static_cast<size_t>(GetInvertedColor(c))]);
-        score += q_util::GetL1Distance(GetFile(weak_king_coord), GetRank(weak_king_coord),
-                                       GetFile(strong_king_coord), GetRank(weak_king_coord)) *
-                 KING_DISTANCE_UNIT_SCORE;
-        score += KING_DISTANCE_BONUS[weak_king_coord];
-    }
-    return score;
-}
-
-void ApplyLateEndgameBonus(const q_core::Board& board, score_t& score) {
-    if (std::abs(score) > LATE_ENDGAME_SCORE_FIX_THRESHOLD) {
-        score += GetLateEndgameBonus(board, board.move_side);
-        score -= GetLateEndgameBonus(board, GetInvertedColor(board.move_side));
-    }
-}
-
 score_t Evaluator::Evaluate(const q_core::Board& board) const {
     Q_ASSERT(board.IsValid());
     Q_ASSERT([&]() {
@@ -77,7 +31,6 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
         return state == state_;
     }());
     score_t res = ApplyModel(state_.model_input, board.move_side);
-    ApplyLateEndgameBonus(board, res);
     return res;
 }
 
