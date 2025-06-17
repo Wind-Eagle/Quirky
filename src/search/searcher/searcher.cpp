@@ -285,7 +285,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     // Prepare local context
     local_context_[idepth].current_move = q_core::NULL_MOVE;
     local_context_[idepth].eval = q_eval::SCORE_UNKNOWN;
-    local_context_[idepth].eval = position_.GetEvaluatorScore();
 
     // Checking transposition table
     q_core::Move tt_move = q_core::NULL_MOVE;
@@ -335,6 +334,9 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         if (!q_eval::IsScoreMate(tt_entry->eval_score)) {
             local_context_[idepth].eval = tt_entry->eval_score;
         }
+    }
+    if (local_context_[idepth].eval == q_eval::SCORE_UNKNOWN) {
+        local_context_[idepth].eval = position_.GetEvaluatorScore();
     }
 
     const bool is_check = position_.IsCheck();
