@@ -237,11 +237,11 @@ std::array<std::array<depth_t, 64>, 32> GetLMRDepthReduction() {
 inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
 
-inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 2;
-inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 125};
+inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 3;
+inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 120, 200};
 
-inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 2;
-inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 125};
+inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 3;
+inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 120, 200};
 
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
 inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
