@@ -14,12 +14,25 @@ void Position::UnmakeMove(const q_core::Move move, const q_core::MakeMoveInfo& m
 
 bool Position::MakeMove(const q_core::Move move, q_core::MakeMoveInfo& make_move_info,
                         q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info) {
-    evaluator.UpdateOnMove(board, move, evaluator_update_info);
     q_core::MakeMove(board, move, make_move_info);
     if (!q_core::WasMoveLegal(board, move)) {
-        UnmakeMove(move, make_move_info, evaluator_update_info);
+        q_core::UnmakeMove(board, move, make_move_info);
         return false;
     }
+    evaluator.UpdateOnMove(board, move, make_move_info, evaluator_update_info);
+    return true;
+}
+
+bool Position::MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
+                        q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info,
+                        const std::function<void()>& after_board_change) {
+    q_core::MakeMove(board, move, make_move_info);
+    if (!q_core::WasMoveLegal(board, move)) {
+        q_core::UnmakeMove(board, move, make_move_info);
+        return false;
+    }
+    after_board_change();
+    evaluator.UpdateOnMove(board, move, make_move_info, evaluator_update_info);
     return true;
 }
 

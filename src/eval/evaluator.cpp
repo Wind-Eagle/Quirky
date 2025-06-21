@@ -1,11 +1,14 @@
 #include "evaluator.h"
 
 #include <array>
+#include <iostream>
 
 #include "../core/util.h"
 #include "core/board/board.h"
 #include "core/board/geometry.h"
 #include "core/board/types.h"
+#include "core/moves/board_manipulation.h"
+#include "core/moves/move.h"
 #include "eval/score.h"
 #include "model.h"
 #include "util/macro.h"
@@ -37,8 +40,9 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
 void Evaluator::StartTrackingBoard(const q_core::Board& board) { state_.Build(board); }
 
 void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
-                             EvaluatorUpdateInfo& info) {
+                             const q_core::MakeMoveInfo& move_info, EvaluatorUpdateInfo& info) {
     alignas(64) auto new_model_input = state_.model_input;
+    const q_core::Color move_side = q_core::GetInvertedColor(board.move_side);
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
     const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {
@@ -47,47 +51,47 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
     };
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
-            basic_update(board.cells[move.src], board.cells[move.dst]);
-            UpdateModelInput(new_model_input, board.cells[move.src], move.dst, 1);
+            basic_update(board.cells[move.dst], move_info.dst_cell);
+            UpdateModelInput(new_model_input, board.cells[move.dst], move.dst, 1);
             break;
         }
         case MoveBasicType::PawnDouble: {
-            const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
+            const cell_t pawn = MakeCell(move_side, Piece::Pawn);
             basic_update(pawn, EMPTY_CELL);
             UpdateModelInput(new_model_input, pawn, move.dst, 1);
             break;
         }
         case MoveBasicType::EnPassant: {
-            const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
+            const cell_t pawn = MakeCell(move_side, Piece::Pawn);
             basic_update(pawn, EMPTY_CELL);
             UpdateModelInput(new_model_input, pawn, move.dst, 1);
             const coord_t taken_coord =
-                (board.move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
-            const cell_t enemy_pawn = MakeCell(GetInvertedColor(board.move_side), Piece::Pawn);
+                (move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
+            const cell_t enemy_pawn = MakeCell(GetInvertedColor(move_side), Piece::Pawn);
             UpdateModelInput(new_model_input, enemy_pawn, taken_coord, -1);
             break;
         }
         case MoveBasicType::Castling: {
-            const auto king_initial_position = board.move_side == Color::White
+            const auto king_initial_position = move_side == Color::White
                                                    ? WHITE_KING_INITIAL_POSITION
                                                    : BLACK_KING_INITIAL_POSITION;
             if (GetCastlingSide(move) == CastlingSide::Kingside) {
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
                                  king_initial_position + 2, 1);
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
                                  king_initial_position, -1);
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
                                  king_initial_position + 1, 1);
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
                                  king_initial_position + 3, -1);
             } else {
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
                                  king_initial_position - 2, 1);
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::King),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
                                  king_initial_position, -1);
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
                                  king_initial_position - 1, 1);
-                UpdateModelInput(new_model_input, MakeCell(board.move_side, Piece::Rook),
+                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
                                  king_initial_position - 4, -1);
             }
             break;
@@ -96,9 +100,9 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
         case MoveBasicType::BishopPromotion:
         case MoveBasicType::RookPromotion:
         case MoveBasicType::QueenPromotion: {
-            const cell_t pawn = MakeCell(board.move_side, Piece::Pawn);
-            basic_update(pawn, board.cells[move.dst]);
-            cell_t promotion_cell = MakeCell(board.move_side, GetPromotionPiece(move));
+            const cell_t pawn = MakeCell(move_side, Piece::Pawn);
+            basic_update(pawn, move_info.dst_cell);
+            cell_t promotion_cell = MakeCell(move_side, GetPromotionPiece(move));
             UpdateModelInput(new_model_input, promotion_cell, move.dst, 1);
             break;
         }

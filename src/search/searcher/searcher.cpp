@@ -137,6 +137,15 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
     }                                                                               \
     Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
+#define MAKE_MOVE_WITH_PREFETCH(position, move)                                                   \
+    q_core::MakeMoveInfo _make_move_info;                                           \
+    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
+    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info, [&](){tt_.Prefetch(position_.board.hash);}); \
+    if (!_legal) {                                                                  \
+        continue;                                                                   \
+    }                                                                               \
+    Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
+
 const std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
     0, 100, 300, 300, 500, 900, 3000, 100, 300, 300, 500, 900, 3000};
 
@@ -391,7 +400,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
 
         q_core::cell_t src_cell = position_.board.cells[move.src];
-        MAKE_MOVE(position_, move);
+        MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
 
         moves_done++;
