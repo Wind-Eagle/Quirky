@@ -137,10 +137,11 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
     }                                                                               \
     Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
 
-#define MAKE_MOVE_WITH_PREFETCH(position, move)                                                   \
+#define MAKE_MOVE_WITH_PREFETCH(position, move)                                     \
     q_core::MakeMoveInfo _make_move_info;                                           \
     q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
-    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info, [&](){tt_.Prefetch(position_.board.hash);}); \
+    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info,  \
+                                    [&]() { tt_.Prefetch(position_.board.hash); }); \
     if (!_legal) {                                                                  \
         continue;                                                                   \
     }                                                                               \
@@ -195,7 +196,7 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
     return score;
 }
 
-#define ON_ROOT_MOVE_SEARCHED \
+#define ON_ROOT_MOVE_SEARCHED                              \
     if constexpr (node_type == NodeType::Root) CHECK_STOP; \
     if constexpr (node_type == NodeType::Root) stat_.OnRootMove(move);
 
@@ -316,8 +317,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             }
             score = AdjustCheckmate(score, -static_cast<depth_t>(idepth));
             if (!IsMoveNull(best_move)) {
-                tt_.Store(*tt_entry, position_hash, best_move, local_context_[idepth].eval, score, depth, tt_node_type,
-                          node_type != NodeType::Simple);
+                tt_.Store(*tt_entry, position_hash, best_move, local_context_[idepth].eval, score,
+                          depth, tt_node_type, node_type != NodeType::Simple);
             }
         }
     };
@@ -350,38 +351,38 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     const bool is_check = position_.IsCheck();
 
-    // Futility pruning
-    if (node_type == NodeType::Simple && depth <= FPR_DEPTH_THRESHOLD &&
-        !q_eval::IsScoreMate(beta) && IsMoveNull(local_context_[idepth].skip_move) && !is_check) {
-        if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
-            return beta;
-        }
-    }
-
-    // Razoring
-    if (node_type == NodeType::Simple && depth <= RPR_DEPTH_THRESHOLD &&
-        !q_eval::IsScoreMate(alpha)) {
-        q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
-        if (local_context_[idepth].eval <= threshold) {
-            return QuiescenseSearch(alpha, beta);
-        }
-    }
-
-    // Null move pruning
-    if (node_type == NodeType::Simple && !is_check &&
-        !IsMoveNull(local_context_[idepth - 1].current_move) &&
-        IsMoveNull(local_context_[idepth].skip_move) &&
-        position_.HasNonPawns(position_.board.move_side) && depth > 1) {
-        if (local_context_[idepth].eval >= beta) {
-            q_core::coord_t old_en_passant_coord;
-            position_.MakeNullMove(old_en_passant_coord);
-            Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
-
-            const q_eval::score_t new_score =
-                -Search<NodeType::Simple>(depth - 3 - depth / 4, idepth + 1, -beta, -beta + 1);
-            CHECK_STOP;
-            if (new_score >= beta) {
+    if (node_type == NodeType::Simple && !is_check) {
+        // Futility pruning
+        if (depth <= FPR_DEPTH_THRESHOLD &&
+            !q_eval::IsScoreMate(beta) && IsMoveNull(local_context_[idepth].skip_move)) {
+            if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
                 return beta;
+            }
+        }
+
+        // Razoring
+        if (depth <= RPR_DEPTH_THRESHOLD && !q_eval::IsScoreMate(alpha)) {
+            q_eval::score_t threshold = alpha - RPR_MARGIN[depth];
+            if (local_context_[idepth].eval <= threshold) {
+                return QuiescenseSearch(alpha, beta);
+            }
+        }
+
+        // Null move pruning
+        if (!IsMoveNull(local_context_[idepth - 1].current_move) &&
+            IsMoveNull(local_context_[idepth].skip_move) &&
+            position_.HasNonPawns(position_.board.move_side) && depth > 1) {
+            if (local_context_[idepth].eval >= beta) {
+                q_core::coord_t old_en_passant_coord;
+                position_.MakeNullMove(old_en_passant_coord);
+                Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
+
+                const q_eval::score_t new_score =
+                    -Search<NodeType::Simple>(depth - 3 - depth / 4, idepth + 1, -beta, -beta + 1);
+                CHECK_STOP;
+                if (new_score >= beta) {
+                    return beta;
+                }
             }
         }
     }
@@ -409,8 +410,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         local_context_[idepth].current_move = move;
 
         // Late move reduction
-        if (move_picker.GetStage() >= MovePicker::Stage::History &&
-            depth >= LMR_DEPTH_THRESHOLD && moves_done > 1) {
+        if (move_picker.GetStage() >= MovePicker::Stage::History && depth >= LMR_DEPTH_THRESHOLD &&
+            moves_done > 1) {
             depth_t depth_reduction =
                 LMR_DEPTH_REDUCTION[std::min(depth, static_cast<depth_t>(31))]
                                    [std::min(static_cast<size_t>(63), history_moves_done)];
