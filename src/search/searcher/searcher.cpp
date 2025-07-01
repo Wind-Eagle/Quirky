@@ -260,10 +260,15 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Checking repetition table
     const q_core::hash_t position_hash = position_.board.hash;
-    if (!rt_.Insert(position_hash)) {
+    const bool position_changed = q_core::IsMoveNull(local_context_[idepth].skip_move);
+    if (position_changed && !rt_.Insert(position_hash)) {
         return 0;
     }
-    Q_DEFER { rt_.Erase(position_hash); };
+    Q_DEFER {
+        if (position_changed) {
+            rt_.Erase(position_hash);
+        }
+    };
 
     // Performing quiescense search
     if (depth <= 0) {
@@ -353,8 +358,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     if (node_type == NodeType::Simple && !is_check) {
         // Futility pruning
-        if (depth <= FPR_DEPTH_THRESHOLD &&
-            !q_eval::IsScoreMate(beta) && IsMoveNull(local_context_[idepth].skip_move)) {
+        if (depth <= FPR_DEPTH_THRESHOLD && !q_eval::IsScoreMate(beta) &&
+            IsMoveNull(local_context_[idepth].skip_move)) {
             if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
                 return beta;
             }
