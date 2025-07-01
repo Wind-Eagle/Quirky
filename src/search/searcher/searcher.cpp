@@ -416,9 +416,9 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             local_context_[idepth].skip_move = move;
             const auto new_score =
                 Search<NodeType::Simple>((depth - 1) / 2, idepth, singular_beta - 1, singular_beta);
-            CHECK_STOP;
             local_context_[idepth] = cur_stack;
             local_context_[idepth].skip_move = q_core::NULL_MOVE;
+            CHECK_STOP;
             if (new_score < singular_beta) {
                 extension++;
             } else if (singular_beta >= beta) {
