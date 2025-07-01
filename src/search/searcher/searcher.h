@@ -37,6 +37,7 @@ class Searcher {
         HistoryTable history_table;
         KillerMoves killer_moves[MAX_IDEPTH];
         q_core::Move best_move;
+        depth_t initial_depth;
     };
     struct LocalContext {
         q_core::Move current_move;

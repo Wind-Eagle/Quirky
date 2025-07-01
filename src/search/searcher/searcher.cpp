@@ -120,6 +120,7 @@ void Searcher::Run(depth_t max_depth) {
 
 q_eval::score_t Searcher::RunSearch(depth_t depth, q_eval::score_t alpha = q_eval::SCORE_MIN,
                                     q_eval::score_t beta = q_eval::SCORE_MAX) {
+    global_context_.initial_depth = depth;
     return Search<NodeType::Root>(depth, 0, alpha, beta);
 }
 
@@ -405,6 +406,27 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             continue;
         }
 
+        depth_t extension = 0;
+        if (node_type != NodeType::Root && move == tt_move && idepth < global_context_.initial_depth * 2 &&
+            depth >= 6 && tt_entry_found &&
+            tt_entry->info.GetNodeType() != TranspositionTable::NodeType::UpperBound &&
+            tt_entry->depth + 3 >= depth && !q_eval::IsScoreMate(tt_entry->score)) {
+            q_eval::score_t singular_beta = tt_entry->score - depth;
+            const auto cur_stack = local_context_[idepth];
+            local_context_[idepth].skip_move = move;
+            const auto new_score =
+                Search<NodeType::Simple>((depth - 1) / 2, idepth, singular_beta - 1, singular_beta);
+            CHECK_STOP;
+            local_context_[idepth] = cur_stack;
+            local_context_[idepth].skip_move = q_core::NULL_MOVE;
+            if (new_score < singular_beta) {
+                extension++;
+            } else if (singular_beta >= beta) {
+                return beta;
+            }
+        }
+        depth_t new_depth = depth + extension;
+
         q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
@@ -424,19 +446,19 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 depth_reduction--;
             }
 
-            depth_reduction = std::min(static_cast<depth_t>(depth - 1),
+            depth_reduction = std::min(static_cast<depth_t>(new_depth - 1),
                                        std::max(depth_reduction, static_cast<depth_t>(1)));
             score =
-                -Search<NodeType::Simple>(depth - depth_reduction, idepth + 1, -alpha - 1, -alpha);
+                -Search<NodeType::Simple>(new_depth - depth_reduction, idepth + 1, -alpha - 1, -alpha);
             if (score > alpha && depth_reduction > 1) {
-                score = -Search<NodeType::Simple>(depth - 1, idepth + 1, -alpha - 1, -alpha);
+                score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha);
             }
         } else if (node_type == NodeType::Simple || moves_done > 1) {
-            score = -Search<NodeType::Simple>(depth - 1, idepth + 1, -alpha - 1, -alpha);
+            score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha);
         }
         if (node_type != NodeType::Simple &&
             (moves_done == 1 || (score > alpha && (node_type == NodeType::Root || score < beta)))) {
-            score = -Search<NodeType::PV>(depth - 1, idepth + 1, -beta, -alpha);
+            score = -Search<NodeType::PV>(new_depth - 1, idepth + 1, -beta, -alpha);
         }
 
         ON_ROOT_MOVE_SEARCHED;
