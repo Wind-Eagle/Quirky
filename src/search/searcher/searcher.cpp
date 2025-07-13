@@ -39,7 +39,7 @@ std::vector<q_core::Move> Searcher::GetPV() {
     std::vector<q_core::Move> pv;
 
     position.MakeMove(global_context_.best_move, make_move_info, evaluator_update_info);
-    for (;;) {
+    while (pv.size() < 64) {
         const q_core::hash_t position_hash = position.board.hash;
         if (!rt.Insert(position_hash)) {
             break;

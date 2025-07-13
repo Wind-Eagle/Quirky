@@ -88,13 +88,13 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
     if constexpr (!p) {
         Q_ASSERT(IsCoordValidAndDefined(board.en_passant_coord));
         if (Q_UNLIKELY(board.en_passant_coord != NO_ENPASSANT_COORD)) {
-            move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord) & dst_mask;
+            move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_left)) {
                 const coord_t dst_coord = board.en_passant_coord;
                 AddPawnMoves<MoveBasicType::EnPassant, true, false>(
                     dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list, size);
             }
-            move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord) & dst_mask;
+            move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_right)) {
                 const coord_t dst_coord = board.en_passant_coord;
                 AddPawnMoves<MoveBasicType::EnPassant, true, false>(
