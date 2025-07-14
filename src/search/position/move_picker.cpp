@@ -43,15 +43,15 @@ static constexpr uint8_t CAPTURE_VICTIM_COST[q_core::NUMBER_OF_CELLS] = {0, 8,  
 static constexpr uint8_t CAPTURE_ATTACKER_COST[q_core::NUMBER_OF_CELLS] = {0, 5, 4, 3, 2, 1, 6,
                                                                            5, 4, 3, 2, 1, 6};
 
-inline static void SortByMVVLVA(const q_core::Board& board, q_core::Move* moves,
+inline static void AnnotateByMVVLVA(const q_core::Board& board, q_core::Move* moves,
                                 const size_t count) {
     for (size_t i = 0; i < count; ++i) {
         q_core::Move& move = moves[i];
         move.info = CAPTURE_VICTIM_COST[board.cells[move.dst]] +
                     CAPTURE_ATTACKER_COST[board.cells[move.src]];
     }
-    std::sort(moves, moves + count,
-              [](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });
+    /*std::sort(moves, moves + count,
+              [](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });*/
 }
 
 inline static void SortByHistoryTable(const HistoryTable& history_table, const q_core::Board& board,
@@ -88,6 +88,13 @@ q_core::Move MovePicker::GetNextMove() {
             }
         }
     }
+    if (stage_ == Stage::Capture) {
+        for (size_t i = pos_ + 1; i < list_.size; i++) {
+            if (list_.moves[i].info > list_.moves[pos_].info) {
+                std::swap(list_.moves[i], list_.moves[pos_]);
+            }
+        }
+    }
     return list_.moves[pos_++];
 }
 
@@ -107,7 +114,7 @@ void MovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                SortByMVVLVA(position_.board, list_.moves + list_old_size,
+                AnnotateByMVVLVA(position_.board, list_.moves + list_old_size,
                              list_.size - list_old_size);
                 break;
             }
@@ -168,6 +175,13 @@ q_core::Move QuiescenseMovePicker::GetNextMove() {
     if (Q_UNLIKELY(stage_ == Stage::End)) {
         return q_core::NULL_MOVE;
     }
+    if (stage_ == Stage::Capture) {
+        for (size_t i = pos_ + 1; i < list_.size; i++) {
+            if (list_.moves[i].info > list_.moves[pos_].info) {
+                std::swap(list_.moves[i], list_.moves[pos_]);
+            }
+        }
+    }
     return list_.moves[pos_++];
 }
 
@@ -180,7 +194,7 @@ void QuiescenseMovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                SortByMVVLVA(position_.board, list_.moves + list_old_size,
+                AnnotateByMVVLVA(position_.board, list_.moves + list_old_size,
                              list_.size - list_old_size);
                 break;
             }
