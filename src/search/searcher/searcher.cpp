@@ -475,7 +475,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             SAVE_ROOT_BEST_MOVE;
             if (IsMoveNull(local_context_[idepth].skip_move)) {
                 tt_store_move(beta, best_move);
-                if (move_picker.GetStage() >= MovePicker::Stage::KillerMoves) {
+                if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
                     global_context_.killer_moves[idepth].Add(best_move);
                     global_context_.history_table.Update(src_cell, best_move, depth);
                 }
