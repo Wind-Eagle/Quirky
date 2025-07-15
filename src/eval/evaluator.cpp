@@ -41,7 +41,8 @@ void Evaluator::StartTrackingBoard(const q_core::Board& board) { state_.Build(bo
 
 void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
                              const q_core::MakeMoveInfo& move_info, EvaluatorUpdateInfo& info) {
-    alignas(64) auto new_model_input = state_.model_input;
+    info.old_model_input = state_.model_input;
+    alignas(64) auto& new_model_input = state_.model_input;
     const q_core::Color move_side = q_core::GetInvertedColor(board.move_side);
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
@@ -109,9 +110,6 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
         default:
             Q_UNREACHABLE();
     }
-
-    info.old_model_input = state_.model_input;
-    state_.model_input = new_model_input;
 }
 
 void Evaluator::RevertOnMove(const q_core::Board&, q_core::Move, EvaluatorUpdateInfo& info) {
