@@ -83,11 +83,11 @@ struct LinearLayer {
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE; j++) {
-                weights_[GetWeightIndex(j * INPUT_SIZE + i)] = reader.ReadWeight<int8_t>(WEIGHT_SCALE);
+                weights_[GetWeightIndex(j * INPUT_SIZE + i)] = reader.ReadWeight<int8_t>(WEIGHT_SCALE * 2);
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE; i++) {
-            biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE);
+            biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE * 2);
         }
         for (size_t i = 0; i < 256; i++) {
             for (size_t j = 0; j < 8; j++) {
@@ -143,7 +143,7 @@ struct LinearLayer {
         }
 
         for (i = 0; i < OUT_CC; i++) {
-            out[i] = regs[i];
+            out[i] = _mm256_srai_epi32(regs[i], 1);
         }
     }
 
