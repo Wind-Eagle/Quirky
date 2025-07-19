@@ -3,6 +3,8 @@
 
 #include "../util/math.h"
 
+#include <cstdint>
+
 namespace q_eval {
 
 using stage_t = uint8_t;

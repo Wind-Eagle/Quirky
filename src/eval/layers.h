@@ -5,19 +5,16 @@
 // https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md
 // https://github.com/jhonnold/berserk/blob/main/src/nn/evaluate.c
 
+// Compilation without avx2 is currently not supported
+
+#include "model_weights.h"
 #include "util/bit.h"
-#include "util/macro.h"
-#ifndef NO_AVX2
-#include <immintrin.h>
-#endif
 
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
-
-#include "model_weights.h"
+#include <immintrin.h>
 
 namespace q_eval {
 
