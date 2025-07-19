@@ -438,12 +438,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
         // Late move reduction
         if (move_picker.GetStage() >= MovePicker::Stage::History && depth >= LMR_DEPTH_THRESHOLD &&
-            moves_done > 1) {
+            moves_done > 1 && !position_.IsCheck()) {
             depth_t depth_reduction =
                 LMR_DEPTH_REDUCTION[std::min(depth, static_cast<depth_t>(31))]
                                    [std::min(static_cast<size_t>(63), history_moves_done)];
-            if (position_.IsCheck()) {
-                depth_reduction--;
+            if (node_type == NodeType::Simple) {
+                depth_reduction++;
             }
 
             depth_reduction = std::min(static_cast<depth_t>(new_depth - 1),
