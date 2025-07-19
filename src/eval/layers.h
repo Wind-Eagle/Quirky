@@ -83,7 +83,8 @@ struct LinearLayer {
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE; j++) {
-                weights_[GetWeightIndex(j * INPUT_SIZE + i)] = reader.ReadWeight<int8_t>(WEIGHT_SCALE * 2);
+                weights_[GetWeightIndex(j * INPUT_SIZE + i)] =
+                    reader.ReadWeight<int8_t>(WEIGHT_SCALE * 2);
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE; i++) {
@@ -128,8 +129,7 @@ struct LinearLayer {
             const __m256i* c0 = (__m256i*)&weights_[i0 * OUTPUT_SIZE * SPARSE_CHUNK_SIZE];
             const __m256i* c1 = (__m256i*)&weights_[i1 * OUTPUT_SIZE * SPARSE_CHUNK_SIZE];
 
-            for (size_t j = 0; j < OUT_CC; j++)
-                Addx2(regs + j, f0, c0[j], f1, c1[j]);
+            for (size_t j = 0; j < OUT_CC; j++) Addx2(regs + j, f0, c0[j], f1, c1[j]);
         }
 
         if (i < count) {
@@ -149,8 +149,8 @@ struct LinearLayer {
 
   private:
     int GetWeightIndex(int idx) {
-    return ((idx / 4) % (INPUT_SIZE / 4) * OUTPUT_SIZE * 4) +
-            (idx / INPUT_SIZE * 4) + (idx % 4);
+        return ((idx / 4) % (INPUT_SIZE / 4) * OUTPUT_SIZE * 4) + (idx / INPUT_SIZE * 4) +
+               (idx % 4);
     }
     void Add(__m256i* acc, __m256i a, __m256i b) {
         __m256i p0 = _mm256_maddubs_epi16(a, b);

@@ -22,7 +22,8 @@ struct Position {
     bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
                   q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
     bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
-                  q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info, const std::function<void()>& after_board_change);
+                  q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info,
+                  const std::function<void()>& after_board_change);
     void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
                     q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
 

@@ -17,7 +17,8 @@ class Evaluator {
     score_t Evaluate(const q_core::Board& board) const;
 
     void StartTrackingBoard(const q_core::Board& board);
-    void UpdateOnMove(const q_core::Board& board, q_core::Move move, const q_core::MakeMoveInfo& move_info, EvaluatorUpdateInfo& info);
+    void UpdateOnMove(const q_core::Board& board, q_core::Move move,
+                      const q_core::MakeMoveInfo& move_info, EvaluatorUpdateInfo& info);
     void RevertOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo& info);
 
   private:

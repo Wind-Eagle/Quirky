@@ -3,9 +3,9 @@
 #include <cmath>
 #include <cstdint>
 
-#include "../core/util.h"
 #include "../core/board/geometry.h"
 #include "../core/board/types.h"
+#include "../core/util.h"
 #include "layers.h"
 
 namespace q_eval {
@@ -57,8 +57,10 @@ score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::C
     if (move_side == q_core::Color::White) {
         ClippedReLU16(MODEL_INPUT_SIZE, clamped_input.data(), input.data());
     } else {
-        ClippedReLU16(MODEL_INPUT_SIZE / 2, clamped_input.data(), input.data() + MODEL_INPUT_SIZE / 2);
-        ClippedReLU16(MODEL_INPUT_SIZE / 2, clamped_input.data() + MODEL_INPUT_SIZE / 2, input.data());
+        ClippedReLU16(MODEL_INPUT_SIZE / 2, clamped_input.data(),
+                      input.data() + MODEL_INPUT_SIZE / 2);
+        ClippedReLU16(MODEL_INPUT_SIZE / 2, clamped_input.data() + MODEL_INPUT_SIZE / 2,
+                      input.data());
     }
 
     alignas(64) std::array<int32_t, HIDDEN_LAYER_SECOND_SIZE> buffer;

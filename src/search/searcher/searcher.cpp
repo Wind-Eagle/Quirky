@@ -69,6 +69,10 @@ SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
                         .pv = pv};
 }
 
+inline static constexpr depth_t AW_DEPTH_THRESHOLD = 5;
+inline static constexpr q_eval::score_t AW_START_DELTA = 20;
+inline static constexpr q_eval::score_t AW_ALPHA_BETA_LIMIT = 300;
+
 void Searcher::Run(depth_t max_depth) {
     q_eval::score_t best_score = q_eval::SCORE_UNKNOWN;
 
@@ -78,17 +82,17 @@ void Searcher::Run(depth_t max_depth) {
         q_eval::score_t delta = 0;
         q_eval::score_t score = q_eval::SCORE_UNKNOWN;
 
-        if (depth > 4) {
-            delta = 20;
+        if (depth >= AW_DEPTH_THRESHOLD) {
+            delta = AW_START_DELTA;
             alpha = std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(best_score - delta));
             beta = std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(best_score + delta));
         }
 
         for (;;) {
-            if (alpha <= -300) {
+            if (alpha <= -AW_ALPHA_BETA_LIMIT) {
                 alpha = q_eval::SCORE_MIN;
             }
-            if (beta >= 300) {
+            if (beta >= AW_ALPHA_BETA_LIMIT) {
                 beta = q_eval::SCORE_MAX;
             }
 
@@ -240,14 +244,19 @@ inline static constexpr uint8_t FIFTY_MOVES_RULE_LIMIT = 100;
 inline static constexpr uint8_t FIFTY_MOVES_RULE_HASH_TABLE_LIMIT = FIFTY_MOVES_RULE_LIMIT - 10;
 
 inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 6;
-inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {0, 50, 110, 180, 260, 350, 450};
+inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {
+    0, 50, 110, 180, 260, 350, 450};
 
 inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 4;
-inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 120, 200, 325};
+inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 120, 200,
+                                                                                   325};
 
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
 inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
     GetLMRDepthReduction();
+
+inline static constexpr depth_t SE_DEPTH_THRESHOLD = 6;
+inline static constexpr depth_t SE_TT_DEPTH_DIFF_THRESHOLD = 3;
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
@@ -406,11 +415,14 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             continue;
         }
 
+        // Singular extension
         depth_t extension = 0;
-        if (node_type != NodeType::Root && move == tt_move && idepth < global_context_.initial_depth * 2 &&
-            depth >= 6 && tt_entry_found &&
+        if (node_type != NodeType::Root && move == tt_move &&
+            idepth < global_context_.initial_depth * 2 && depth >= SE_DEPTH_THRESHOLD &&
+            tt_entry_found &&
             tt_entry->info.GetNodeType() != TranspositionTable::NodeType::UpperBound &&
-            tt_entry->depth + 3 >= depth && !q_eval::IsScoreMate(tt_entry->score)) {
+            tt_entry->depth + SE_TT_DEPTH_DIFF_THRESHOLD >= depth &&
+            !q_eval::IsScoreMate(tt_entry->score)) {
             q_eval::score_t singular_beta = tt_entry->score - depth;
             const auto cur_stack = local_context_[idepth];
             local_context_[idepth].skip_move = move;
@@ -448,8 +460,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
             depth_reduction = std::min(static_cast<depth_t>(new_depth - 1),
                                        std::max(depth_reduction, static_cast<depth_t>(1)));
-            score =
-                -Search<NodeType::Simple>(new_depth - depth_reduction, idepth + 1, -alpha - 1, -alpha);
+            score = -Search<NodeType::Simple>(new_depth - depth_reduction, idepth + 1, -alpha - 1,
+                                              -alpha);
             if (score > alpha && depth_reduction > 1) {
                 score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha);
             }

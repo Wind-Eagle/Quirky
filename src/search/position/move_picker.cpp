@@ -44,14 +44,12 @@ static constexpr uint8_t CAPTURE_ATTACKER_COST[q_core::NUMBER_OF_CELLS] = {0, 5,
                                                                            5, 4, 3, 2, 1, 6};
 
 inline static void AnnotateByMVVLVA(const q_core::Board& board, q_core::Move* moves,
-                                const size_t count) {
+                                    const size_t count) {
     for (size_t i = 0; i < count; ++i) {
         q_core::Move& move = moves[i];
         move.info = CAPTURE_VICTIM_COST[board.cells[move.dst]] +
                     CAPTURE_ATTACKER_COST[board.cells[move.src]];
     }
-    /*std::sort(moves, moves + count,
-              [](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });*/
 }
 
 inline static void SortByHistoryTable(const HistoryTable& history_table, const q_core::Board& board,
@@ -115,7 +113,7 @@ void MovePicker::GetNewMoves() {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
                 AnnotateByMVVLVA(position_.board, list_.moves + list_old_size,
-                             list_.size - list_old_size);
+                                 list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {
@@ -195,7 +193,7 @@ void QuiescenseMovePicker::GetNewMoves() {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
                 AnnotateByMVVLVA(position_.board, list_.moves + list_old_size,
-                             list_.size - list_old_size);
+                                 list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {

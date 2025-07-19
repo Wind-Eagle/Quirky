@@ -19,17 +19,18 @@ TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
       size_log_(byte_size_log - CLUSTER_SIZE_LOG) {}
 
 void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_core::hash_t hash,
-                               const q_core::Move move, const q_eval::score_t eval_score, const q_eval::score_t score,
-                               const uint8_t depth, const NodeType node_type,
-                               const bool is_pv) const {
+                               const q_core::Move move, const q_eval::score_t eval_score,
+                               const q_eval::score_t score, const uint8_t depth,
+                               const NodeType node_type, const bool is_pv) const {
     const auto value_hash = GetValueHash(hash);
-    Entry new_entry{.hash_low = value_hash,
-                    .eval_score = eval_score,
-                    .score = score,
-                    .move = q_core::GetCompressedMove(move),
-                    .depth = depth,
-                    .info = EntryInfo(generation_, node_type, is_pv),
-                };
+    Entry new_entry{
+        .hash_low = value_hash,
+        .eval_score = eval_score,
+        .score = score,
+        .move = q_core::GetCompressedMove(move),
+        .depth = depth,
+        .info = EntryInfo(generation_, node_type, is_pv),
+    };
     if (GetEntryImportance(new_entry, generation_) > GetEntryImportance(old_entry, generation_)) {
         old_entry = new_entry;
     }
