@@ -11,6 +11,7 @@
 #include "core/moves/move.h"
 #include "eval/score.h"
 #include "model.h"
+#include "util/io.h"
 #include "util/macro.h"
 
 using namespace q_core;
@@ -52,8 +53,11 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
     };
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
-            basic_update(board.cells[move.dst], move_info.dst_cell);
-            UpdateModelInput(new_model_input, board.cells[move.dst], move.dst, 1);
+            if (move_info.dst_cell == EMPTY_CELL) {
+                SubAdd(new_model_input, board.cells[move.dst], move.src, board.cells[move.dst], move.dst);
+            } else {
+                SubSubAdd(new_model_input, board.cells[move.dst], move.src, move_info.dst_cell, move.dst, board.cells[move.dst], move.dst);
+            }
             break;
         }
         case MoveBasicType::PawnDouble: {

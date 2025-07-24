@@ -47,6 +47,28 @@ void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, const q_core
     layer_storage.feature_layer.Update(input.data(), pos, delta);
 }
 
+void SubAdd(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell_first,
+            q_core::coord_t coord_first, q_core::cell_t cell_second, q_core::coord_t coord_second) {
+    const size_t pos_first =
+        (static_cast<size_t>(cell_first) - 1) * q_core::BOARD_SIZE + coord_first;
+    const size_t pos_second =
+        (static_cast<size_t>(cell_second) - 1) * q_core::BOARD_SIZE + coord_second;
+    layer_storage.feature_layer.SubAdd(input.data(), pos_first, pos_second);
+}
+
+void SubSubAdd(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell_first,
+               q_core::coord_t coord_first, q_core::cell_t cell_second,
+               q_core::coord_t coord_second, q_core::cell_t cell_third,
+               q_core::coord_t coord_third) {
+    const size_t pos_first =
+        (static_cast<size_t>(cell_first) - 1) * q_core::BOARD_SIZE + coord_first;
+    const size_t pos_second =
+        (static_cast<size_t>(cell_second) - 1) * q_core::BOARD_SIZE + coord_second;
+    const size_t pos_third =
+        (static_cast<size_t>(cell_third) - 1) * q_core::BOARD_SIZE + coord_third;
+    layer_storage.feature_layer.SubSubAdd(input.data(), pos_first, pos_second, pos_third);
+}
+
 score_t ApplyModel(const std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::Color move_side) {
     alignas(64) std::array<int8_t, FEATURE_LAYER_SIZE> clamped_input{};
     if (move_side == q_core::Color::White) {

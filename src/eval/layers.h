@@ -79,6 +79,18 @@ struct FeatureLayer {
         }
     }
 
+    void SubAdd(int16_t* __restrict input, size_t position_first, size_t position_second) {
+        for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
+            input[i] += weights_[position_second][i] - weights_[position_first][i];
+        }
+    }
+
+    void SubSubAdd(int16_t* __restrict input, size_t position_first, size_t position_second, size_t position_third) {
+        for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
+            input[i] += weights_[position_third][i] - weights_[position_first][i] - weights_[position_second][i];
+        }
+    }
+
   private:
     alignas(64) std::array<std::array<int16_t, OUTPUT_SIZE>, INPUT_SIZE> weights_;
     alignas(64) std::array<int16_t, OUTPUT_SIZE> biases_;
