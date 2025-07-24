@@ -23,13 +23,13 @@ template <MoveBasicType basic_type, bool is_capture, bool is_promotion>
 void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size) {
     if constexpr (is_promotion) {
         list[size++] =
-            ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
-        list[size++] =
-            ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
         list[size++] =
             ConstructMove(src, dst, GetMoveType<MoveBasicType::RookPromotion>(is_capture));
         list[size++] =
-            ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
+        list[size++] =
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
     } else {
         list[size++] = ConstructMove(src, dst, GetMoveType<basic_type>(is_capture));
     }
