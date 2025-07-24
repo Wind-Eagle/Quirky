@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 project(Quirky)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O2 -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O2 -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt")
 
 add_compile_options(
     -Wall -Wextra -Wpedantic
@@ -37,7 +37,7 @@ add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/model_weights.h
 )
 
-add_library(util INTERFACE src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/random.h src/util/bit.h src/util/string.h src/util/math.h)
+add_library(util INTERFACE src/util/io.h src/util/macro.h src/util/error.h src/util/hash.h src/util/bit.h src/util/string.h src/util/math.h)
 
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(util)
