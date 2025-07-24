@@ -22,7 +22,7 @@ void Evaluator::State::Build(const q_core::Board& board) {
     InitializeModelInput(model_input);
     for (coord_t i = 0; i < BOARD_SIZE; i++) {
         if (board.cells[i] != EMPTY_CELL) {
-            UpdateModelInput(model_input, board.cells[i], i, 1);
+            Add(model_input, board.cells[i], i);
         }
     }
 }
@@ -47,10 +47,6 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
     const q_core::Color move_side = q_core::GetInvertedColor(board.move_side);
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
-    const auto basic_update = [&](const cell_t src_cell, const cell_t dst_cell) {
-        UpdateModelInput(new_model_input, src_cell, move.src, -1);
-        UpdateModelInput(new_model_input, dst_cell, move.dst, -1);
-    };
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
             if (move_info.dst_cell == EMPTY_CELL) {
@@ -62,42 +58,29 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
         }
         case MoveBasicType::PawnDouble: {
             const cell_t pawn = MakeCell(move_side, Piece::Pawn);
-            basic_update(pawn, EMPTY_CELL);
-            UpdateModelInput(new_model_input, pawn, move.dst, 1);
+            SubAdd(new_model_input, pawn, move.src, pawn, move.dst);
             break;
         }
         case MoveBasicType::EnPassant: {
             const cell_t pawn = MakeCell(move_side, Piece::Pawn);
-            basic_update(pawn, EMPTY_CELL);
-            UpdateModelInput(new_model_input, pawn, move.dst, 1);
             const coord_t taken_coord =
                 (move_side == Color::White ? move.dst - BOARD_SIDE : move.dst + BOARD_SIDE);
             const cell_t enemy_pawn = MakeCell(GetInvertedColor(move_side), Piece::Pawn);
-            UpdateModelInput(new_model_input, enemy_pawn, taken_coord, -1);
+            SubSubAdd(new_model_input, pawn, move.src, enemy_pawn, taken_coord, pawn, move.dst);
             break;
         }
         case MoveBasicType::Castling: {
             const auto king_initial_position = move_side == Color::White
                                                    ? WHITE_KING_INITIAL_POSITION
                                                    : BLACK_KING_INITIAL_POSITION;
+            const cell_t king = MakeCell(move_side, Piece::King);
+            const cell_t rook = MakeCell(move_side, Piece::Rook);
             if (GetCastlingSide(move) == CastlingSide::Kingside) {
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
-                                 king_initial_position + 2, 1);
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
-                                 king_initial_position, -1);
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
-                                 king_initial_position + 1, 1);
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
-                                 king_initial_position + 3, -1);
+                SubAdd(new_model_input, king, king_initial_position, king, king_initial_position + 2);
+                SubAdd(new_model_input, rook, king_initial_position + 3, rook, king_initial_position + 1);
             } else {
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
-                                 king_initial_position - 2, 1);
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::King),
-                                 king_initial_position, -1);
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
-                                 king_initial_position - 1, 1);
-                UpdateModelInput(new_model_input, MakeCell(move_side, Piece::Rook),
-                                 king_initial_position - 4, -1);
+                SubAdd(new_model_input, king, king_initial_position, king, king_initial_position - 2);
+                SubAdd(new_model_input, rook, king_initial_position - 4, rook, king_initial_position - 1);
             }
             break;
         }
@@ -106,9 +89,12 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
         case MoveBasicType::RookPromotion:
         case MoveBasicType::QueenPromotion: {
             const cell_t pawn = MakeCell(move_side, Piece::Pawn);
-            basic_update(pawn, move_info.dst_cell);
             cell_t promotion_cell = MakeCell(move_side, GetPromotionPiece(move));
-            UpdateModelInput(new_model_input, promotion_cell, move.dst, 1);
+            if (move_info.dst_cell == EMPTY_CELL) {
+                SubAdd(new_model_input, pawn, move.src, promotion_cell, move.dst);
+            } else {
+                SubSubAdd(new_model_input, pawn, move.src, move_info.dst_cell, move.dst, promotion_cell, move.dst);
+            }
             break;
         }
         default:

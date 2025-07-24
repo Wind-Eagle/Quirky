@@ -7,6 +7,7 @@
 #include "../core/board/types.h"
 #include "../core/util.h"
 #include "layers.h"
+#include "util/macro.h"
 
 namespace q_eval {
 
@@ -36,19 +37,16 @@ void InitializeModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input) {
     layer_storage.feature_layer.GetResultOnEmptyBoard(input.data());
 }
 
-void UpdateModelInput(std::array<int16_t, MODEL_INPUT_SIZE>& input, const q_core::cell_t cell,
-                      const q_core::coord_t coord, const int8_t delta) {
-    Q_ASSERT(q_core::IsCellValid(cell));
-    Q_ASSERT(q_core::IsCoordValidAndDefined(coord));
-    if (cell == q_core::EMPTY_CELL) {
-        return;
-    }
-    const size_t pos = (static_cast<size_t>(cell) - 1) * q_core::BOARD_SIZE + coord;
-    layer_storage.feature_layer.Update(input.data(), pos, delta);
+void Add(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell, q_core::coord_t coord) {
+    const size_t pos =
+        (static_cast<size_t>(cell) - 1) * q_core::BOARD_SIZE + coord;
+    layer_storage.feature_layer.Add(input.data(), pos);
 }
 
 void SubAdd(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell_first,
             q_core::coord_t coord_first, q_core::cell_t cell_second, q_core::coord_t coord_second) {
+    Q_ASSERT(cell_first != q_core::EMPTY_CELL && cell_second != q_core::EMPTY_CELL);
+    Q_ASSERT(q_core::IsCoordValidAndDefined(coord_first) && q_core::IsCoordValidAndDefined(coord_second));
     const size_t pos_first =
         (static_cast<size_t>(cell_first) - 1) * q_core::BOARD_SIZE + coord_first;
     const size_t pos_second =
@@ -60,6 +58,8 @@ void SubSubAdd(std::array<int16_t, MODEL_INPUT_SIZE>& input, q_core::cell_t cell
                q_core::coord_t coord_first, q_core::cell_t cell_second,
                q_core::coord_t coord_second, q_core::cell_t cell_third,
                q_core::coord_t coord_third) {
+    Q_ASSERT(cell_first != q_core::EMPTY_CELL && cell_second != q_core::EMPTY_CELL && cell_third != q_core::EMPTY_CELL);
+    Q_ASSERT(q_core::IsCoordValidAndDefined(coord_first) && q_core::IsCoordValidAndDefined(coord_second) && q_core::IsCoordValidAndDefined(coord_third));
     const size_t pos_first =
         (static_cast<size_t>(cell_first) - 1) * q_core::BOARD_SIZE + coord_first;
     const size_t pos_second =

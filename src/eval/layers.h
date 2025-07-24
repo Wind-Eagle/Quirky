@@ -79,15 +79,81 @@ struct FeatureLayer {
         }
     }
 
-    void SubAdd(int16_t* __restrict input, size_t position_first, size_t position_second) {
-        for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
-            input[i] += weights_[position_second][i] - weights_[position_first][i];
+    void Add(int16_t* input, size_t position) {
+        __m256i regs[16];
+        for (size_t c = 0; c < 2; c++) {
+            const size_t unroll_offset = c * 256;
+            
+            __m256i* inputs = (__m256i*)&input[unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_load_si256(&inputs[i]);
+            }
+
+            const __m256i* second = (__m256i*)&weights_[position][unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_add_epi16(regs[i], second[i]);
+            }
+
+            for (size_t i = 0; i < 16; i++) {
+                _mm256_store_si256(&inputs[i], regs[i]);
+            }
+        }
+    }
+
+    void SubAdd(int16_t* input, size_t position_first, size_t position_second) {
+        __m256i regs[16];
+        for (size_t c = 0; c < 2; c++) {
+            const size_t unroll_offset = c * 256;
+            
+            __m256i* inputs = (__m256i*)&input[unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_load_si256(&inputs[i]);
+            }
+
+            const __m256i* first = (__m256i*)&weights_[position_first][unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_sub_epi16(regs[i], first[i]);
+            }
+
+            const __m256i* second = (__m256i*)&weights_[position_second][unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_add_epi16(regs[i], second[i]);
+            }
+
+            for (size_t i = 0; i < 16; i++) {
+                _mm256_store_si256(&inputs[i], regs[i]);
+            }
         }
     }
 
     void SubSubAdd(int16_t* __restrict input, size_t position_first, size_t position_second, size_t position_third) {
-        for (uint16_t i = 0; i < OUTPUT_SIZE; i++) {
-            input[i] += weights_[position_third][i] - weights_[position_first][i] - weights_[position_second][i];
+        __m256i regs[16];
+        for (size_t c = 0; c < 2; c++) {
+            const size_t unroll_offset = c * 256;
+            
+            __m256i* inputs = (__m256i*)&input[unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_load_si256(&inputs[i]);
+            }
+
+            const __m256i* first = (__m256i*)&weights_[position_first][unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_sub_epi16(regs[i], first[i]);
+            }
+
+            const __m256i* second = (__m256i*)&weights_[position_second][unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_sub_epi16(regs[i], second[i]);
+            }
+
+            const __m256i* third = (__m256i*)&weights_[position_third][unroll_offset];
+            for (size_t i = 0; i < 16; i++) {
+                regs[i] = _mm256_add_epi16(regs[i], third[i]);
+            }
+
+            for (size_t i = 0; i < 16; i++) {
+                _mm256_store_si256(&inputs[i], regs[i]);
+            }
         }
     }
 
