@@ -7,14 +7,17 @@
 
 // Compilation without avx2 is currently not supported
 
-#include "model_weights.h"
-#include "util/bit.h"
+#include <immintrin.h>
 
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <immintrin.h>
+
+#include "core/board/types.h"
+#include "core/util.h"
+#include "model_weights.h"
+#include "util/bit.h"
 
 namespace q_eval {
 
@@ -43,12 +46,19 @@ struct FeatureLayer {
   public:
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
-            for (size_t j = 0; j < OUTPUT_SIZE; j++) {
+            for (size_t j = 0; j < OUTPUT_SIZE / 2; j++) {
                 weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE);
+                const q_core::cell_t cell = i / q_core::BOARD_SIZE + 1;
+                const q_core::coord_t coord = i % q_core::BOARD_SIZE;
+                size_t pos =
+                    (static_cast<size_t>(q_core::FlipCellColor(cell)) - 1) * q_core::BOARD_SIZE +
+                    q_core::FlipCoord(coord);
+                weights_[pos][j + OUTPUT_SIZE / 2] = weights_[i][j];
             }
         }
-        for (size_t i = 0; i < OUTPUT_SIZE; i++) {
+        for (size_t i = 0; i < OUTPUT_SIZE / 2; i++) {
             biases_[i] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE);
+            biases_[i + OUTPUT_SIZE / 2] = biases_[i];
         }
     }
 
