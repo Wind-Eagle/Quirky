@@ -38,11 +38,13 @@ class Searcher {
         KillerMoves killer_moves[MAX_IDEPTH];
         q_core::Move best_move;
         depth_t initial_depth;
+        idepth_t nmp_min_idepth;
     };
     struct LocalContext {
         q_core::Move current_move;
         q_eval::score_t eval;
         q_core::Move skip_move = q_core::NULL_MOVE;
+        bool nmp_verification = false;
     };
 
     TranspositionTable& tt_;

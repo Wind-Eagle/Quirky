@@ -25,6 +25,7 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& 
     for (size_t i = 0; i < MAX_IDEPTH; i++) {
         local_context_[i] = LocalContext();
     }
+    global_context_.nmp_min_idepth = 0;
 }
 
 std::vector<q_core::Move> Searcher::GetPV() {
@@ -270,7 +271,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Checking repetition table
     const q_core::hash_t position_hash = position_.board.hash;
-    const bool position_changed = q_core::IsMoveNull(local_context_[idepth].skip_move);
+    const bool position_changed = q_core::IsMoveNull(local_context_[idepth].skip_move) && !local_context_[idepth].nmp_verification;
     if (position_changed && !rt_.Insert(position_hash)) {
         return 0;
     }
@@ -386,17 +387,27 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         // Null move pruning
         if (!IsMoveNull(local_context_[idepth - 1].current_move) &&
             IsMoveNull(local_context_[idepth].skip_move) &&
-            position_.HasNonPawns(position_.board.move_side) && depth > 1) {
+            position_.HasNonPawns(position_.board.move_side) && depth >= 3 && idepth >= global_context_.nmp_min_idepth) {
             if (local_context_[idepth].eval >= beta) {
                 q_core::coord_t old_en_passant_coord;
                 position_.MakeNullMove(old_en_passant_coord);
-                Q_DEFER { position_.UnmakeNullMove(old_en_passant_coord); };
-
                 const q_eval::score_t new_score =
-                    -Search<NodeType::Simple>(depth - 3 - depth / 4, idepth + 1, -beta, -beta + 1);
+                    -Search<NodeType::Simple>(depth - 3 - depth / 3, idepth + 1, -beta, -beta + 1);
+                position_.UnmakeNullMove(old_en_passant_coord); 
                 CHECK_STOP;
                 if (new_score >= beta) {
-                    return beta;
+                    if (depth < 12 || global_context_.nmp_min_idepth > 0) {
+                        return beta;
+                    }
+                    global_context_.nmp_min_idepth = idepth + (depth - 3 - depth / 3) * 3 / 4;
+                    local_context_[idepth].nmp_verification = true;
+                    const q_eval::score_t verif_score = Search<NodeType::Simple>(depth - 3 - depth / 3, idepth, beta - 1, beta);
+                    local_context_[idepth].nmp_verification = false;
+                    global_context_.nmp_min_idepth = 0;
+                    CHECK_STOP;
+                    if (verif_score >= beta) {
+                        return beta;
+                    }
                 }
             }
         }
