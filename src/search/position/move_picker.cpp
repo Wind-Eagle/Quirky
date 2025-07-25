@@ -2,8 +2,12 @@
 
 #include <algorithm>
 
+#include "core/board/board.h"
+#include "core/board/types.h"
+#include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "position.h"
+#include "util/io.h"
 
 namespace q_search {
 
@@ -100,6 +104,10 @@ q_core::Move MovePicker::GetNextMove() {
     return list_.moves[pos_++];
 }
 
+bool IsValidKiller(const q_core::Board& board, const q_core::Move move) {
+    return q_core::IsMovePseudolegal(board, move) && board.cells[move.dst] == q_core::EMPTY_CELL;
+}
+
 void MovePicker::GetNewMoves() {
     while (pos_ == list_.size) {
         if (stage_ != Stage::End) {
@@ -126,7 +134,7 @@ void MovePicker::GetNewMoves() {
             }
             case Stage::KillerMoves: {
                 for (size_t i = 0; i < KillerMoves::COUNT; i++) {
-                    if (q_core::IsMovePseudolegal(position_.board, killer_moves_.GetMove(i))) {
+                    if (IsValidKiller(position_.board, killer_moves_.GetMove(i))) {
                         list_.moves[list_.size] = killer_moves_.GetMove(i);
                         list_.size++;
                     }
