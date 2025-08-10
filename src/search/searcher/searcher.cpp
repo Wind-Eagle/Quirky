@@ -387,7 +387,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         // Null move pruning
         if (!IsMoveNull(local_context_[idepth - 1].current_move) &&
             IsMoveNull(local_context_[idepth].skip_move) &&
-            position_.HasNonPawns(position_.board.move_side) && depth >= 3 && idepth >= global_context_.nmp_min_idepth) {
+            position_.HasNonPawns(position_.board.move_side) && depth > 1 && idepth >= global_context_.nmp_min_idepth) {
             if (local_context_[idepth].eval >= beta) {
                 q_core::coord_t old_en_passant_coord;
                 position_.MakeNullMove(old_en_passant_coord);
