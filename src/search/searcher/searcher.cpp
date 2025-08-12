@@ -389,19 +389,20 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             IsMoveNull(local_context_[idepth].skip_move) &&
             position_.HasNonPawns(position_.board.move_side) && depth > 1 && idepth >= global_context_.nmp_min_idepth) {
             if (local_context_[idepth].eval >= beta) {
+                const depth_t reduction = depth / 3 + 3 + std::min(4, (local_context_[idepth].eval - beta) / 150);
                 q_core::coord_t old_en_passant_coord;
                 position_.MakeNullMove(old_en_passant_coord);
                 const q_eval::score_t new_score =
-                    -Search<NodeType::Simple>(depth - 3 - depth / 3, idepth + 1, -beta, -beta + 1);
-                position_.UnmakeNullMove(old_en_passant_coord); 
+                    -Search<NodeType::Simple>(depth - reduction, idepth + 1, -beta, -beta + 1);
+                position_.UnmakeNullMove(old_en_passant_coord);
                 CHECK_STOP;
                 if (new_score >= beta) {
                     if (depth < 12 || global_context_.nmp_min_idepth > 0) {
                         return beta;
                     }
-                    global_context_.nmp_min_idepth = idepth + (depth - 3 - depth / 3) * 3 / 4;
+                    global_context_.nmp_min_idepth = idepth + (depth - reduction) * 3 / 4;
                     local_context_[idepth].nmp_verification = true;
-                    const q_eval::score_t verif_score = Search<NodeType::Simple>(depth - 3 - depth / 3, idepth, beta - 1, beta);
+                    const q_eval::score_t verif_score = Search<NodeType::Simple>(depth - reduction, idepth, beta - 1, beta);
                     local_context_[idepth].nmp_verification = false;
                     global_context_.nmp_min_idepth = 0;
                     CHECK_STOP;
