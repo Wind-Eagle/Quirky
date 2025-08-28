@@ -1,0 +1,12 @@
+{
+    "gamesInBatch": 100000,
+    "batches": 100,
+    "fensInGame": 32,
+    "cores": 16,
+    "engineName": "./Quirky",
+    "teacherEngineName": "./stockfish",
+    "filterBinaryName": "./model_sampler",
+    "playMovetime": 20,
+    "labelMovetime": 100,
+    "openingBook": "./book.epd"
+}
