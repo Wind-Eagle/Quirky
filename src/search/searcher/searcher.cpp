@@ -6,6 +6,7 @@
 #include "../../core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/moves/move.h"
+#include "core/util.h"
 #include "eval/score.h"
 #include "search/control/control.h"
 #include "search/position/move_picker.h"
@@ -420,6 +421,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
     size_t history_moves_done = 0;
+    q_core::MoveList quiet_moves;
+
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         CHECK_STOP;
@@ -451,9 +454,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
         depth_t new_depth = depth + extension;
 
-        q_core::cell_t src_cell = position_.board.cells[move.src];
         MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
+
+        if (!q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move)) {
+            quiet_moves.moves[quiet_moves.size++] = move;
+        }
 
         moves_done++;
         history_moves_done += move_picker.GetStage() == MovePicker::Stage::History ? 1 : 0;
@@ -501,7 +507,10 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 tt_store_move(beta, best_move);
                 if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
                     global_context_.killer_moves[idepth].Add(best_move);
-                    global_context_.history_table.Update(src_cell, best_move, depth);
+                    global_context_.history_table.UpdateGood(q_core::GetInvertedColor(position_.board.move_side), best_move, depth);
+                    for (size_t i = 0; i + 1 < quiet_moves.size; i++) {
+                        global_context_.history_table.UpdateBad(q_core::GetInvertedColor(position_.board.move_side), quiet_moves.moves[i], depth);
+                    }
                 }
             }
             return beta;
