@@ -55,7 +55,7 @@ q_core::Board::FENParseStatus Position::MakeFromFEN(const std::string_view& fen)
     return q_core::Board::FENParseStatus::Ok;
 }
 
-q_eval::score_t Position::GetEvaluatorScore() const { return evaluator.Evaluate(board); }
+q_eval::score_t Position::GetEvaluatorScore() { return evaluator.Evaluate(board); }
 
 bool Position::HasNonPawns() const {
     return board.bb_pieces[q_core::MakeCell(q_core::Color::White, q_core::Piece::Knight)] |

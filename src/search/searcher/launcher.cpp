@@ -30,7 +30,7 @@ void ProcessPositionMoves(Position& position, const std::vector<q_core::Move>& m
             helper_rt.Insert(position.board.hash);
         }
         q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
+        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info(position.evaluator.Arena());
         position.MakeMove(move, make_move_info, evaluator_update_info);
     }
 }
@@ -99,7 +99,7 @@ q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
     q_core::Move random_move = q_core::NULL_MOVE;
     for (size_t i = 0; i < move_list.size; i++) {
         q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
+        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info(position.evaluator.Arena());
         bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_update_info);
         if (!legal) {
             continue;
@@ -121,7 +121,9 @@ void SearchLauncher::StartMainThread(const Position& start_position,
                                      const std::vector<q_core::Move>& moves,
                                      time_control_t time_control, depth_t max_depth) {
     RepetitionTable rt{GetRTByteSizeLog(moves.size())};
-    Position position = start_position;
+    Position position;
+    position.board = start_position.board;
+    position.evaluator.StartTrackingBoard(position.board);
     ProcessPositionMoves(position, moves, rt);
 
     bool has_two_legal_moves = false;

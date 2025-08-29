@@ -7,6 +7,7 @@
 #include "../../core/board/board.h"
 #include "../../core/moves/board_manipulation.h"
 #include "../../eval/evaluator.h"
+#include "util/io.h"
 
 namespace q_search {
 
@@ -14,6 +15,11 @@ using depth_t = int16_t;
 using idepth_t = uint16_t;
 
 struct Position {
+    Position() {}
+    Position(const Position& position) {
+        board = position.board;
+        evaluator.StartTrackingBoard(board);
+    }
     q_core::Board board;
     q_eval::Evaluator evaluator;
 
@@ -34,7 +40,7 @@ struct Position {
     bool HasNonPawns(q_core::Color c) const;
     bool IsCheck() const;
 
-    q_eval::score_t GetEvaluatorScore() const;
+    q_eval::score_t GetEvaluatorScore();
 };
 
 }  // namespace q_search

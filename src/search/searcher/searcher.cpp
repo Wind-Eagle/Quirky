@@ -37,7 +37,7 @@ std::vector<q_core::Move> Searcher::GetPV() {
     RepetitionTable rt(10);
     Position position = position_;
     q_core::MakeMoveInfo make_move_info;
-    q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
+    q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info(position.evaluator.Arena());
     std::vector<q_core::Move> pv;
 
     position.MakeMove(global_context_.best_move, make_move_info, evaluator_update_info);
@@ -137,7 +137,7 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 
 #define MAKE_MOVE(position, move)                                                   \
     q_core::MakeMoveInfo _make_move_info;                                           \
-    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
+    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info(position.evaluator.Arena());                  \
     bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info); \
     if (!_legal) {                                                                  \
         continue;                                                                   \
@@ -146,7 +146,7 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 
 #define MAKE_MOVE_WITH_PREFETCH(position, move)                                     \
     q_core::MakeMoveInfo _make_move_info;                                           \
-    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
+    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info(position.evaluator.Arena());                  \
     bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info,  \
                                     [&]() { tt_.Prefetch(position_.board.hash); }); \
     if (!_legal) {                                                                  \
