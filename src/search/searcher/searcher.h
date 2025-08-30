@@ -3,12 +3,12 @@
 
 #include <vector>
 
-#include "../control/control.h"
-#include "../control/stat.h"
-#include "../position/move_picker.h"
-#include "../position/position.h"
-#include "../position/repetition_table.h"
-#include "../position/transposition_table.h"
+#include "search/control/control.h"
+#include "search/control/stat.h"
+#include "search/position/move_picker.h"
+#include "search/position/position.h"
+#include "search/position/repetition_table.h"
+#include "search/position/transposition_table.h"
 #include "core/moves/move.h"
 
 namespace q_search {
@@ -37,11 +37,14 @@ class Searcher {
         HistoryTable history_table;
         KillerMoves killer_moves[MAX_IDEPTH];
         q_core::Move best_move;
+        depth_t initial_depth;
+        idepth_t nmp_min_idepth;
     };
     struct LocalContext {
         q_core::Move current_move;
         q_eval::score_t eval;
         q_core::Move skip_move = q_core::NULL_MOVE;
+        bool nmp_verification = false;
     };
 
     TranspositionTable& tt_;

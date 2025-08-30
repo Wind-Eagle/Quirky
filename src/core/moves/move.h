@@ -1,8 +1,8 @@
 #ifndef QUIRKY_SRC_CORE_MOVES_MOVE_H
 #define QUIRKY_SRC_CORE_MOVES_MOVE_H
 
-#include "../board/board.h"
-#include "../board/geometry.h"
+#include "core/board/board.h"
+#include "core/board/geometry.h"
 #include "util/bit.h"
 
 namespace q_core {

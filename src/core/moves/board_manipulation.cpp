@@ -1,7 +1,7 @@
 #include "board_manipulation.h"
 
-#include "../board/hash.h"
-#include "../util.h"
+#include "core/board/hash.h"
+#include "core/util.h"
 #include "attack.h"
 #include "move.h"
 

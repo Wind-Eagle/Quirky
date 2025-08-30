@@ -1,8 +1,8 @@
 #include "movegen.h"
 
-#include "../../util/bit.h"
-#include "../board/geometry.h"
-#include "../util.h"
+#include "util/bit.h"
+#include "core/board/geometry.h"
+#include "core/util.h"
 #include "core/board/types.h"
 #include "core/moves/attack.h"
 #include "magic.h"
@@ -23,13 +23,13 @@ template <MoveBasicType basic_type, bool is_capture, bool is_promotion>
 void AddPawnMoves(const coord_t src, const coord_t dst, Move* list, size_t& size) {
     if constexpr (is_promotion) {
         list[size++] =
-            ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
-        list[size++] =
-            ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
         list[size++] =
             ConstructMove(src, dst, GetMoveType<MoveBasicType::RookPromotion>(is_capture));
         list[size++] =
-            ConstructMove(src, dst, GetMoveType<MoveBasicType::QueenPromotion>(is_capture));
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::KnightPromotion>(is_capture));
+        list[size++] =
+            ConstructMove(src, dst, GetMoveType<MoveBasicType::BishopPromotion>(is_capture));
     } else {
         list[size++] = ConstructMove(src, dst, GetMoveType<basic_type>(is_capture));
     }
@@ -88,13 +88,13 @@ void GeneratePawnCaptures(const Board& board, Move* list, const bitboard_t src,
     if constexpr (!p) {
         Q_ASSERT(IsCoordValidAndDefined(board.en_passant_coord));
         if (Q_UNLIKELY(board.en_passant_coord != NO_ENPASSANT_COORD)) {
-            move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord) & dst_mask;
+            move_dst_left = move_left & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_left)) {
                 const coord_t dst_coord = board.en_passant_coord;
                 AddPawnMoves<MoveBasicType::EnPassant, true, false>(
                     dst_coord - (CURRENT_PAWN_MOVE_DELTA - 1), dst_coord, list, size);
             }
-            move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord) & dst_mask;
+            move_dst_right = move_right & MakeBitboardFromCoord(board.en_passant_coord);
             if (Q_UNLIKELY(move_dst_right)) {
                 const coord_t dst_coord = board.en_passant_coord;
                 AddPawnMoves<MoveBasicType::EnPassant, true, false>(

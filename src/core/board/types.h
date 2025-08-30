@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "../../util/macro.h"
+#include "util/macro.h"
 
 namespace q_core {
 

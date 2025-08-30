@@ -1,4 +1,5 @@
 #include "transposition_table.h"
+#include "core/moves/move.h"
 
 namespace q_search {
 
@@ -6,7 +7,7 @@ uint64_t GetKeyHash(const q_core::hash_t hash, const uint8_t size_log) {
     return hash & ((1ULL << size_log) - 1);
 }
 
-uint32_t GetValueHash(const q_core::hash_t hash) { return hash >> 32; }
+uint16_t GetValueHash(const q_core::hash_t hash) { return hash >> 48; }
 
 int16_t GetEntryImportance(const auto entry, uint8_t cur_generation) {
     uint8_t generation_diff = cur_generation - entry.info.GetGeneration();
@@ -19,17 +20,22 @@ TranspositionTable::TranspositionTable(const uint8_t byte_size_log)
       size_log_(byte_size_log - CLUSTER_SIZE_LOG) {}
 
 void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_core::hash_t hash,
-                               const q_core::Move move, const q_eval::score_t score,
-                               const uint8_t depth, const NodeType node_type,
-                               const bool is_pv) const {
+                               const q_core::Move move, const q_eval::score_t eval_score,
+                               const q_eval::score_t score, const uint8_t depth,
+                               const NodeType node_type, const bool is_pv) const {
     const auto value_hash = GetValueHash(hash);
-    Entry new_entry{.hash_low = static_cast<uint16_t>(value_hash & ((1ULL << 16) - 1)),
-                    .hash_high = static_cast<uint16_t>(value_hash >> 16),
-                    .score = score,
-                    .move = q_core::GetCompressedMove(move),
-                    .depth = depth,
-                    .info = EntryInfo(generation_, node_type, is_pv)};
-    if (GetEntryImportance(new_entry, generation_) > GetEntryImportance(old_entry, generation_)) {
+    if (!q_core::IsMoveNull(move) || old_entry.hash_low != value_hash) {
+        old_entry.move = q_core::GetCompressedMove(move);
+    }
+    if (node_type == NodeType::ExactValue || old_entry.hash_low != value_hash || depth + 4 > old_entry.depth || old_entry.info.GetGeneration() != generation_) {
+            Entry new_entry{
+            .hash_low = value_hash,
+            .eval_score = eval_score,
+            .score = score,
+            .move = q_core::GetCompressedMove(move),
+            .depth = depth,
+            .info = EntryInfo(generation_, node_type, is_pv),
+        };
         old_entry = new_entry;
     }
 }
@@ -40,8 +46,7 @@ TranspositionTable::Entry* TranspositionTable::GetEntry(const q_core::hash_t has
     const auto value_hash = GetValueHash(hash);
     auto& entry = data_[key_hash];
     for (uint8_t i = 0; i < Cluster::CLUSTER_ENTRY_COUNT; i++) {
-        const uint32_t entry_hash = static_cast<uint32_t>(entry.data[i].hash_low) +
-                                    (static_cast<uint32_t>(entry.data[i].hash_high) << 16);
+        const uint16_t entry_hash = entry.data[i].hash_low;
         if (entry_hash == value_hash) {
             found = true;
             return &entry.data[i];

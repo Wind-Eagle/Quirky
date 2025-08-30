@@ -3,8 +3,8 @@
 
 #include <array>
 
-#include "../../util/hash.h"
-#include "../../util/macro.h"
+#include "util/hash.h"
+#include "util/macro.h"
 #include "types.h"
 
 namespace {

@@ -1,7 +1,7 @@
 #ifndef QUIRKY_SRC_CORE_MOVES_MOVEGEN_H
 #define QUIRKY_SRC_CORE_MOVES_MOVEGEN_H
 
-#include "../board/board.h"
+#include "core/board/board.h"
 #include "core/board/types.h"
 #include "move.h"
 

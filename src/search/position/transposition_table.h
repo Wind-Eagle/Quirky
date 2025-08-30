@@ -3,9 +3,9 @@
 
 #include <memory>
 
-#include "../../core/board/types.h"
-#include "../../core/moves/move.h"
-#include "../../eval/score.h"
+#include "core/board/types.h"
+#include "core/moves/move.h"
+#include "eval/score.h"
 
 namespace q_search {
 
@@ -36,7 +36,7 @@ class TranspositionTable {
         // actually, we can store 16 bit of hash, but it requires a number of experiments
         // storing 32-bit hash as two numbers to get proper struct alignment
         uint16_t hash_low;
-        uint16_t hash_high;
+        q_eval::score_t eval_score;
         q_eval::score_t score;
         q_core::compressed_move_t move;
         uint8_t depth = 0;
@@ -65,7 +65,8 @@ class TranspositionTable {
     explicit TranspositionTable(uint8_t byte_size_log);
 
     void Store(TranspositionTable::Entry& old_entry, q_core::hash_t hash, q_core::Move move,
-               q_eval::score_t score, uint8_t depth, NodeType node_type, bool is_pv) const;
+               q_eval::score_t eval_score, q_eval::score_t score, uint8_t depth, NodeType node_type,
+               bool is_pv) const;
     Entry* GetEntry(q_core::hash_t hash, bool& found) const;
     void Prefetch(q_core::hash_t hash) const;
 

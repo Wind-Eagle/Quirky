@@ -1,11 +1,12 @@
 #ifndef QUIRKY_SRC_SEARCH_POSITION_POSITION_H
 #define QUIRKY_SRC_SEARCH_POSITION_POSITION_H
 
+#include <functional>
 #include <string_view>
 
-#include "../../core/board/board.h"
-#include "../../core/moves/board_manipulation.h"
-#include "../../eval/evaluator.h"
+#include "core/board/board.h"
+#include "core/moves/board_manipulation.h"
+#include "eval/evaluator.h"
 
 namespace q_search {
 
@@ -20,6 +21,9 @@ struct Position {
 
     bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
                   q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
+    bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
+                  q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info,
+                  const std::function<void()>& after_board_change);
     void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
                     q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
 

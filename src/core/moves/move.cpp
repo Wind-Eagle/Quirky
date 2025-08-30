@@ -1,7 +1,7 @@
 #include "move.h"
 
-#include "../board/board.h"
-#include "../util.h"
+#include "core/board/board.h"
+#include "core/util.h"
 
 namespace q_core {
 

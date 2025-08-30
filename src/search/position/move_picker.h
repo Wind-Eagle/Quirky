@@ -1,7 +1,8 @@
 #ifndef QUIRKY_SRC_SEARCH_POSITION_MOVE_PICKER_H
 #define QUIRKY_SRC_SEARCH_POSITION_MOVE_PICKER_H
 
-#include "../../core/moves/movegen.h"
+#include "core/moves/movegen.h"
+#include "core/board/types.h"
 #include "position.h"
 
 namespace q_search {
@@ -20,11 +21,12 @@ class KillerMoves {
 class HistoryTable {
   public:
     HistoryTable();
-    void Update(q_core::cell_t cell, q_core::Move move, depth_t depth);
-    uint64_t GetScore(q_core::cell_t cell, q_core::Move move) const;
+    void UpdateGood(q_core::Color c, q_core::Move move, depth_t depth);
+    void UpdateBad(q_core::Color c, q_core::Move move, depth_t depth);
+    int64_t GetScore(q_core::Color c, q_core::Move move) const;
 
   private:
-    std::array<std::array<uint64_t, q_core::BOARD_SIZE>, q_core::NUMBER_OF_CELLS> table_;
+    std::array<std::array<std::array<int64_t, q_core::BOARD_SIZE>, q_core::BOARD_SIZE>, 2> table_;
 };
 
 class MovePicker {

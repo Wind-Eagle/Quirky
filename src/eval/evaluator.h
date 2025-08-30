@@ -1,8 +1,9 @@
 #ifndef QUIRKY_SRC_EVAL_EVAL_H
 #define QUIRKY_SRC_EVAL_EVAL_H
 
-#include "../core/board/board.h"
-#include "../core/moves/move.h"
+#include "core/board/board.h"
+#include "core/moves/move.h"
+#include "core/moves/board_manipulation.h"
 #include "model.h"
 
 namespace q_eval {
@@ -10,13 +11,14 @@ namespace q_eval {
 class Evaluator {
   public:
     struct EvaluatorUpdateInfo {
-        alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
+        alignas(64) std::array<int16_t, MODEL_INPUT_SIZE> old_model_input;
     };
 
     score_t Evaluate(const q_core::Board& board) const;
 
     void StartTrackingBoard(const q_core::Board& board);
-    void UpdateOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo& info);
+    void UpdateOnMove(const q_core::Board& board, q_core::Move move,
+                      const q_core::MakeMoveInfo& move_info, EvaluatorUpdateInfo& info);
     void RevertOnMove(const q_core::Board& board, q_core::Move move, EvaluatorUpdateInfo& info);
 
   private:
@@ -31,7 +33,7 @@ class Evaluator {
             return true;
         }
 
-        alignas(32) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
+        alignas(64) std::array<int16_t, MODEL_INPUT_SIZE> model_input;
     };
     State state_;
 };

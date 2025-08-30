@@ -1,7 +1,9 @@
 #ifndef QUIRKY_SRC_EVAL_SCORE_H
 #define QUIRKY_SRC_EVAL_SCORE_H
 
-#include "../util/math.h"
+#include "util/math.h"
+
+#include <cstdint>
 
 namespace q_eval {
 

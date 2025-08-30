@@ -2,8 +2,12 @@
 
 #include <algorithm>
 
+#include "core/board/board.h"
+#include "core/board/types.h"
+#include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "position.h"
+#include "util/io.h"
 
 namespace q_search {
 
@@ -23,25 +27,46 @@ void KillerMoves::Add(const q_core::Move move) {
 q_core::Move KillerMoves::GetMove(const uint8_t index) const { return moves_[index]; }
 
 HistoryTable::HistoryTable() {
-    for (q_core::cell_t i = 0; i < q_core::NUMBER_OF_CELLS; i++) {
+    for (q_core::cell_t i = 0; i < q_core::BOARD_SIZE; i++) {
         for (q_core::coord_t j = 0; j < q_core::BOARD_SIZE; j++) {
-            table_[i][j] = 0;
+            table_[0][i][j] = 0;
+            table_[1][i][j] = 0;
         }
     }
 }
 
-void HistoryTable::Update(const q_core::cell_t cell, const q_core::Move move, const depth_t depth) {
-    table_[cell][move.dst] += depth * depth;
+// History bonuses are a mixture of ideas used in
+// avalanche and berserk chess engines
+// https://github.com/SnowballSH/Avalanche/blob/master/src/engine/search.zig
+// https://github.com/jhonnold/berserk/blob/main/src/history.h
+
+void HistoryTable::UpdateGood(const q_core::Color c, const q_core::Move move, const depth_t depth) {
+    int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
+    table_[static_cast<size_t>(c)][move.src][move.dst] += adj - table_[static_cast<size_t>(c)][move.src][move.dst] / 16384;
 }
 
-uint64_t HistoryTable::GetScore(const q_core::cell_t cell, const q_core::Move move) const {
-    return table_[cell][move.dst];
+void HistoryTable::UpdateBad(const q_core::Color c, const q_core::Move move, const depth_t depth) {
+    int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
+    table_[static_cast<size_t>(c)][move.src][move.dst] -= adj - table_[static_cast<size_t>(c)][move.src][move.dst] / 16384;
+}
+
+int64_t HistoryTable::GetScore(const q_core::Color c, const q_core::Move move) const {
+    return table_[static_cast<size_t>(c)][move.src][move.dst];
 }
 
 static constexpr uint8_t CAPTURE_VICTIM_COST[q_core::NUMBER_OF_CELLS] = {0, 8,  16, 24, 30, 36, 0,
                                                                          8, 16, 24, 30, 36, 0};
 static constexpr uint8_t CAPTURE_ATTACKER_COST[q_core::NUMBER_OF_CELLS] = {0, 5, 4, 3, 2, 1, 6,
                                                                            5, 4, 3, 2, 1, 6};
+
+inline static void AnnotateByMVVLVA(const q_core::Board& board, q_core::Move* moves,
+                                    const size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        q_core::Move& move = moves[i];
+        move.info = CAPTURE_VICTIM_COST[board.cells[move.dst]] +
+                    CAPTURE_ATTACKER_COST[board.cells[move.src]];
+    }
+}
 
 inline static void SortByMVVLVA(const q_core::Board& board, q_core::Move* moves,
                                 const size_t count) {
@@ -51,14 +76,14 @@ inline static void SortByMVVLVA(const q_core::Board& board, q_core::Move* moves,
                     CAPTURE_ATTACKER_COST[board.cells[move.src]];
     }
     std::sort(moves, moves + count,
-              [](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });
+              [&](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });
 }
 
 inline static void SortByHistoryTable(const HistoryTable& history_table, const q_core::Board& board,
                                       q_core::Move* moves, const size_t count) {
     std::sort(moves, moves + count, [&](const q_core::Move lhs, const q_core::Move rhs) {
-        return history_table.GetScore(board.cells[lhs.src], lhs) >
-               history_table.GetScore(board.cells[rhs.src], rhs);
+        return history_table.GetScore(board.move_side, lhs) >
+               history_table.GetScore(board.move_side, rhs);
     });
 }
 
@@ -91,6 +116,10 @@ q_core::Move MovePicker::GetNextMove() {
     return list_.moves[pos_++];
 }
 
+bool IsValidKiller(const q_core::Board& board, const q_core::Move move) {
+    return q_core::IsMovePseudolegal(board, move) && board.cells[move.dst] == q_core::EMPTY_CELL;
+}
+
 void MovePicker::GetNewMoves() {
     while (pos_ == list_.size) {
         if (stage_ != Stage::End) {
@@ -117,7 +146,7 @@ void MovePicker::GetNewMoves() {
             }
             case Stage::KillerMoves: {
                 for (size_t i = 0; i < KillerMoves::COUNT; i++) {
-                    if (q_core::IsMovePseudolegal(position_.board, killer_moves_.GetMove(i))) {
+                    if (IsValidKiller(position_.board, killer_moves_.GetMove(i))) {
                         list_.moves[list_.size] = killer_moves_.GetMove(i);
                         list_.size++;
                     }
@@ -168,6 +197,13 @@ q_core::Move QuiescenseMovePicker::GetNextMove() {
     if (Q_UNLIKELY(stage_ == Stage::End)) {
         return q_core::NULL_MOVE;
     }
+    if (stage_ == Stage::Capture) {
+        for (size_t i = pos_ + 1; i < list_.size; i++) {
+            if (list_.moves[i].info > list_.moves[pos_].info) {
+                std::swap(list_.moves[i], list_.moves[pos_]);
+            }
+        }
+    }
     return list_.moves[pos_++];
 }
 
@@ -180,8 +216,8 @@ void QuiescenseMovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                SortByMVVLVA(position_.board, list_.moves + list_old_size,
-                             list_.size - list_old_size);
+                AnnotateByMVVLVA(position_.board, list_.moves + list_old_size,
+                                 list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {

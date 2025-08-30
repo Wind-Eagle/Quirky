@@ -12,9 +12,9 @@ void LogStart() {
 }
 
 void LogUciResponseInner(const UciInitResponse&) {
-    q_util::Print("id name Quirky 1.0");
+    q_util::Print("id name Quirky 2.0");
     q_util::Print("id author Wind-Eagle");
-    q_util::Print("option name Hash type spin default 16 min 1 max 33554432");
+    q_util::Print("option name Hash type spin default 8 min 1 max 1024");
     q_util::Print("uciok");
 }
 
