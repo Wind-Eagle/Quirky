@@ -4,9 +4,9 @@
 #include <functional>
 #include <string_view>
 
-#include "../../core/board/board.h"
-#include "../../core/moves/board_manipulation.h"
-#include "../../eval/evaluator.h"
+#include "core/board/board.h"
+#include "core/moves/board_manipulation.h"
+#include "eval/evaluator.h"
 
 namespace q_search {
 

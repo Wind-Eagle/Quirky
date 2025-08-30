@@ -1,7 +1,7 @@
 #ifndef QUIRKY_SRC_CORE_MOVES_BOARD_MANIPULATION_H
 #define QUIRKY_SRC_CORE_MOVES_BOARD_MANIPULATION_H
 
-#include "../board/board.h"
+#include "core/board/board.h"
 #include "move.h"
 
 namespace q_core {

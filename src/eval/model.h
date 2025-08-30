@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "../core/board/types.h"
+#include "core/board/types.h"
 #include "score.h"
 
 namespace q_eval {

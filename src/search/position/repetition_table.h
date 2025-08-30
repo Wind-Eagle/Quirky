@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "../../core/board/types.h"
-#include "../../util/bit.h"
+#include "core/board/types.h"
+#include "util/bit.h"
 
 namespace q_search {
 

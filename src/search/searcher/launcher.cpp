@@ -2,13 +2,13 @@
 
 #include <utility>
 
-#include "../../util/string.h"
-#include "../control/control.h"
-#include "../control/stat.h"
+#include "util/string.h"
 #include "core/board/board.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "eval/score.h"
+#include "search/control/control.h"
+#include "search/control/stat.h"
 #include "search/position/transposition_table.h"
 #include "searcher.h"
 #include "util/bit.h"

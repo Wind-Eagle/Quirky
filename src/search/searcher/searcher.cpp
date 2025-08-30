@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstddef>
 
-#include "../../core/moves/attack.h"
+#include "core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/moves/move.h"
 #include "core/util.h"
@@ -249,6 +249,8 @@ inline static constexpr depth_t FPR_DEPTH_THRESHOLD = 6;
 inline static constexpr std::array<depth_t, FPR_DEPTH_THRESHOLD + 1> FPR_MARGIN = {
     0, 50, 110, 180, 260, 350, 450};
 
+inline static constexpr depth_t NMP_VERIFICATION_DEPTH_THRESHOLD = 12;
+
 inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 4;
 inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 120, 200,
                                                                                    325};
@@ -398,7 +400,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 position_.UnmakeNullMove(old_en_passant_coord);
                 CHECK_STOP;
                 if (new_score >= beta) {
-                    if (depth < 12 || global_context_.nmp_min_idepth > 0) {
+                    if (depth < NMP_VERIFICATION_DEPTH_THRESHOLD || global_context_.nmp_min_idepth > 0) {
                         return beta;
                     }
                     global_context_.nmp_min_idepth = idepth + (depth - reduction) * 3 / 4;

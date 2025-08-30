@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "../board/board.h"
+#include "core/board/board.h"
 #include "core/board/types.h"
 #include "move.h"
 

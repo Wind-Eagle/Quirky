@@ -1,7 +1,7 @@
 #ifndef QUIRKY_SRC_SEARCH_POSITION_MOVE_PICKER_H
 #define QUIRKY_SRC_SEARCH_POSITION_MOVE_PICKER_H
 
-#include "../../core/moves/movegen.h"
+#include "core/moves/movegen.h"
 #include "core/board/types.h"
 #include "position.h"
 

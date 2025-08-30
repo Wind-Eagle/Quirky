@@ -3,10 +3,10 @@
 
 #include <thread>
 
-#include "../control/control.h"
-#include "../control/time.h"
-#include "../position/position.h"
-#include "../position/transposition_table.h"
+#include "search/control/control.h"
+#include "search/control/time.h"
+#include "search/position/position.h"
+#include "search/position/transposition_table.h"
 
 namespace q_search {
 

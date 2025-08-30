@@ -3,9 +3,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "../core/board/geometry.h"
-#include "../core/board/types.h"
-#include "../core/util.h"
+#include "core/board/types.h"
 #include "layers.h"
 #include "util/macro.h"
 

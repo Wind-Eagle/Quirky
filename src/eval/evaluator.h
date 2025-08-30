@@ -1,8 +1,8 @@
 #ifndef QUIRKY_SRC_EVAL_EVAL_H
 #define QUIRKY_SRC_EVAL_EVAL_H
 
-#include "../core/board/board.h"
-#include "../core/moves/move.h"
+#include "core/board/board.h"
+#include "core/moves/move.h"
 #include "core/moves/board_manipulation.h"
 #include "model.h"
 

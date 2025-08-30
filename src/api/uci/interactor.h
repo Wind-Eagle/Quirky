@@ -5,8 +5,8 @@
 #include <variant>
 #include <vector>
 
-#include "../../search/control/time.h"
-#include "../../search/searcher/launcher.h"
+#include "search/control/time.h"
+#include "search/searcher/launcher.h"
 #include "util/error.h"
 
 namespace q_api {

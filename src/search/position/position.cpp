@@ -1,6 +1,6 @@
 #include "position.h"
 
-#include "../../core/moves/attack.h"
+#include "core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/util.h"
 

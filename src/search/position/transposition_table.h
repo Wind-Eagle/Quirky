@@ -3,9 +3,9 @@
 
 #include <memory>
 
-#include "../../core/board/types.h"
-#include "../../core/moves/move.h"
-#include "../../eval/score.h"
+#include "core/board/types.h"
+#include "core/moves/move.h"
+#include "eval/score.h"
 
 namespace q_search {
 

@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include "../../util/string.h"
+#include "util/string.h"
 #include "interactor.h"
 #include "search/searcher/searcher.h"
 

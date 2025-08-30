@@ -1,9 +1,8 @@
 #include "evaluator.h"
 
 #include <array>
-#include <iostream>
 
-#include "../core/util.h"
+#include "core/util.h"
 #include "core/board/board.h"
 #include "core/board/geometry.h"
 #include "core/board/types.h"
@@ -11,7 +10,6 @@
 #include "core/moves/move.h"
 #include "eval/score.h"
 #include "model.h"
-#include "util/io.h"
 #include "util/macro.h"
 
 using namespace q_core;

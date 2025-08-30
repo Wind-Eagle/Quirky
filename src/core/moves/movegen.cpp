@@ -1,8 +1,8 @@
 #include "movegen.h"
 
-#include "../../util/bit.h"
-#include "../board/geometry.h"
-#include "../util.h"
+#include "util/bit.h"
+#include "core/board/geometry.h"
+#include "core/util.h"
 #include "core/board/types.h"
 #include "core/moves/attack.h"
 #include "magic.h"
