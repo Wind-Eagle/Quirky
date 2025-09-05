@@ -19,6 +19,8 @@
 #include "model_weights.h"
 #include "util/bit.h"
 
+#include <iostream>
+
 namespace q_eval {
 
 static constexpr int WEIGHT_SCALE = 64;
@@ -81,7 +83,7 @@ struct FeatureLayer {
 
     void Add(int16_t* input, size_t position) {
         __m256i regs[16];
-        for (size_t c = 0; c < 2; c++) {
+        for (size_t c = 0; c < OUTPUT_SIZE / 256; c++) {
             const size_t unroll_offset = c * 256;
             
             __m256i* inputs = (__m256i*)&input[unroll_offset];
@@ -102,7 +104,7 @@ struct FeatureLayer {
 
     void SubAdd(int16_t* input, size_t position_first, size_t position_second) {
         __m256i regs[16];
-        for (size_t c = 0; c < 2; c++) {
+        for (size_t c = 0; c < OUTPUT_SIZE / 256; c++) {
             const size_t unroll_offset = c * 256;
             
             __m256i* inputs = (__m256i*)&input[unroll_offset];
@@ -128,7 +130,7 @@ struct FeatureLayer {
 
     void SubSubAdd(int16_t* __restrict input, size_t position_first, size_t position_second, size_t position_third) {
         __m256i regs[16];
-        for (size_t c = 0; c < 2; c++) {
+        for (size_t c = 0; c < OUTPUT_SIZE / 256; c++) {
             const size_t unroll_offset = c * 256;
             
             __m256i* inputs = (__m256i*)&input[unroll_offset];
