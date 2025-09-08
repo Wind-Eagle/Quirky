@@ -42,12 +42,12 @@ HistoryTable::HistoryTable() {
 
 void HistoryTable::UpdateGood(const q_core::Color c, const q_core::Move move, const depth_t depth) {
     int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
-    table_[static_cast<size_t>(c)][move.src][move.dst] += adj - table_[static_cast<size_t>(c)][move.src][move.dst] / 16384;
+    table_[static_cast<size_t>(c)][move.src][move.dst] += adj - table_[static_cast<size_t>(c)][move.src][move.dst] * std::abs(adj) / 16384;
 }
 
 void HistoryTable::UpdateBad(const q_core::Color c, const q_core::Move move, const depth_t depth) {
     int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
-    table_[static_cast<size_t>(c)][move.src][move.dst] -= adj - table_[static_cast<size_t>(c)][move.src][move.dst] / 16384;
+    table_[static_cast<size_t>(c)][move.src][move.dst] += -adj - table_[static_cast<size_t>(c)][move.src][move.dst] * std::abs(adj) / 16384;
 }
 
 int64_t HistoryTable::GetScore(const q_core::Color c, const q_core::Move move) const {
