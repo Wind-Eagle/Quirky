@@ -255,6 +255,9 @@ inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 4;
 inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 120, 200,
                                                                                    325};
 
+inline static constexpr depth_t HMP_DEPTH_THRESHOLD = 3;
+inline static constexpr std::array<depth_t, HMP_DEPTH_THRESHOLD + 1> HMP_MARGIN = {0, -1000, -4200, -7400};                                                                             
+
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
 inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
     GetLMRDepthReduction();
@@ -455,6 +458,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             }
         }
         depth_t new_depth = depth + extension;
+
+        if (node_type == NodeType::Simple && depth <= HMP_DEPTH_THRESHOLD && moves_done > 0 && !is_check && !q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move)) {
+            if (global_context_.history_table.GetScore(position_.board.move_side, move) <= HMP_MARGIN[depth]) {
+                continue;
+            }
+        }
 
         MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
