@@ -463,12 +463,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             if (moves_done > static_cast<size_t>(depth * depth + 2)) {
                 continue;
             }
-            if (depth <= HMP_DEPTH_THRESHOLD && moves_done > 0) {
+            if (depth <= HMP_DEPTH_THRESHOLD && moves_done > 0 && move_picker.GetStage() >= MovePicker::Stage::History) {
                 if (global_context_.history_table.GetScore(position_.board.move_side, move) <= HMP_MARGIN[depth]) {
                     continue;
                 }
             }
-    }
+        }
 
         MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
