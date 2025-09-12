@@ -459,11 +459,16 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
         depth_t new_depth = depth + extension;
 
-        if (node_type == NodeType::Simple && depth <= HMP_DEPTH_THRESHOLD && moves_done > 0 && !is_check && !q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move)) {
-            if (global_context_.history_table.GetScore(position_.board.move_side, move) <= HMP_MARGIN[depth]) {
+        if (node_type == NodeType::Simple && !is_check && !q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move)) { 
+            if (moves_done > static_cast<size_t>(depth * depth + 2)) {
                 continue;
             }
-        }
+            if (depth <= HMP_DEPTH_THRESHOLD && moves_done > 0) {
+                if (global_context_.history_table.GetScore(position_.board.move_side, move) <= HMP_MARGIN[depth]) {
+                    continue;
+                }
+            }
+    }
 
         MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
