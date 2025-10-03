@@ -16,14 +16,14 @@ void PrintHelp() {
 struct SamplerArguments {
     std::string_view input_file;
     std::string_view output_file;
-    size_t batch_size = 2048;
+    size_t batch_size = -1;
 };
 
 void Make(const SamplerArguments& args) {
     std::ifstream in(args.input_file.data());
     size_t pos = 1;
     while (true) {
-        PositionSet game_set = ReadPositions(in);
+        PositionSet game_set = ReadPositions(in, args.batch_size);
         if (game_set.positions.empty()) {
             break;
         }

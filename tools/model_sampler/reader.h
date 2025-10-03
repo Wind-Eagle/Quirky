@@ -17,6 +17,6 @@ struct PositionSet {
     std::vector<Position> positions;
 };
 
-PositionSet ReadPositions(std::ifstream& in);
+PositionSet ReadPositions(std::ifstream& in, size_t batch_size);
 
 #endif  // QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_READER_H
