@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdlib>
 
 #include "../../src/util/error.h"
 #include "../../src/util/io.h"
@@ -10,20 +11,24 @@ void PrintHelp() {
         "Quirky eval model sampler is a tool that can transform labeled fens set"
         "into a dataset for Quirky eval model learner. Usage:\n",
         "--help: print help\n", "-i [path to file] - path to the dataset file\n",
-        "-o [path to file] - path to the dataset qds file\n");
+        "-i [path to file] - file with raw dataset\n",
+        "-o [path to directory] - directory with datasets\n",
+        "-r [float] - ratio of test dataset elements");
 }
 
 struct SamplerArguments {
     std::string_view input_file;
-    std::string_view output_file;
-    size_t batch_size = -1;
+    std::string_view out_dir;
+    float test_ratio = 0.1;
 };
 
 void Make(const SamplerArguments& args) {
     std::ifstream in(args.input_file.data());
     size_t pos = 1;
+    std::ofstream train_out(std::string(args.out_dir) + "/train.qds", std::ios::binary);
+    std::ofstream test_out(std::string(args.out_dir) + "/test.qds", std::ios::binary);
     while (true) {
-        PositionSet game_set = ReadPositions(in, args.batch_size);
+        PositionSet game_set = ReadPositions(in, (1 << 20));
         if (game_set.positions.empty()) {
             break;
         }
@@ -31,8 +36,7 @@ void Make(const SamplerArguments& args) {
         if (out_file_name.size() == 1) {
             out_file_name .insert(out_file_name.begin(), '0');
         }
-        std::ofstream out(std::string(args.output_file) + "/" + out_file_name + ".qds", std::ios::binary);
-        WriteBoardsToCSV(game_set, out);
+        WriteBoardsToCSV(game_set, train_out, test_out, args.test_ratio);
     }
 }
 
@@ -50,14 +54,15 @@ int main(int argc, char* argv[]) {
         if (std::string(argv[i]) == "-i") {
             sampler_arguments.input_file = std::string_view(argv[i + 1]);
         } else if (std::string(argv[i]) == "-o") {
-            sampler_arguments.output_file = std::string_view(argv[i + 1]);
-        } else if (std::string(argv[i]) == "-s") {
-            sampler_arguments.batch_size = std::stoi(argv[i + 1]);
-        } else {
+            sampler_arguments.out_dir = std::string_view(argv[i + 1]);
+        } else if (std::string(argv[i]) == "-r") {
+            sampler_arguments.test_ratio = std::stof(argv[i + 1]);
+        }
+        else {
             q_util::ExitWithError(QuirkyError::UnexpectedArgument);
         }
     }
-    if (sampler_arguments.input_file.empty() || sampler_arguments.output_file.empty()) {
+    if (sampler_arguments.input_file.empty() || sampler_arguments.out_dir.empty()) {
         q_util::ExitWithError(QuirkyError::ParseError);
     }
     Make(sampler_arguments);

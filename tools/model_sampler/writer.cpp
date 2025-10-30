@@ -9,7 +9,12 @@
 #include "reader.h"
 #include "util/io.h"
 
-void WriteBoardsToCSV(const PositionSet& position_set, std::ofstream& out) {
+#include <random>
+
+void WriteBoardsToCSV(const PositionSet& position_set, std::ofstream& train_out, std::ofstream& test_out, float ratio) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> rnd(0.0, 1.0);
     for (const auto& position : position_set.positions) {
         const auto& board = position.board;
         std::array<int8_t, q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2> input_features{};
@@ -37,6 +42,7 @@ void WriteBoardsToCSV(const PositionSet& position_set, std::ofstream& out) {
         }
         float target = position.target;
 
+        std::ofstream& out = rnd(gen) < ratio ? test_out : train_out;
         out.write(reinterpret_cast<const char*>(packed_bytes.data()), 96);
         out.write(reinterpret_cast<const char*>(&target), sizeof(float));
     }
