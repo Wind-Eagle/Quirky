@@ -78,7 +78,7 @@ inline static constexpr q_eval::score_t AW_START_DELTA = 20;
 inline static constexpr q_eval::score_t AW_ALPHA_BETA_LIMIT = 300;
 
 void Searcher::Run(depth_t max_depth, size_t pv_count) {
-    q_eval::score_t best_score = q_eval::SCORE_UNKNOWN;
+    std::vector<q_eval::score_t> pv_scores(pv_count, q_eval::SCORE_UNKNOWN);
 
     for (uint8_t depth = 1; depth <= max_depth; depth++) {
         std::vector<RootMoveWithScore> move_results;
@@ -90,12 +90,14 @@ void Searcher::Run(depth_t max_depth, size_t pv_count) {
             q_eval::score_t delta = 0;
             q_eval::score_t score = q_eval::SCORE_UNKNOWN;
 
+            q_eval::score_t window_avg = pv_scores[pv_index];
+
             if (depth >= AW_DEPTH_THRESHOLD) {
                 delta = AW_START_DELTA;
                 alpha =
-                    std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(best_score - delta));
+                    std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(window_avg - delta));
                 beta =
-                    std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(best_score + delta));
+                    std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(window_avg + delta));
             }
 
             for (;;) {
@@ -126,11 +128,11 @@ void Searcher::Run(depth_t max_depth, size_t pv_count) {
             if (depth > 1 && control_.IsStopped()) {
                 break;
             }
-            best_score = score;
+            pv_scores[pv_index] = score;
             global_context_.root_forbidden_moves
                 .moves[global_context_.root_forbidden_moves.size++] = global_context_.best_move;
             RootMoveWithScore move_result{.move = global_context_.best_move,
-                                          .score = best_score,
+                                          .score = score,
                                           .depth = depth,
                                           .index = 0,
                                           .pv_index = pv_index};
