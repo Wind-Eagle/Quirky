@@ -33,6 +33,9 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         if (args[2] == "Hash") {
             return UciSetOptionCommand{.type = OptionType::HashTableSize, .value = args[4]};
         }
+        if (args[2] == "MultiPV") {
+            return UciSetOptionCommand{.type = OptionType::PVCount, .value = args[4]};
+        }
         return UciUnparsedCommand{.parse_error = "No such option"};
     }
     if (command_name == "position") {

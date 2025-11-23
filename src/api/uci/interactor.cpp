@@ -23,6 +23,9 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciSetOptionCom
         case OptionType::HashTableSize: {
             context.launcher.ChangeTTSize(std::stoll((command.value)));
         }
+        case OptionType::PVCount: {
+            context.launcher.ChangePVCount(std::stoll((command.value)));
+        }
     }
     return UciEmptyResponse{};
 }

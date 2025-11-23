@@ -1,7 +1,9 @@
 #include "launcher.h"
 
+#include <string>
 #include <utility>
 
+#include "search/position/position.h"
 #include "util/string.h"
 #include "core/board/board.h"
 #include "core/moves/move.h"
@@ -50,7 +52,7 @@ uint64_t GetNPS(const SearchStat& stat, time_t time_since_start) {
                                  : stat.GetNodesCount() * 1000 / time_since_start;
 }
 
-void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
+void PrintSearchResult(const SearchResult& result, const SearchStat& stat, size_t pv_count,
                        time_t time_since_start) {
     std::vector<std::string> moves;
     if (!IsMoveNull(result.best_move)) {
@@ -73,7 +75,12 @@ void PrintSearchResult(const SearchResult& result, const SearchStat& stat,
         }
         score_str = "score mate " + std::to_string(num_of_moves_to_mate);
     }
-    q_util::Print("info depth", static_cast<int>(result.depth), "time", time_since_start, score_str,
+    std::string depth_string = "info depth " + std::to_string(result.depth);
+    if (pv_count > 1) {
+        depth_string += " multipv " + std::to_string(result.index + 1);
+    }
+
+    q_util::Print(depth_string, "time", time_since_start, score_str,
                   "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start),
                   !pv_str.empty() ? "pv " + pv_str : "");
 }
@@ -92,29 +99,6 @@ void PrintBestMove(const q_core::Move move) {
     q_util::Print("bestmove", q_core::CastMoveToString(move));
 }
 
-q_core::Move GetRandomMove(Position& position, bool& has_two_legal_moves) {
-    q_core::MoveList move_list;
-    q_core::Movegen movegen(position.board);
-    movegen.GenerateAllMoves(position.board, move_list);
-    q_core::Move random_move = q_core::NULL_MOVE;
-    for (size_t i = 0; i < move_list.size; i++) {
-        q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
-        bool legal = position.MakeMove(move_list.moves[i], make_move_info, evaluator_update_info);
-        if (!legal) {
-            continue;
-        }
-        position.UnmakeMove(move_list.moves[i], make_move_info, evaluator_update_info);
-        if (!q_core::IsMoveNull(random_move)) {
-            has_two_legal_moves = true;
-            return random_move;
-        }
-        random_move = move_list.moves[i];
-    }
-    has_two_legal_moves = false;
-    return random_move;
-}
-
 SearchLauncher::~SearchLauncher() { Join(); }
 
 void SearchLauncher::StartMainThread(const Position& start_position,
@@ -124,13 +108,32 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     Position position = start_position;
     ProcessPositionMoves(position, moves, rt);
 
-    bool has_two_legal_moves = false;
-    const q_core::Move random_move = GetRandomMove(position, has_two_legal_moves);
+    size_t root_legal_moves_found = 0;
+    q_core::Movegen root_movegen(position.board);
+    q_core::MoveList all_root_moves;
+    root_movegen.GenerateAllMoves(position.board, all_root_moves);
+    q_core::Move random_move;
+    for (size_t i = 0; i < all_root_moves.size; i++) {
+        q_core::MakeMoveInfo make_move_info;
+        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
+        bool legal = position.MakeMove(all_root_moves.moves[i], make_move_info, evaluator_update_info);
+        if (!legal) {
+            continue;
+        }
+        random_move = all_root_moves.moves[i];
+        root_legal_moves_found++;
+        position.UnmakeMove(all_root_moves.moves[i], make_move_info, evaluator_update_info);
+        if (root_legal_moves_found >= std::max(static_cast<size_t>(2), pv_count_)) {
+            break;
+        }
+    }
+    size_t real_pv_count = std::min(root_legal_moves_found, pv_count_);
+
     if (q_core::IsMoveNull(random_move)) {
         q_util::PrintError("This is a position with no legal moves: either mate or stalemate");
         return;
     }
-    if (!has_two_legal_moves && std::holds_alternative<GameTimeControl>(time_control)) {
+    if (root_legal_moves_found == 1 && std::holds_alternative<GameTimeControl>(time_control)) {
         PrintBestMove(random_move);
         return;
     }
@@ -138,10 +141,12 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     SearchStat stat;
     Searcher searcher(tt_, rt, position, control_, stat);
     SearchTimer timer(time_control, position, stat);
-    std::thread search_thread = std::thread([&]() { searcher.Run(max_depth); });
+    std::thread search_thread = std::thread([&]() { searcher.Run(max_depth, real_pv_count); });
 
     SearchResult final_result{};
     final_result.depth = 0;
+
+    size_t pv_processed = 0;
 
     static constexpr time_t NODES_UPDATE_TICK = 3000;
     time_t nodes_update_timer = 0;
@@ -157,17 +162,23 @@ void SearchLauncher::StartMainThread(const Position& start_position,
             std::vector<SearchResult> results = control_.GetResults();
             for (auto& result : results) {
                 if (result.bound_type == Exact && result.depth >= final_result.depth) {
-                    PrintSearchResult(result, stat, time_since_start);
-                    final_result = std::move(result);
-                    timer.ProcessNextDepth(result);
+                    PrintSearchResult(result, stat, real_pv_count, time_since_start);
+                    pv_processed++;
+                    if (pv_processed == 0) {
+                        final_result = std::move(result);
+                    }
+                    if (pv_processed == real_pv_count) {
+                        pv_processed = 0;
+                        timer.ProcessNextDepth(result);
+                    }
                 } else if (result.bound_type == Lower && result.depth >= final_result.depth) {
                     if (control_.AreDetailedResultsEnabled()) {
-                        PrintSearchResult(result, stat, time_since_start);
+                        PrintSearchResult(result, stat, real_pv_count, time_since_start);
                     }
                     final_result = std::move(result);
                 } else if (result.bound_type == Upper && result.depth >= final_result.depth) {
                     if (control_.AreDetailedResultsEnabled()) {
-                        PrintSearchResult(result, stat, time_since_start);
+                        PrintSearchResult(result, stat, real_pv_count, time_since_start);
                     }
                 }
             }
@@ -214,6 +225,10 @@ void SearchLauncher::NewGame() { tt_.NextGame(); }
 
 void SearchLauncher::ChangeTTSize(size_t new_tt_size_mb) {
     tt_ = TranspositionTable(20 + q_util::GetHighestBit(new_tt_size_mb));
+}
+
+void SearchLauncher::ChangePVCount(size_t new_pv_count) {
+    pv_count_ = new_pv_count;
 }
 
 }  // namespace q_search

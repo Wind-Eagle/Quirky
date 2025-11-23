@@ -17,6 +17,7 @@ struct SearchResult {
     q_eval::score_t score;
     q_core::Move best_move;
     depth_t depth;
+    size_t index;
     std::vector<q_core::Move> pv;
 };
 
@@ -24,6 +25,14 @@ struct RootMove {
     depth_t depth;
     q_core::Move move;
     size_t number;
+};
+
+struct RootMoveWithScore {
+    q_core::Move move;
+    q_eval::score_t score;
+    depth_t depth;
+    size_t index;
+    size_t pv_index;
 };
 
 class SearchControl {

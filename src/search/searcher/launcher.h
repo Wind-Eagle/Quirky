@@ -19,6 +19,7 @@ class SearchLauncher {
     void Join();
     void NewGame();
     void ChangeTTSize(size_t new_tt_size_mb);
+    void ChangePVCount(size_t new_pv_count);
 
   private:
     void StartMainThread(const Position& start_position, const std::vector<q_core::Move>& moves,
@@ -27,6 +28,7 @@ class SearchLauncher {
     std::thread thread_;
     q_search::TranspositionTable tt_{TT_DEFAULT_BYTE_SIZE_LOG};
     SearchControl control_;
+    size_t pv_count_ = 1;
 };
 
 }  // namespace q_search
