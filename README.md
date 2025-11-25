@@ -21,7 +21,9 @@ $ make -j8
 Quirky is based on alpha-beta pruning with various well-known heuristics and NNUE evaluation. It doesn't use autotuning of search constants, and aims to use as few complex and obscure heuristics as possible.
 
 NNUE architecture is (768 -> 256) x2 -> 16 -> 32 -> 1. It was trained in the following way:
-- Numerous self-play games of Quirky 1.0 were played. The time control was set to 20ms per move. From this games we randomly sampled positions that were evaluated during search.
+- Numerous self-play games were played. The time control was set to 20ms per move. From this games we randomly sampled positions that were evaluated during search.
+  - For Quirky 2.0 we used Quirky 1.0 as engine generating positions.
+  - For Quirky 2.1 we used six slightly different Quirky 1.0 variants as engines generating positions.
 - From each game, we randomly selected 32 positions evaluated with the first engine, and 32 positions evaluated with the second engine.
 - We filtered out positions that were in check and positions where a simple quiescence search was able to find a winning capture.
 - We then used Stockfish with WDL scores to analyze each position for 100 ms.
@@ -32,6 +34,8 @@ Quirky 1.0 NNUE was trained using a third-party dataset.
 [Dataset used for Quirky 1.0 NNUE](https://bitbucket.org/zurichess/tuner/downloads)
 
 [Dataset used for Quirky 2.0 NNUE](https://disk.yandex.ru/d/jcXiqAqF97RXeQ)
+
+[Dataset used for Quirky 2.1 NNUE](https://disk.yandex.ru/d/O6d1VJuWoj1Wgg)
 
 ## Thanks
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page), for many useful articles
