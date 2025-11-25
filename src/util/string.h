@@ -42,6 +42,12 @@ inline bool IsStringNonNegativeNumber(const T& s) {
                                       [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }
 
+template <StringLike T>
+inline bool IsStringNumber(const T& s) {
+    return !s.empty() && std::find_if(s[0] == '-' ? s.begin() + 1 : s.begin(), s.end(),
+                                      [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
 }  // namespace q_util
 
 #endif  // QUIRKY_SRC_UTIL_STRING_H
