@@ -25,7 +25,12 @@ func uciNewGame(ctx context.Context, engine *uci.Engine, timeout time.Duration) 
 	return nil
 }
 
-func getEngines(ctx context.Context, whiteEngineName string, blackEngineName string) (*uci.Engine, *uci.Engine) {
+func getEngines(ctx context.Context, engineNames []string) (*uci.Engine, *uci.Engine) {
+	whiteIndex := rand.Int32N(int32(len(engineNames)))
+	blackIndex := rand.Int32N(int32(len(engineNames)))
+
+	whiteEngineName := engineNames[whiteIndex]
+	blackEngineName := engineNames[blackIndex]
 	whiteEngine, err := uci.NewEasyEngine(ctx, uci.EasyEngineOptions{
 		Name:            whiteEngineName,
 		WaitInitialized: true,
@@ -205,12 +210,12 @@ func GenFens(output string, settings Settings) {
 	bar := pb.ProgressBarTemplate(tmpl).Start(numOfChunks)
 	for range settings.Cores {
 		g.Go(func() error {
-			whiteEngine, blackEngine := getEngines(ctx, settings.EngineName, settings.EngineName)
-			defer whiteEngine.Close()
-			defer blackEngine.Close()
 			for {
+				whiteEngine, blackEngine := getEngines(ctx, settings.EngineNames)
 				_, ok := <-ch
 				if !ok {
+					whiteEngine.Close()
+					blackEngine.Close()
 					break
 				}
 				randomIndex := rand.Int32N(int32(len(openings)))
@@ -218,17 +223,18 @@ func GenFens(output string, settings Settings) {
 				fens, err, ok := playGame(ctx, whiteEngine, blackEngine, randomItem, settings.PlayMovetime, settings.FensInGame)
 				if err != nil {
 					fmt.Println("error in getting dataset line:", err)
-					whiteEngine.Close()
-					blackEngine.Close()
-					whiteEngine, blackEngine = getEngines(ctx, settings.EngineName, settings.EngineName)
 				}
 				if !ok {
+					whiteEngine.Close()
+					blackEngine.Close()
 					continue
 				}
 				for _, fen := range fens {
 					pch <- fen
 				}
 				bar.Increment()
+				whiteEngine.Close()
+				blackEngine.Close()
 			}
 			return nil
 		})

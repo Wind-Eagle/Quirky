@@ -21,10 +21,10 @@ Position ReadPosition(std::ifstream& in) {
     return Position{board, target};
 }
 
-PositionSet ReadPositions(std::ifstream& in) {
+PositionSet ReadPositions(std::ifstream& in, size_t batch_size) {
     PositionSet position_set;
     std::string tmp;
-    for (;;) {
+    while (position_set.positions.size() < batch_size) {
         if (in.peek() == '\n') {
             std::getline(in, tmp);
             continue;

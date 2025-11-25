@@ -11,7 +11,7 @@
 
 namespace q_api {
 
-enum class OptionType : uint8_t { HashTableSize = 0 };
+enum class OptionType : uint8_t { HashTableSize = 0, PVCount = 1 };
 
 struct UciInitCommand {};
 struct UciReadyCommand {};

@@ -33,6 +33,9 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         if (args[2] == "Hash") {
             return UciSetOptionCommand{.type = OptionType::HashTableSize, .value = args[4]};
         }
+        if (args[2] == "MultiPV") {
+            return UciSetOptionCommand{.type = OptionType::PVCount, .value = args[4]};
+        }
         return UciUnparsedCommand{.parse_error = "No such option"};
     }
     if (command_name == "position") {
@@ -107,10 +110,11 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
         } else {
             q_search::GameTimeControl time_control{};
             for (size_t i = 1; i < args.size(); i += 2) {
-                if (!q_util::IsStringNonNegativeNumber(args[i + 1])) {
+                if (!q_util::IsStringNumber(args[i + 1])) {
                     return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
                 }
-                uint64_t arg = std::stoll(args[i + 1]);
+                int64_t arg = std::stoll(args[i + 1]);
+                arg = std::max(arg, static_cast<int64_t>(0));  // Special fix for CCRL negative time issues
                 if (args[i] == "wtime") {
                     time_control.white_time.time = arg;
                 } else if (args[i] == "btime") {

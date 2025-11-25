@@ -3,7 +3,7 @@
     "batches": 100,
     "fensInGame": 32,
     "cores": 16,
-    "engineName": "./Quirky",
+    "engineNames": ["./Quirky1", "./Quirky2", "./Quirky3", "./Quirky4", "./Quirky5"],
     "teacherEngineName": "./stockfish",
     "filterBinaryName": "./model_sampler",
     "playMovetime": 20,

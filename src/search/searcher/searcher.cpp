@@ -3,8 +3,8 @@
 #include <cmath>
 #include <cstddef>
 
-#include "core/moves/attack.h"
 #include "core/board/types.h"
+#include "core/moves/attack.h"
 #include "core/moves/move.h"
 #include "core/util.h"
 #include "eval/score.h"
@@ -12,6 +12,7 @@
 #include "search/position/move_picker.h"
 #include "search/position/position.h"
 #include "search/position/transposition_table.h"
+#include "util/io.h"
 
 namespace q_search {
 
@@ -29,8 +30,8 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& 
     global_context_.nmp_min_idepth = 0;
 }
 
-std::vector<q_core::Move> Searcher::GetPV() {
-    if (q_core::IsMoveNull(global_context_.best_move)) {
+std::vector<q_core::Move> Searcher::GetPV(q_core::Move best_move) {
+    if (q_core::IsMoveNull(best_move)) {
         return {};
     }
 
@@ -40,7 +41,7 @@ std::vector<q_core::Move> Searcher::GetPV() {
     q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
     std::vector<q_core::Move> pv;
 
-    position.MakeMove(global_context_.best_move, make_move_info, evaluator_update_info);
+    position.MakeMove(best_move, make_move_info, evaluator_update_info);
     while (pv.size() < 64) {
         const q_core::hash_t position_hash = position.board.hash;
         if (!rt.Insert(position_hash)) {
@@ -62,12 +63,13 @@ std::vector<q_core::Move> Searcher::GetPV() {
     return pv;
 }
 
-SearchResult Searcher::GetSearchResult(depth_t depth, q_eval::score_t score) {
-    std::vector<q_core::Move> pv = GetPV();
+SearchResult Searcher::GetSearchResult(RootMoveWithScore result) {
+    std::vector<q_core::Move> pv = GetPV(result.move);
     return SearchResult{.bound_type = Exact,
-                        .score = score,
-                        .best_move = global_context_.best_move,
-                        .depth = depth,
+                        .score = result.score,
+                        .best_move = result.move,
+                        .depth = result.depth,
+                        .index = result.index,
                         .pv = pv};
 }
 
@@ -75,51 +77,76 @@ inline static constexpr depth_t AW_DEPTH_THRESHOLD = 5;
 inline static constexpr q_eval::score_t AW_START_DELTA = 20;
 inline static constexpr q_eval::score_t AW_ALPHA_BETA_LIMIT = 300;
 
-void Searcher::Run(depth_t max_depth) {
-    q_eval::score_t best_score = q_eval::SCORE_UNKNOWN;
+void Searcher::Run(depth_t max_depth, size_t pv_count) {
+    std::vector<q_eval::score_t> pv_scores(pv_count, q_eval::SCORE_UNKNOWN);
 
     for (uint8_t depth = 1; depth <= max_depth; depth++) {
-        q_eval::score_t alpha = q_eval::SCORE_MIN;
-        q_eval::score_t beta = q_eval::SCORE_MAX;
-        q_eval::score_t delta = 0;
-        q_eval::score_t score = q_eval::SCORE_UNKNOWN;
+        std::vector<RootMoveWithScore> move_results;
+        global_context_.root_forbidden_moves.size = 0;
+        global_context_.pv_count = pv_count;
+        for (size_t pv_index = 0; pv_index < pv_count; pv_index++) {
+            q_eval::score_t alpha = q_eval::SCORE_MIN;
+            q_eval::score_t beta = q_eval::SCORE_MAX;
+            q_eval::score_t delta = 0;
+            q_eval::score_t score = q_eval::SCORE_UNKNOWN;
 
-        if (depth >= AW_DEPTH_THRESHOLD) {
-            delta = AW_START_DELTA;
-            alpha = std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(best_score - delta));
-            beta = std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(best_score + delta));
-        }
+            q_eval::score_t window_avg = pv_scores[pv_index];
 
-        for (;;) {
-            if (alpha <= -AW_ALPHA_BETA_LIMIT) {
-                alpha = q_eval::SCORE_MIN;
+            if (depth >= AW_DEPTH_THRESHOLD) {
+                delta = AW_START_DELTA;
+                alpha =
+                    std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(window_avg - delta));
+                beta =
+                    std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(window_avg + delta));
             }
-            if (beta >= AW_ALPHA_BETA_LIMIT) {
-                beta = q_eval::SCORE_MAX;
-            }
 
-            score = RunSearch(depth, alpha, beta);
-            if (control_.IsStopped()) {
+            for (;;) {
+                if (alpha <= -AW_ALPHA_BETA_LIMIT) {
+                    alpha = q_eval::SCORE_MIN;
+                }
+                if (beta >= AW_ALPHA_BETA_LIMIT) {
+                    beta = q_eval::SCORE_MAX;
+                }
+
+                score = RunSearch(depth, alpha, beta);
+                if (control_.IsStopped()) {
+                    break;
+                }
+
+                if (score <= alpha) {
+                    beta = (alpha + beta) / 2;
+                    alpha =
+                        std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(score - delta));
+                } else if (score >= beta) {
+                    beta = std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(score + delta));
+                } else {
+                    break;
+                }
+
+                delta += delta / 2;
+            }
+            if (depth > 1 && control_.IsStopped()) {
                 break;
             }
-
-            if (score <= alpha) {
-                beta = (alpha + beta) / 2;
-                alpha = std::max(q_eval::SCORE_MIN, static_cast<q_eval::score_t>(score - delta));
-            } else if (score >= beta) {
-                beta = std::min(q_eval::SCORE_MAX, static_cast<q_eval::score_t>(score + delta));
-            } else {
-                break;
-            }
-
-            delta += delta / 2;
+            pv_scores[pv_index] = score;
+            global_context_.root_forbidden_moves
+                .moves[global_context_.root_forbidden_moves.size++] = global_context_.best_move;
+            RootMoveWithScore move_result{.move = global_context_.best_move,
+                                          .score = score,
+                                          .depth = depth,
+                                          .index = 0,
+                                          .pv_index = pv_index};
+            move_results.push_back(move_result);
         }
-        if (depth > 1 && control_.IsStopped()) {
-            break;
+        std::sort(move_results.begin(), move_results.end(),
+                  [&](const auto& lhs, const auto& rhs) { return lhs.score > rhs.score; });
+        for (size_t i = 0; i < move_results.size(); i++) {
+            move_results[i].index = i;
         }
-        best_score = score;
         if (control_.FinishDepth(depth)) {
-            control_.AddResult(GetSearchResult(depth, score));
+            for (const auto& move_result : move_results) {
+                control_.AddResult(GetSearchResult(move_result));
+            }
         }
     }
 }
@@ -207,21 +234,40 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
     if constexpr (node_type == NodeType::Root) CHECK_STOP; \
     if constexpr (node_type == NodeType::Root) stat_.OnRootMove(move);
 
+#define CHECK_ROOT_MOVE_ALLOWED(move)                                            \
+    if (node_type == NodeType::Root) {                                           \
+        bool move_is_forbidden = false;                                          \
+        for (size_t i = 0; i < global_context_.root_forbidden_moves.size; i++) { \
+            if (move == global_context_.root_forbidden_moves.moves[i]) {         \
+                move_is_forbidden = true;                                        \
+                break;                                                           \
+            }                                                                    \
+        }                                                                        \
+        if (move_is_forbidden) {                                                 \
+            continue;                                                            \
+        }                                                                        \
+    }
+
 #define SAVE_ROOT_BEST_MOVE \
     if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move;
 
-#define SEND_ROOT_LOWERBOUND                                        \
-    if constexpr (node_type == NodeType::Root)                      \
-    control_.AddResult(SearchResult{.bound_type = Lower,            \
-                                    .score = std::min(alpha, beta), \
-                                    .best_move = best_move,         \
-                                    .depth = depth,                 \
+#define SEND_ROOT_LOWERBOUND                                          \
+    if (node_type == NodeType::Root && global_context_.pv_count == 1) \
+    control_.AddResult(SearchResult{.bound_type = Lower,              \
+                                    .score = std::min(alpha, beta),   \
+                                    .best_move = best_move,           \
+                                    .depth = depth,                   \
+                                    .index = 0,                       \
                                     .pv = {}})
 
-#define SEND_ROOT_UPPERBOUND                   \
-    if constexpr (node_type == NodeType::Root) \
-    control_.AddResult(SearchResult{           \
-        .bound_type = Upper, .score = alpha, .best_move = best_move, .depth = depth, .pv = {}})
+#define SEND_ROOT_UPPERBOUND                                          \
+    if (node_type == NodeType::Root && global_context_.pv_count == 1) \
+    control_.AddResult(SearchResult{.bound_type = Upper,              \
+                                    .score = alpha,                   \
+                                    .best_move = best_move,           \
+                                    .depth = depth,                   \
+                                    .index = 0,                       \
+                                    .pv = {}})
 
 #define SEND_ROOT_MOVE                         \
     if constexpr (node_type == NodeType::Root) \
@@ -274,7 +320,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Checking repetition table
     const q_core::hash_t position_hash = position_.board.hash;
-    const bool position_changed = q_core::IsMoveNull(local_context_[idepth].skip_move) && !local_context_[idepth].nmp_verification;
+    const bool position_changed = q_core::IsMoveNull(local_context_[idepth].skip_move) &&
+                                  !local_context_[idepth].nmp_verification;
     if (position_changed && !rt_.Insert(position_hash)) {
         return 0;
     }
@@ -390,9 +437,11 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         // Null move pruning
         if (!IsMoveNull(local_context_[idepth - 1].current_move) &&
             IsMoveNull(local_context_[idepth].skip_move) &&
-            position_.HasNonPawns(position_.board.move_side) && depth > 1 && idepth >= global_context_.nmp_min_idepth) {
+            position_.HasNonPawns(position_.board.move_side) && depth > 1 &&
+            idepth >= global_context_.nmp_min_idepth) {
             if (local_context_[idepth].eval >= beta) {
-                const depth_t reduction = depth / 3 + 3 + std::min(4, (local_context_[idepth].eval - beta) / 150);
+                const depth_t reduction =
+                    depth / 3 + 3 + std::min(4, (local_context_[idepth].eval - beta) / 150);
                 q_core::coord_t old_en_passant_coord;
                 position_.MakeNullMove(old_en_passant_coord);
                 const q_eval::score_t new_score =
@@ -400,12 +449,14 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 position_.UnmakeNullMove(old_en_passant_coord);
                 CHECK_STOP;
                 if (new_score >= beta) {
-                    if (depth < NMP_VERIFICATION_DEPTH_THRESHOLD || global_context_.nmp_min_idepth > 0) {
+                    if (depth < NMP_VERIFICATION_DEPTH_THRESHOLD ||
+                        global_context_.nmp_min_idepth > 0) {
                         return beta;
                     }
                     global_context_.nmp_min_idepth = idepth + (depth - reduction) * 3 / 4;
                     local_context_[idepth].nmp_verification = true;
-                    const q_eval::score_t verif_score = Search<NodeType::Simple>(depth - reduction, idepth, beta - 1, beta);
+                    const q_eval::score_t verif_score =
+                        Search<NodeType::Simple>(depth - reduction, idepth, beta - 1, beta);
                     local_context_[idepth].nmp_verification = false;
                     global_context_.nmp_min_idepth = 0;
                     CHECK_STOP;
@@ -428,6 +479,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
         CHECK_STOP;
+        CHECK_ROOT_MOVE_ALLOWED(move);
         if (move == local_context_[idepth].skip_move) {
             continue;
         }
@@ -509,9 +561,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 tt_store_move(beta, best_move);
                 if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
                     global_context_.killer_moves[idepth].Add(best_move);
-                    global_context_.history_table.UpdateGood(q_core::GetInvertedColor(position_.board.move_side), best_move, depth);
+                    global_context_.history_table.UpdateGood(
+                        q_core::GetInvertedColor(position_.board.move_side), best_move, depth);
                     for (size_t i = 0; i + 1 < quiet_moves.size; i++) {
-                        global_context_.history_table.UpdateBad(q_core::GetInvertedColor(position_.board.move_side), quiet_moves.moves[i], depth);
+                        global_context_.history_table.UpdateBad(
+                            q_core::GetInvertedColor(position_.board.move_side),
+                            quiet_moves.moves[i], depth);
                     }
                 }
             }

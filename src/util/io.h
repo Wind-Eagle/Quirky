@@ -2,11 +2,14 @@
 #define QUIRKY_SRC_UTIL_IO_H
 
 #include <iostream>
+#include <mutex>
 #include <optional>
 
 #include "error.h"
 
 namespace {
+
+ std::mutex print_mutex;
 
 inline void PrintToStream(std::ostream& stream) { stream << std::endl; }
 
@@ -31,20 +34,24 @@ inline std::optional<std::string> ReadLine(std::istream& stream = std::cin) {
 
 template <class First, class... Rest>
 inline void Print(First first, Rest... rest) {
+    std::lock_guard guard(print_mutex);
     PrintToStream(std::cout, first, rest...);
 }
 
 template <class First, class... Rest>
 inline void LogText(std::ostream& stream, First first, Rest... rest) {
+    std::lock_guard guard(print_mutex);
     PrintToStream(stream, "[", first, "]    ", rest...);
 }
 
 template <class First, class... Rest>
 inline void PrintError(First first, Rest... rest) {
+    std::lock_guard guard(print_mutex);
     PrintToStream(std::cerr, "[ERROR]    ", first, rest...);
 }
 
 inline void ExitWithError(QuirkyError error) {
+    std::lock_guard guard(print_mutex);
     PrintToStream(std::cerr, "[FATAL ERROR]    ", GetErrorMessage(error));
     exit(static_cast<uint8_t>(error));
 }
