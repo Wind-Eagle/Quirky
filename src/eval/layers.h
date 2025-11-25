@@ -49,7 +49,7 @@ struct FeatureLayer {
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE / 2; j++) {
-                weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE);
+                weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * 16);
                 const q_core::cell_t cell = i / q_core::BOARD_SIZE + 1;
                 const q_core::coord_t coord = i % q_core::BOARD_SIZE;
                 size_t pos =
@@ -59,7 +59,7 @@ struct FeatureLayer {
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE / 2; i++) {
-            biases_[i] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE);
+            biases_[i] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * 16);
             biases_[i + OUTPUT_SIZE / 2] = biases_[i];
         }
     }
@@ -407,12 +407,13 @@ inline void ClippedReLU16(int size, int8_t* output, const int16_t* input) {
 
     for (int i = 0; i < num_out_chunks; ++i) {
         const __m256i in0 =
-            _mm256_load_si256((const __m256i*)&input[(i * 2 + 0) * IN_REGISTER_WIDTH]);
+            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 0) * IN_REGISTER_WIDTH]), 4);
         const __m256i in1 =
-            _mm256_load_si256((const __m256i*)&input[(i * 2 + 1) * IN_REGISTER_WIDTH]);
+            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 1) * IN_REGISTER_WIDTH]), 4);
 
         const __m256i result =
             _mm256_permute4x64_epi64(_mm256_max_epi8(_mm256_packs_epi16(in0, in1), zero), control);
+
 
         _mm256_store_si256((__m256i*)&output[i * OUT_REGISTER_WIDTH], result);
     }
