@@ -10,7 +10,7 @@
 namespace q_eval {
 
 static constexpr size_t INPUT_LAYER_SIZE = q_core::BOARD_SIZE * q_core::NUMBER_OF_PIECES * 2;
-static constexpr size_t FEATURE_LAYER_SIZE = 512;
+static constexpr size_t FEATURE_LAYER_SIZE = 1024;
 static constexpr size_t HIDDEN_LAYER_FIRST_SIZE = 16;
 static constexpr size_t HIDDEN_LAYER_SECOND_SIZE = 32;
 
