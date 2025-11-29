@@ -28,6 +28,9 @@ static constexpr int ACTIVATION_SCALE = 127;
 static constexpr int OUTPUT_SCALE = 64 * 64;
 static constexpr int PRECISE_WEIGHT_SCALE = 64;
 
+static constexpr uint8_t FEATURE_ADDITIONAL_PRECISION = 4;
+static constexpr uint8_t LINEAR_ADDITIONAL_PRECISION = 1;
+
 struct ModelReader {
   public:
     template <std::integral T>
@@ -49,7 +52,7 @@ struct FeatureLayer {
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE / 2; j++) {
-                weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * 16);
+                weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * (1 << FEATURE_ADDITIONAL_PRECISION));
                 const q_core::cell_t cell = i / q_core::BOARD_SIZE + 1;
                 const q_core::coord_t coord = i % q_core::BOARD_SIZE;
                 size_t pos =
@@ -59,7 +62,7 @@ struct FeatureLayer {
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE / 2; i++) {
-            biases_[i] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * 16);
+            biases_[i] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * (1 << FEATURE_ADDITIONAL_PRECISION));
             biases_[i + OUTPUT_SIZE / 2] = biases_[i];
         }
     }
@@ -171,11 +174,11 @@ struct LinearLayer {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE; j++) {
                 weights_[GetWeightIndex(j * INPUT_SIZE + i)] =
-                    reader.ReadWeight<int8_t>(WEIGHT_SCALE * 2);
+                    reader.ReadWeight<int8_t>(WEIGHT_SCALE * (1 << LINEAR_ADDITIONAL_PRECISION));
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE; i++) {
-            biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE * 2);
+            biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE * (1 << LINEAR_ADDITIONAL_PRECISION));
         }
         for (size_t i = 0; i < 256; i++) {
             for (size_t j = 0; j < 8; j++) {
@@ -230,7 +233,7 @@ struct LinearLayer {
         }
 
         for (i = 0; i < OUT_CC; i++) {
-            out[i] = _mm256_srai_epi32(regs[i], 1);
+            out[i] = _mm256_srai_epi32(regs[i], LINEAR_ADDITIONAL_PRECISION);
         }
     }
 
@@ -407,9 +410,9 @@ inline void ClippedReLU16(int size, int8_t* output, const int16_t* input) {
 
     for (int i = 0; i < num_out_chunks; ++i) {
         const __m256i in0 =
-            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 0) * IN_REGISTER_WIDTH]), 4);
+            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 0) * IN_REGISTER_WIDTH]), FEATURE_ADDITIONAL_PRECISION);
         const __m256i in1 =
-            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 1) * IN_REGISTER_WIDTH]), 4);
+            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 1) * IN_REGISTER_WIDTH]), FEATURE_ADDITIONAL_PRECISION);
 
         const __m256i result =
             _mm256_permute4x64_epi64(_mm256_max_epi8(_mm256_packs_epi16(in0, in1), zero), control);
