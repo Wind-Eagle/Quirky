@@ -7,11 +7,10 @@
 #include "core/board/geometry.h"
 #include "core/board/types.h"
 #include "reader.h"
-#include "util/io.h"
 
 #include <random>
 
-void WriteBoardsToCSV(const PositionSet& position_set, std::ofstream& train_out, std::ofstream& test_out, float ratio) {
+void WriteBoardsToCSV(const PositionSet& position_set, OutputSources& output_sources) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> rnd(0.0, 1.0);
@@ -42,8 +41,17 @@ void WriteBoardsToCSV(const PositionSet& position_set, std::ofstream& train_out,
         }
         float target = position.target;
 
-        std::ofstream& out = rnd(gen) < ratio ? test_out : train_out;
-        out.write(reinterpret_cast<const char*>(packed_bytes.data()), 96);
-        out.write(reinterpret_cast<const char*>(&target), sizeof(float));
+        const auto write = [&](std::ofstream& train_out, std::ofstream& test_out){
+            std::ofstream& out = rnd(gen) < output_sources.test_ratio ? test_out : train_out;
+            out.write(reinterpret_cast<const char*>(packed_bytes.data()), 96);
+            out.write(reinterpret_cast<const char*>(&target), sizeof(float));
+        };
+
+        const bool write_preliminary = rnd(gen) < output_sources.preliminary_ratio;
+        if (write_preliminary) {
+            write(output_sources.preliminary_train_out, output_sources.preliminary_test_out);
+        }
+        size_t chunk_num = gen() % output_sources.chunks_count;
+        write(output_sources.train_outs[chunk_num], output_sources.test_out);
     }
 }
