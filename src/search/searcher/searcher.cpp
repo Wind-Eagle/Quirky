@@ -161,7 +161,7 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 #define CHECK_STOP \
     if (ShouldStop()) return 0
 
-#define MAKE_MOVE(position, move)                                                   \
+#define AUTO_MAKE_MOVE(position, move)                                              \
     q_core::MakeMoveInfo _make_move_info;                                           \
     q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
     bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info); \
@@ -177,11 +177,10 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
                                     [&]() { tt_.Prefetch(position_.board.hash); }); \
     if (!_legal) {                                                                  \
         continue;                                                                   \
-    }                                                                               \
-    Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
+    }
 
-const std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
-    0, 100, 300, 300, 500, 900, 3000, 100, 300, 300, 500, 900, 3000};
+#define UNMAKE_MOVE(position, move) \
+    position.UnmakeMove(move, _make_move_info, _evaluator_update_info);
 
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;
@@ -196,7 +195,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
             return beta;
         }
     }
-    QuiescenseMovePicker move_picker(position_, in_check);
+    QuiescenseMovePicker move_picker(position_, in_check, global_context_.history_table);
     size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != QuiescenseMovePicker::Stage::End;
@@ -208,7 +207,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
                 continue;
             }
         }
-        MAKE_MOVE(position_, move);
+        AUTO_MAKE_MOVE(position_, move);
         moves_done++;
         q_eval::score_t new_score = -QuiescenseSearch(-beta, -alpha);
         alpha = std::max(alpha, new_score);
@@ -488,6 +487,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
     size_t history_moves_done = 0;
+    q_core::MoveList captures;
     q_core::MoveList quiet_moves;
 
     for (q_core::Move move = move_picker.GetNextMove();
@@ -525,6 +525,9 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         MAKE_MOVE_WITH_PREFETCH(position_, move);
         SEND_ROOT_MOVE;
 
+        if (q_core::IsMoveCapture(move)) {
+            captures.moves[captures.size++] = move;
+        }
         if (!q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move)) {
             quiet_moves.moves[quiet_moves.size++] = move;
         }
@@ -559,6 +562,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             score = -Search<NodeType::PV>(new_depth - 1, idepth + 1, -beta, -alpha, false);
         }
 
+        UNMAKE_MOVE(position_, move);
+
         ON_ROOT_MOVE_SEARCHED;
 
         if (score > alpha) {
@@ -573,16 +578,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             SAVE_ROOT_BEST_MOVE;
             if (IsMoveNull(local_context_[idepth].skip_move)) {
                 tt_store_move(beta, best_move);
-                if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
-                    global_context_.killer_moves[idepth].Add(best_move);
-                    global_context_.history_table.UpdateGood(
-                        q_core::GetInvertedColor(position_.board.move_side), best_move, depth);
-                    for (size_t i = 0; i + 1 < quiet_moves.size; i++) {
-                        global_context_.history_table.UpdateBad(
-                            q_core::GetInvertedColor(position_.board.move_side),
-                            quiet_moves.moves[i], depth);
-                    }
-                }
+                global_context_.killer_moves[idepth].Update(best_move);
+                global_context_.history_table.Update(position_, depth, best_move, captures, quiet_moves);
             }
             return beta;
         }

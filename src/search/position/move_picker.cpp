@@ -6,8 +6,10 @@
 #include "core/board/types.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
+#include "core/util.h"
 #include "position.h"
 #include "util/io.h"
+#include "util/macro.h"
 
 namespace q_search {
 
@@ -26,11 +28,25 @@ void KillerMoves::Add(const q_core::Move move) {
 
 q_core::Move KillerMoves::GetMove(const uint8_t index) const { return moves_[index]; }
 
+void KillerMoves::Update(const q_core::Move best_move) {
+    if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
+        Add(best_move);
+    }
+}
+
 HistoryTable::HistoryTable() {
     for (q_core::cell_t i = 0; i < q_core::BOARD_SIZE; i++) {
         for (q_core::coord_t j = 0; j < q_core::BOARD_SIZE; j++) {
             table_[0][i][j] = 0;
             table_[1][i][j] = 0;
+        }
+    }
+
+    for (q_core::cell_t i = 0; i < q_core::NUMBER_OF_PIECES; i++) {
+        for (q_core::coord_t j = 0; j < q_core::BOARD_SIZE; j++) {
+            for (q_core::cell_t k = 0; k < q_core::NUMBER_OF_PIECES; k++) {
+                capture_table_[i][j][k] = 0;
+            }
         }
     }
 }
@@ -40,51 +56,76 @@ HistoryTable::HistoryTable() {
 // https://github.com/SnowballSH/Avalanche/blob/master/src/engine/search.zig
 // https://github.com/jhonnold/berserk/blob/main/src/history.h
 
-void HistoryTable::UpdateGood(const q_core::Color c, const q_core::Move move, const depth_t depth) {
-    int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
-    table_[static_cast<size_t>(c)][move.src][move.dst] += adj - table_[static_cast<size_t>(c)][move.src][move.dst] * std::abs(adj) / 16384;
+int16_t& HistoryTable::GetQuietEntry(const q_core::Board& board, const q_core::Move move) {
+    return table_[static_cast<size_t>(board.move_side)][move.src][move.dst];
 }
 
-void HistoryTable::UpdateBad(const q_core::Color c, const q_core::Move move, const depth_t depth) {
-    int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
-    table_[static_cast<size_t>(c)][move.src][move.dst] += -adj - table_[static_cast<size_t>(c)][move.src][move.dst] * std::abs(adj) / 16384;
+int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board, const q_core::Move move) {
+    const q_core::Piece src = q_core::GetCellPiece(board.cells[move.src]);
+    const q_core::Piece dst = board.cells[move.dst] == q_core::EMPTY_CELL
+                                  ? q_core::Piece::Pawn
+                                  : q_core::GetCellPiece(board.cells[move.dst]);
+    return capture_table_[static_cast<size_t>(src) - 1][move.dst][static_cast<size_t>(dst) - 1];
 }
 
-int64_t HistoryTable::GetScore(const q_core::Color c, const q_core::Move move) const {
-    return table_[static_cast<size_t>(c)][move.src][move.dst];
+const int16_t& HistoryTable::GetQuietEntry(const q_core::Board& board, const q_core::Move move) const {
+    return table_[static_cast<size_t>(board.move_side)][move.src][move.dst];
 }
 
-static constexpr uint8_t CAPTURE_VICTIM_COST[q_core::NUMBER_OF_CELLS] = {0, 8,  16, 24, 30, 36, 0,
-                                                                         8, 16, 24, 30, 36, 0};
-static constexpr uint8_t CAPTURE_ATTACKER_COST[q_core::NUMBER_OF_CELLS] = {0, 5, 4, 3, 2, 1, 6,
-                                                                           5, 4, 3, 2, 1, 6};
+const int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board, const q_core::Move move) const {
+    const q_core::Piece src = q_core::GetCellPiece(board.cells[move.src]);
+    const q_core::Piece dst = board.cells[move.dst] == q_core::EMPTY_CELL
+                                  ? q_core::Piece::Pawn
+                                  : q_core::GetCellPiece(board.cells[move.dst]);
+    return capture_table_[static_cast<size_t>(src) - 1][move.dst][static_cast<size_t>(dst) - 1];
+}
 
-inline static void AnnotateByMVVLVA(const q_core::Board& board, q_core::Move* moves,
-                                    const size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        q_core::Move& move = moves[i];
-        move.info = CAPTURE_VICTIM_COST[board.cells[move.dst]] +
-                    CAPTURE_ATTACKER_COST[board.cells[move.src]];
+void HistoryTable::UpdateQuiet(const q_core::Board& board, const q_core::Move move, const int adj) {
+    int16_t& entry = GetQuietEntry(board, move);
+    entry += adj - entry * std::abs(adj) / 16384;
+}
+
+void HistoryTable::UpdateCapture(const q_core::Board& board, q_core::Move move, const int adj) {
+    int16_t& entry = GetCaptureEntry(board, move);
+    entry += adj - entry * std::abs(adj) / 16384;
+}
+
+int16_t HistoryTable::GetQuietScore(const q_core::Board& board, const q_core::Move move) const {
+    return GetQuietEntry(board, move);
+}
+
+int16_t HistoryTable::GetCaptureScore(const q_core::Board& board, const q_core::Move move) const {
+    return GetCaptureEntry(board, move);
+}
+
+void HistoryTable::Update(const Position& position, depth_t depth, q_core::Move best_move,
+                          const q_core::MoveList& captures, const q_core::MoveList& quiet_moves) {
+    const int adj = std::min(1708, 4 * depth * depth + 191 * depth - 118);
+
+    if (q_core::IsMoveCapture(best_move)) {
+        UpdateCapture(position.board, best_move, adj);
+    } else if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
+        UpdateQuiet(position.board, best_move, adj);
+    }
+
+    for (size_t i = 0; i + 1 < captures.size; i++) {
+        UpdateCapture(position.board, captures.moves[i], -adj);
+    }
+    if (!q_core::IsMoveCapture(best_move) && !q_core::IsMovePromotion(best_move)) {
+        for (size_t i = 0; i + 1 < quiet_moves.size; i++) {
+            UpdateQuiet(position.board, quiet_moves.moves[i], -adj);
+        }
     }
 }
 
-inline static void SortByMVVLVA(const q_core::Board& board, q_core::Move* moves,
+inline static void SortMoves(q_core::Move* moves, const std::array<int, 256>& scores,
                                 const size_t count) {
+    Q_ASSERT(count < 256);
     for (size_t i = 0; i < count; ++i) {
-        q_core::Move& move = moves[i];
-        move.info = CAPTURE_VICTIM_COST[board.cells[move.dst]] +
-                    CAPTURE_ATTACKER_COST[board.cells[move.src]];
+        moves[i].info = i;
     }
     std::sort(moves, moves + count,
-              [&](const q_core::Move lhs, const q_core::Move rhs) { return lhs.info > rhs.info; });
-}
-
-inline static void SortByHistoryTable(const HistoryTable& history_table, const q_core::Board& board,
-                                      q_core::Move* moves, const size_t count) {
-    std::sort(moves, moves + count, [&](const q_core::Move lhs, const q_core::Move rhs) {
-        return history_table.GetScore(board.move_side, lhs) >
-               history_table.GetScore(board.move_side, rhs);
-    });
+              [&](const q_core::Move lhs, const q_core::Move rhs) { return scores[lhs.info] > scores[rhs.info]; });
 }
 
 MovePicker::Stage GetNextStage(MovePicker::Stage stage) {
@@ -120,6 +161,18 @@ bool IsValidKiller(const q_core::Board& board, const q_core::Move move) {
     return q_core::IsMovePseudolegal(board, move) && board.cells[move.dst] == q_core::EMPTY_CELL;
 }
 
+void ScoreCaptures(const q_core::Board& board, const HistoryTable& history_table, q_core::Move* moves, std::array<int, 256>& scores, const size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        scores[i] = history_table.GetCaptureScore(board, moves[i]) / 16 + SEE_CELLS_VALUE[board.cells[moves[i].dst]];
+    }
+}
+
+void ScoreQuiets(const q_core::Board& board, const HistoryTable& history_table, q_core::Move* moves, std::array<int, 256>& scores, const size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        scores[i] = history_table.GetQuietScore(board, moves[i]);
+    }
+}
+
 void MovePicker::GetNewMoves() {
     while (pos_ == list_.size) {
         if (stage_ != Stage::End) {
@@ -136,8 +189,8 @@ void MovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                SortByMVVLVA(position_.board, list_.moves + list_old_size,
-                             list_.size - list_old_size);
+                ScoreCaptures(position_.board, history_table_, list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                SortMoves(list_.moves + list_old_size, scores_, list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {
@@ -169,8 +222,8 @@ void MovePicker::GetNewMoves() {
                         list_.size--;
                     }
                 }
-                SortByHistoryTable(history_table_, position_.board, list_.moves + list_old_size,
-                                   list_.size - list_old_size);
+                ScoreQuiets(position_.board, history_table_, list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                SortMoves(list_.moves + list_old_size, scores_, list_.size - list_old_size);
                 break;
             }
             case Stage::End: {
@@ -189,20 +242,13 @@ QuiescenseMovePicker::Stage GetNextStage(QuiescenseMovePicker::Stage stage) {
     return static_cast<QuiescenseMovePicker::Stage>(static_cast<uint8_t>(stage) + 1);
 }
 
-QuiescenseMovePicker::QuiescenseMovePicker(const Position& position, bool in_check)
-    : position_(position), movegen_(position.board), in_check_(in_check) {}
+QuiescenseMovePicker::QuiescenseMovePicker(const Position& position, bool in_check, const HistoryTable& history_table)
+    : position_(position), movegen_(position.board), in_check_(in_check), history_table_(history_table) {}
 
 q_core::Move QuiescenseMovePicker::GetNextMove() {
     GetNewMoves();
     if (Q_UNLIKELY(stage_ == Stage::End)) {
         return q_core::NULL_MOVE;
-    }
-    if (stage_ == Stage::Capture) {
-        for (size_t i = pos_ + 1; i < list_.size; i++) {
-            if (list_.moves[i].info > list_.moves[pos_].info) {
-                std::swap(list_.moves[i], list_.moves[pos_]);
-            }
-        }
     }
     return list_.moves[pos_++];
 }
@@ -216,8 +262,8 @@ void QuiescenseMovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                AnnotateByMVVLVA(position_.board, list_.moves + list_old_size,
-                                 list_.size - list_old_size);
+                ScoreCaptures(position_.board, history_table_, list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                SortMoves(list_.moves + list_old_size, scores_, list_.size - list_old_size);
                 break;
             }
             case Stage::Promotion: {
