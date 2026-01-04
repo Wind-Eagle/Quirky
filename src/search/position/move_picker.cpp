@@ -4,6 +4,7 @@
 
 #include "core/board/board.h"
 #include "core/board/types.h"
+#include "core/moves/attack.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "core/util.h"
@@ -68,7 +69,8 @@ int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board, const q_core:
     return capture_table_[src][move.dst][static_cast<size_t>(dst) - 1];
 }
 
-const int16_t& HistoryTable::GetQuietEntry(const q_core::Board& board, const q_core::Move move) const {
+const int16_t& HistoryTable::GetQuietEntry(const q_core::Board& board,
+                                           const q_core::Move move) const {
     return table_[static_cast<size_t>(board.move_side)][move.src][move.dst];
 }
 
@@ -120,13 +122,14 @@ void HistoryTable::Update(const Position& position, depth_t depth, q_core::Move 
 }
 
 inline static void SortMoves(q_core::Move* moves, const std::array<int, 256>& scores,
-                                const size_t count) {
+                             const size_t count) {
     Q_ASSERT(count < 256);
     for (size_t i = 0; i < count; ++i) {
         moves[i].info = i;
     }
-    std::sort(moves, moves + count,
-              [&](const q_core::Move lhs, const q_core::Move rhs) { return scores[lhs.info] > scores[rhs.info]; });
+    std::sort(moves, moves + count, [&](const q_core::Move lhs, const q_core::Move rhs) {
+        return scores[lhs.info] > scores[rhs.info];
+    });
 }
 
 MovePicker::Stage GetNextStage(MovePicker::Stage stage) {
@@ -141,19 +144,40 @@ MovePicker::MovePicker(const Position& position, const q_core::Move tt_move,
       history_table_(history_table),
       movegen_(position.board) {}
 
+#define SKIP_MOVE                     \
+    pos_++;                           \
+    if (pos_ == list_.size) {         \
+        GetNewMoves();                \
+        if (pos_ == list_.size) {     \
+            return q_core::NULL_MOVE; \
+        }                             \
+    }
+
+bool IsCaptureGood(const q_core::Board& board, const q_core::Move move,
+                   const std::array<int, 256>& scores, size_t pos) {
+    return q_core::IsSEENotNegative(board, move, -scores[pos] / 2, SEE_CELLS_VALUE) &&
+           !(q_core::IsMovePromotion(move) &&
+             q_core::GetPromotionPiece(move) != q_core::Piece::Queen);
+}
+
+bool IsQuietGood(const q_core::Move move) {
+    return !(q_core::IsMovePromotion(move) && q_core::GetPromotionPiece(move) != q_core::Piece::Queen);
+}
+
 q_core::Move MovePicker::GetNextMove() {
     GetNewMoves();
     if (Q_UNLIKELY(stage_ == Stage::End)) {
         return q_core::NULL_MOVE;
     }
     while (stage_ != Stage::TTMove && list_.moves[pos_] == tt_move_) {
-        pos_++;
-        if (pos_ == list_.size) {
-            GetNewMoves();
-            if (pos_ == list_.size) {
-                return q_core::NULL_MOVE;
-            }
+        SKIP_MOVE;
+    }
+    while (stage_ == Stage::Capture) {
+        if (IsCaptureGood(position_.board, list_.moves[pos_], scores_, pos_ - stage_start_pos_)) {
+            break;
         }
+        bad_list_.moves[bad_list_.size++] = list_.moves[pos_];
+        SKIP_MOVE;
     }
     return list_.moves[pos_++];
 }
@@ -162,13 +186,16 @@ bool IsValidKiller(const q_core::Board& board, const q_core::Move move) {
     return q_core::IsMovePseudolegal(board, move) && board.cells[move.dst] == q_core::EMPTY_CELL;
 }
 
-void ScoreCaptures(const q_core::Board& board, const HistoryTable& history_table, q_core::Move* moves, std::array<int, 256>& scores, const size_t count) {
+void ScoreCaptures(const q_core::Board& board, const HistoryTable& history_table,
+                   q_core::Move* moves, std::array<int, 256>& scores, const size_t count) {
     for (size_t i = 0; i < count; i++) {
-        scores[i] = history_table.GetCaptureScore(board, moves[i]) / 16 + SEE_CELLS_VALUE[board.cells[moves[i].dst]];
+        scores[i] = history_table.GetCaptureScore(board, moves[i]) / 16 +
+                    SEE_CELLS_VALUE[board.cells[moves[i].dst]];
     }
 }
 
-void ScoreQuiets(const q_core::Board& board, const HistoryTable& history_table, q_core::Move* moves, std::array<int, 256>& scores, const size_t count) {
+void ScoreQuiets(const q_core::Board& board, const HistoryTable& history_table, q_core::Move* moves,
+                 std::array<int, 256>& scores, const size_t count) {
     for (size_t i = 0; i < count; i++) {
         scores[i] = history_table.GetQuietScore(board, moves[i]);
     }
@@ -178,6 +205,7 @@ void MovePicker::GetNewMoves() {
     while (pos_ == list_.size) {
         if (stage_ != Stage::End) {
             stage_ = GetNextStage(stage_);
+            stage_start_pos_ = pos_;
         }
         switch (stage_) {
             case Stage::TTMove: {
@@ -190,7 +218,8 @@ void MovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                ScoreCaptures(position_.board, history_table_, list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                ScoreCaptures(position_.board, history_table_, list_.moves + list_old_size, scores_,
+                              list_.size - list_old_size);
                 SortMoves(list_.moves + list_old_size, scores_, list_.size - list_old_size);
                 break;
             }
@@ -223,8 +252,17 @@ void MovePicker::GetNewMoves() {
                         list_.size--;
                     }
                 }
-                ScoreQuiets(position_.board, history_table_, list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                ScoreQuiets(position_.board, history_table_, list_.moves + list_old_size, scores_,
+                            list_.size - list_old_size);
                 SortMoves(list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                break;
+            }
+            case Stage::Bad: {
+                const size_t list_old_size = list_.size;
+                list_.size += bad_list_.size;
+                for (size_t i = 0; i < bad_list_.size; i++) {
+                    list_.moves[i + list_old_size] = bad_list_.moves[i];
+                }
                 break;
             }
             case Stage::End: {
@@ -243,8 +281,12 @@ QuiescenseMovePicker::Stage GetNextStage(QuiescenseMovePicker::Stage stage) {
     return static_cast<QuiescenseMovePicker::Stage>(static_cast<uint8_t>(stage) + 1);
 }
 
-QuiescenseMovePicker::QuiescenseMovePicker(const Position& position, bool in_check, const HistoryTable& history_table)
-    : position_(position), movegen_(position.board), in_check_(in_check), history_table_(history_table) {}
+QuiescenseMovePicker::QuiescenseMovePicker(const Position& position, bool in_check,
+                                           const HistoryTable& history_table)
+    : position_(position),
+      movegen_(position.board),
+      in_check_(in_check),
+      history_table_(history_table) {}
 
 q_core::Move QuiescenseMovePicker::GetNextMove() {
     GetNewMoves();
@@ -263,7 +305,8 @@ void QuiescenseMovePicker::GetNewMoves() {
             case Stage::Capture: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllCaptures(position_.board, list_);
-                ScoreCaptures(position_.board, history_table_, list_.moves + list_old_size, scores_, list_.size - list_old_size);
+                ScoreCaptures(position_.board, history_table_, list_.moves + list_old_size, scores_,
+                              list_.size - list_old_size);
                 SortMoves(list_.moves + list_old_size, scores_, list_.size - list_old_size);
                 break;
             }

@@ -41,6 +41,9 @@ class HistoryTable {
 inline static constexpr std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
     0, 100, 300, 300, 500, 900, 3000, 100, 300, 300, 500, 900, 3000};
 
+  inline static constexpr std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_SMALL_VALUE = {
+    0, 25, 75, 75, 125, 225, 750, 25, 75, 75, 125, 225, 750};
+
 class MovePicker {
   public:
     MovePicker(const Position& position, q_core::Move tt_move, const KillerMoves& killer_moves,
@@ -52,7 +55,8 @@ class MovePicker {
         Promotion = 3,
         KillerMoves = 4,
         History = 5,
-        End = 6
+        Bad = 6,
+        End = 7
     };
     q_core::Move GetNextMove();
     Stage GetStage() const;
@@ -61,12 +65,14 @@ class MovePicker {
     void GetNewMoves();
     const Position& position_;
     q_core::MoveList list_;
+    q_core::MoveList bad_list_;
     std::array<int, 256> scores_;
     q_core::Move tt_move_;
     const KillerMoves& killer_moves_;
     const HistoryTable& history_table_;
     q_core::Movegen movegen_;
     size_t pos_ = 0;
+    size_t stage_start_pos_ = 0;
     Stage stage_ = Stage::Start;
 };
 
