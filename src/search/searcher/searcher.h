@@ -26,7 +26,7 @@ class Searcher {
     q_eval::score_t RunSearch(depth_t depth, q_eval::score_t alpha, q_eval::score_t beta);
     template <NodeType node_type>
     q_eval::score_t Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
-                           q_eval::score_t beta);
+                           q_eval::score_t beta, bool is_cut_node);
 
     SearchResult GetSearchResult(RootMoveWithScore result);
     std::vector<q_core::Move> GetPV(q_core::Move best_move);

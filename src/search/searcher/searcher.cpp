@@ -154,7 +154,7 @@ void Searcher::Run(depth_t max_depth, size_t pv_count) {
 q_eval::score_t Searcher::RunSearch(depth_t depth, q_eval::score_t alpha = q_eval::SCORE_MIN,
                                     q_eval::score_t beta = q_eval::SCORE_MAX) {
     global_context_.initial_depth = depth;
-    return Search<NodeType::Root>(depth, 0, alpha, beta);
+    return Search<NodeType::Root>(depth, 0, alpha, beta, false);
 }
 
 bool Searcher::ShouldStop() { return control_.IsStopped(); }
@@ -310,7 +310,7 @@ inline static constexpr depth_t SE_TT_DEPTH_DIFF_THRESHOLD = 3;
 
 template <Searcher::NodeType node_type>
 q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t alpha,
-                                 q_eval::score_t beta) {
+                                 q_eval::score_t beta, bool is_cut_node) {
     CHECK_STOP;
 
     // Checking fifty move rule
@@ -370,6 +370,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         tt_entry = tt_.GetEntry(position_hash, tt_entry_found);
     }
 
+    bool tt_pv = node_type != NodeType::Simple;
+
     auto tt_store_move = [&](q_eval::score_t score, const q_core::Move best_move) {
         if (tt_entry) {
             auto tt_node_type = TranspositionTable::NodeType::ExactValue;
@@ -384,13 +386,14 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             score = AdjustCheckmate(score, -static_cast<depth_t>(idepth));
             if (!IsMoveNull(best_move)) {
                 tt_.Store(*tt_entry, position_hash, best_move, local_context_[idepth].eval, score,
-                          depth, tt_node_type, node_type != NodeType::Simple);
+                          depth, tt_node_type, tt_pv);
             }
         }
     };
 
     if (tt_entry_found) {
         tt_move = q_core::GetDecompressedMove(tt_entry->move);
+        tt_pv |= tt_entry->info.IsPV();
         const bool is_cutoff_allowed =
             (node_type != NodeType::Root) & (tt_entry->depth >= depth) &
             (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT) &
@@ -445,7 +448,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 q_core::coord_t old_en_passant_coord;
                 position_.MakeNullMove(old_en_passant_coord);
                 const q_eval::score_t new_score =
-                    -Search<NodeType::Simple>(depth - reduction, idepth + 1, -beta, -beta + 1);
+                    -Search<NodeType::Simple>(depth - reduction, idepth + 1, -beta, -beta + 1, !is_cut_node);
                 position_.UnmakeNullMove(old_en_passant_coord);
                 CHECK_STOP;
                 if (new_score >= beta) {
@@ -456,7 +459,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                     global_context_.nmp_min_idepth = idepth + (depth - reduction) * 3 / 4;
                     local_context_[idepth].nmp_verification = true;
                     const q_eval::score_t verif_score =
-                        Search<NodeType::Simple>(depth - reduction, idepth, beta - 1, beta);
+                        Search<NodeType::Simple>(depth - reduction, idepth, beta - 1, beta, false);
                     local_context_[idepth].nmp_verification = false;
                     global_context_.nmp_min_idepth = 0;
                     CHECK_STOP;
@@ -496,7 +499,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             const auto cur_stack = local_context_[idepth];
             local_context_[idepth].skip_move = move;
             const auto new_score =
-                Search<NodeType::Simple>((depth - 1) / 2, idepth, singular_beta - 1, singular_beta);
+                Search<NodeType::Simple>((depth - 1) / 2, idepth, singular_beta - 1, singular_beta, is_cut_node);
             local_context_[idepth] = cur_stack;
             local_context_[idepth].skip_move = q_core::NULL_MOVE;
             CHECK_STOP;
@@ -533,16 +536,16 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             depth_reduction = std::min(static_cast<depth_t>(new_depth - 1),
                                        std::max(depth_reduction, static_cast<depth_t>(1)));
             score = -Search<NodeType::Simple>(new_depth - depth_reduction, idepth + 1, -alpha - 1,
-                                              -alpha);
+                                              -alpha, true);
             if (score > alpha && depth_reduction > 1) {
-                score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha);
+                score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha, !is_cut_node);
             }
         } else if (node_type == NodeType::Simple || moves_done > 1) {
-            score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha);
+        score = -Search<NodeType::Simple>(new_depth - 1, idepth + 1, -alpha - 1, -alpha, !is_cut_node);
         }
         if (node_type != NodeType::Simple &&
             (moves_done == 1 || (score > alpha && (node_type == NodeType::Root || score < beta)))) {
-            score = -Search<NodeType::PV>(new_depth - 1, idepth + 1, -beta, -alpha);
+            score = -Search<NodeType::PV>(new_depth - 1, idepth + 1, -beta, -alpha, false);
         }
 
         ON_ROOT_MOVE_SEARCHED;
@@ -592,13 +595,13 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
 template q_eval::score_t Searcher::Search<Searcher::NodeType::Root>(depth_t depth, idepth_t idepth,
                                                                     q_eval::score_t alpha,
-                                                                    q_eval::score_t beta);
+                                                                    q_eval::score_t beta, bool is_cut_node);
 template q_eval::score_t Searcher::Search<Searcher::NodeType::PV>(depth_t depth, idepth_t idepth,
                                                                   q_eval::score_t alpha,
-                                                                  q_eval::score_t beta);
+                                                                  q_eval::score_t beta, bool is_cut_node);
 template q_eval::score_t Searcher::Search<Searcher::NodeType::Simple>(depth_t depth,
                                                                       idepth_t idepth,
                                                                       q_eval::score_t alpha,
-                                                                      q_eval::score_t beta);
+                                                                      q_eval::score_t beta, bool is_cut_node);
 
 }  // namespace q_search
