@@ -395,10 +395,8 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         tt_move = q_core::GetDecompressedMove(tt_entry->move);
         tt_pv |= tt_entry->info.IsPV();
         const bool is_cutoff_allowed =
-            (node_type != NodeType::Root) & (tt_entry->depth >= depth) &
-            (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT) &
-            (node_type == NodeType::Simple ||
-             tt_entry->info.GetGeneration() == tt_.GetGeneration());
+            (node_type == NodeType::Simple) & (tt_entry->depth >= depth) &
+            (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT);
         if (is_cutoff_allowed) {
             const q_eval::score_t score = AdjustCheckmate(tt_entry->score, idepth);
             const auto tt_node_type = tt_entry->info.GetNodeType();
