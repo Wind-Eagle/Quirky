@@ -35,7 +35,7 @@ class HistoryTable {
     void UpdateQuiet(const q_core::Board& board, q_core::Move move, int adj);
     void UpdateCapture(const q_core::Board& board, q_core::Move move, int adj);
     std::array<std::array<std::array<int16_t, q_core::BOARD_SIZE>, q_core::BOARD_SIZE>, 2> table_;
-    std::array<std::array<std::array<int16_t, q_core::NUMBER_OF_PIECES>, q_core::BOARD_SIZE>, q_core::NUMBER_OF_PIECES> capture_table_;
+    std::array<std::array<std::array<int16_t, q_core::NUMBER_OF_PIECES>, q_core::BOARD_SIZE>, q_core::NUMBER_OF_CELLS> capture_table_;
 };
 
 inline static constexpr std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {

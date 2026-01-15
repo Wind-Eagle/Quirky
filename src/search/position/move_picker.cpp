@@ -42,7 +42,7 @@ HistoryTable::HistoryTable() {
         }
     }
 
-    for (q_core::cell_t i = 0; i < q_core::NUMBER_OF_PIECES; i++) {
+    for (q_core::cell_t i = 0; i < q_core::NUMBER_OF_CELLS; i++) {
         for (q_core::coord_t j = 0; j < q_core::BOARD_SIZE; j++) {
             for (q_core::cell_t k = 0; k < q_core::NUMBER_OF_PIECES; k++) {
                 capture_table_[i][j][k] = 0;
@@ -61,23 +61,24 @@ int16_t& HistoryTable::GetQuietEntry(const q_core::Board& board, const q_core::M
 }
 
 int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board, const q_core::Move move) {
-    const q_core::Piece src = q_core::GetCellPiece(board.cells[move.src]);
+    const q_core::cell_t src = board.cells[move.src];
     const q_core::Piece dst = board.cells[move.dst] == q_core::EMPTY_CELL
                                   ? q_core::Piece::Pawn
                                   : q_core::GetCellPiece(board.cells[move.dst]);
-    return capture_table_[static_cast<size_t>(src) - 1][move.dst][static_cast<size_t>(dst) - 1];
+    return capture_table_[src][move.dst][static_cast<size_t>(dst) - 1];
 }
 
 const int16_t& HistoryTable::GetQuietEntry(const q_core::Board& board, const q_core::Move move) const {
     return table_[static_cast<size_t>(board.move_side)][move.src][move.dst];
 }
 
-const int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board, const q_core::Move move) const {
-    const q_core::Piece src = q_core::GetCellPiece(board.cells[move.src]);
+const int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board,
+                                             const q_core::Move move) const {
+    const q_core::cell_t src = board.cells[move.src];
     const q_core::Piece dst = board.cells[move.dst] == q_core::EMPTY_CELL
                                   ? q_core::Piece::Pawn
                                   : q_core::GetCellPiece(board.cells[move.dst]);
-    return capture_table_[static_cast<size_t>(src) - 1][move.dst][static_cast<size_t>(dst) - 1];
+    return capture_table_[src][move.dst][static_cast<size_t>(dst) - 1];
 }
 
 void HistoryTable::UpdateQuiet(const q_core::Board& board, const q_core::Move move, const int adj) {
