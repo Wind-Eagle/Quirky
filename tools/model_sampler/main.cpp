@@ -11,11 +11,12 @@ void PrintHelp() {
     q_util::Print(
         "Quirky eval model sampler is a tool that can transform labeled fens set"
         "into a dataset for Quirky eval model learner. Usage:\n",
-        "--help: print help\n", "-i [path to file] - path to the dataset file\n",
+        "--help: print help\n",
         "--input [path to file] - file with raw dataset\n",
         "--output [path to directory] - directory with datasets\n",
         "--test-ratio [float] - ratio of test dataset elements\n"
         "--preliminary-ratio [float] - ratio of preliminary dataset elements\n"
+        "--preliminary-chunks-count [integer] - ratio of preliminary dataset elements\n"
         "--chunks-count [integer] - number of output chunks");
 }
 
@@ -24,6 +25,7 @@ struct SamplerArguments {
     std::string_view out_dir;
     float test_ratio = 0.1;
     float preliminary_ratio = 0.5;
+    size_t preliminary_chunks_count = 2;
     size_t chunks_count = 2;
 };
 
@@ -34,10 +36,14 @@ void Make(const SamplerArguments& args) {
 
     output_sources.test_ratio = args.test_ratio;
     output_sources.preliminary_ratio = args.preliminary_ratio;
+    output_sources.preliminary_chunks_count = args.preliminary_chunks_count;
     output_sources.chunks_count = args.chunks_count;
 
-    output_sources.preliminary_train_out = std::ofstream(std::string(args.out_dir) + "/preliminary_train.qds", std::ios::binary);
+    for (size_t i = 0; i < args.preliminary_chunks_count; i++) {
+         output_sources.preliminary_train_outs.emplace_back(std::string(args.out_dir) + "/preliminary_train_chunk_" + std::to_string(i + 1) + ".qds", std::ios::binary);
+    }
     output_sources.preliminary_test_out = std::ofstream(std::string(args.out_dir) + "/preliminary_test.qds", std::ios::binary);
+
     for (size_t i = 0; i < args.chunks_count; i++) {
          output_sources.train_outs.emplace_back(std::string(args.out_dir) + "/train_chunk_" + std::to_string(i + 1) + ".qds", std::ios::binary);
     }
@@ -74,6 +80,8 @@ int main(int argc, char* argv[]) {
             sampler_arguments.test_ratio = std::stof(argv[i + 1]);
         } else if (std::string(argv[i]) == "--preliminary-ratio") {
             sampler_arguments.preliminary_ratio = std::stof(argv[i + 1]);
+        } else if (std::string(argv[i]) == "--preliminary-chunks-count") {
+            sampler_arguments.preliminary_chunks_count = std::stoi(argv[i + 1]);
         } else if (std::string(argv[i]) == "--chunks-count") {
             sampler_arguments.chunks_count = std::stoi(argv[i + 1]);
         }

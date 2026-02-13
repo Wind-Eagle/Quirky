@@ -49,7 +49,8 @@ void WriteBoardsToCSV(const PositionSet& position_set, OutputSources& output_sou
 
         const bool write_preliminary = rnd(gen) < output_sources.preliminary_ratio;
         if (write_preliminary) {
-            write(output_sources.preliminary_train_out, output_sources.preliminary_test_out);
+            size_t chunk_num = gen() % output_sources.preliminary_chunks_count;
+            write(output_sources.preliminary_train_outs[chunk_num], output_sources.preliminary_test_out);
         }
         size_t chunk_num = gen() % output_sources.chunks_count;
         write(output_sources.train_outs[chunk_num], output_sources.test_out);
