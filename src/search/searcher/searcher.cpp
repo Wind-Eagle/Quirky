@@ -416,6 +416,11 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         local_context_[idepth].eval = position_.GetEvaluatorScore();
     }
 
+    if (tt_entry && !tt_entry_found) {
+        tt_.Store(*tt_entry, position_hash, q_core::NULL_MOVE, local_context_[idepth].eval, q_eval::SCORE_UNKNOWN,
+                          0, TranspositionTable::NodeType::UpperBound, tt_pv);
+    }
+
     const bool is_check = position_.IsCheck();
 
     if (node_type == NodeType::Simple && !is_check) {
