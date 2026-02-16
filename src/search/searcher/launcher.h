@@ -24,7 +24,7 @@ class SearchLauncher {
   private:
     void StartMainThread(const Position& start_position, const std::vector<q_core::Move>& moves,
                          time_control_t time_control, depth_t max_depth);
-    static constexpr uint8_t TT_DEFAULT_BYTE_SIZE_LOG = 23;
+    static constexpr uint8_t TT_DEFAULT_BYTE_SIZE_LOG = 25;
     std::thread thread_;
     q_search::TranspositionTable tt_{TT_DEFAULT_BYTE_SIZE_LOG};
     SearchControl control_;
