@@ -301,6 +301,8 @@ inline static constexpr depth_t RPR_DEPTH_THRESHOLD = 4;
 inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN = {0, 50, 120, 200,
                                                                                    325};
 
+inline static constexpr depth_t IIR_DEPTH_THRESHOLD = 4;
+
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
 inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
     GetLMRDepthReduction();
@@ -471,6 +473,13 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                     }
                 }
             }
+        }
+    }
+
+    // IIR
+    if (IsMoveNull(local_context_[idepth].skip_move) && !is_check) {
+        if ((node_type != NodeType::Simple || is_cut_node) && depth >= IIR_DEPTH_THRESHOLD && q_core::IsMoveNull(tt_move)) {
+            depth--;
         }
     }
 
