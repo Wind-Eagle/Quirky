@@ -74,7 +74,7 @@ SearchResult Searcher::GetSearchResult(RootMoveWithScore result) {
 }
 
 inline static constexpr depth_t AW_DEPTH_THRESHOLD = 5;
-inline static constexpr q_eval::score_t AW_START_DELTA = 20;
+inline static constexpr q_eval::score_t AW_START_DELTA = 10;
 inline static constexpr q_eval::score_t AW_ALPHA_BETA_LIMIT = 300;
 
 void Searcher::Run(depth_t max_depth, size_t pv_count) {
