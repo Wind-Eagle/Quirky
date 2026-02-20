@@ -12,7 +12,6 @@
 #include "search/position/move_picker.h"
 #include "search/position/position.h"
 #include "search/position/transposition_table.h"
-#include "util/io.h"
 
 namespace q_search {
 
@@ -187,11 +186,11 @@ const std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;
     stat_.IncNodesCount();
-    const q_eval::score_t score = position_.GetEvaluatorScore();
 
     bool in_check = position_.IsCheck();
 
     if (!in_check) {
+        const q_eval::score_t score = position_.GetEvaluatorScore();
         alpha = std::max(alpha, score);
         if (alpha >= beta) {
             return beta;
