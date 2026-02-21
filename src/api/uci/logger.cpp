@@ -1,7 +1,5 @@
 #include "logger.h"
 
-#include <optional>
-
 #include "interactor.h"
 #include "util/io.h"
 
@@ -12,9 +10,9 @@ void LogStart() {
 }
 
 void LogUciResponseInner(const UciInitResponse&) {
-    q_util::Print("id name Quirky 2.0");
+    q_util::Print("id name Quirky 2.1 dev");
     q_util::Print("id author Wind-Eagle");
-    q_util::Print("option name Hash type spin default 8 min 1 max 1024");
+    q_util::Print("option name Hash type spin default 32 min 1 max 1024");
     q_util::Print("option name MultiPV type spin default 1 min 1 max 256");
     q_util::Print("uciok");
 }
