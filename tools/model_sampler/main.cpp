@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "../../src/util/error.h"
 #include "../../src/util/io.h"
 #include "reader.h"
 #include "writer.h"
@@ -86,11 +85,11 @@ int main(int argc, char* argv[]) {
             sampler_arguments.chunks_count = std::stoi(argv[i + 1]);
         }
         else {
-            q_util::ExitWithError(QuirkyError::UnexpectedArgument);
+            q_util::ExitWithError("Unexpected argument");
         }
     }
     if (sampler_arguments.input_file.empty() || sampler_arguments.out_dir.empty()) {
-        q_util::ExitWithError(QuirkyError::ParseError);
+        q_util::ExitWithError("Parse error");
     }
     Make(sampler_arguments);
 }

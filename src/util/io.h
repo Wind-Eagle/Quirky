@@ -50,10 +50,11 @@ inline void PrintError(First first, Rest... rest) {
     PrintToStream(std::cerr, "[ERROR]    ", first, rest...);
 }
 
-inline void ExitWithError(QuirkyError error) {
+template <class First, class... Rest>
+inline void ExitWithError(First first, Rest... rest) {
     std::lock_guard guard(print_mutex);
-    PrintToStream(std::cerr, "[FATAL ERROR]    ", GetErrorMessage(error));
-    exit(static_cast<uint8_t>(error));
+    PrintToStream(std::cerr, "[FATAL ERROR]    ", first, rest...);
+    exit(-1);
 }
 
 }  // namespace q_util

@@ -24,9 +24,10 @@ void LogUciResponseInner(const UciReadyResponse&) { q_util::Print("readyok"); }
 void LogUciResponseInner(const UciEmptyResponse&) {}
 
 void LogUciResponseInner(const UciErrorResponse& response) {
-    q_util::PrintError(response.error_message);
-    if (response.fatal_error != std::nullopt) {
-        q_util::ExitWithError(*response.fatal_error);
+    if (!response.is_fatal) {
+        q_util::PrintError(response.error_message);
+    } else {
+        q_util::ExitWithError(response.error_message);
     }
 }
 

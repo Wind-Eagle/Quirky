@@ -7,7 +7,6 @@
 
 #include "search/control/time.h"
 #include "search/searcher/launcher.h"
-#include "util/error.h"
 
 namespace q_api {
 
@@ -43,7 +42,7 @@ struct UciReadyResponse {};
 struct UciEmptyResponse {};
 struct UciErrorResponse {
     std::string error_message;
-    std::optional<QuirkyError> fatal_error;
+    bool is_fatal;
 };
 
 using uci_response_t =
