@@ -18,8 +18,7 @@
 #include "core/util.h"
 #include "model_weights.h"
 #include "util/bit.h"
-
-#include <iostream>
+#include "util/io.h"
 
 namespace q_eval {
 
@@ -28,8 +27,8 @@ static constexpr int ACTIVATION_SCALE = 127;
 static constexpr int OUTPUT_SCALE = 64 * 64;
 static constexpr int PRECISE_WEIGHT_SCALE = 64;
 
-static constexpr uint8_t FEATURE_ADDITIONAL_PRECISION = 4;
-static constexpr uint8_t LINEAR_ADDITIONAL_PRECISION = 1;
+static constexpr uint8_t FEATURE_ADDITIONAL_PRECISION = 5;
+static constexpr uint8_t LINEAR_ADDITIONAL_PRECISION = 3;
 
 struct ModelReader {
   public:
@@ -37,8 +36,9 @@ struct ModelReader {
     T ReadWeight(int scale) {
         float weight = MODEL_WEIGHTS[index_++];
         int64_t final_weight = std::round(weight * scale);
-        final_weight = std::min(final_weight, static_cast<int64_t>(std::numeric_limits<T>::max()));
-        final_weight = std::max(final_weight, static_cast<int64_t>(std::numeric_limits<T>::min()));
+        if (final_weight > static_cast<int64_t>(std::numeric_limits<T>::max()) || final_weight < static_cast<int64_t>(std::numeric_limits<T>::min())) {
+            q_util::ExitWithError("Model weights are out of range");
+        }
         return final_weight;
     }
 
