@@ -160,10 +160,6 @@ bool IsCaptureGood(const q_core::Board& board, const q_core::Move move,
              q_core::GetPromotionPiece(move) != q_core::Piece::Queen);
 }
 
-bool IsQuietGood(const q_core::Move move) {
-    return !(q_core::IsMovePromotion(move) && q_core::GetPromotionPiece(move) != q_core::Piece::Queen);
-}
-
 q_core::Move MovePicker::GetNextMove() {
     GetNewMoves();
     if (Q_UNLIKELY(stage_ == Stage::End)) {
@@ -190,7 +186,7 @@ void ScoreCaptures(const q_core::Board& board, const HistoryTable& history_table
                    q_core::Move* moves, std::array<int, 256>& scores, const size_t count) {
     for (size_t i = 0; i < count; i++) {
         scores[i] = history_table.GetCaptureScore(board, moves[i]) / 16 +
-                    SEE_CELLS_VALUE[board.cells[moves[i].dst]];
+                    SEE_CELLS_VALUE[board.cells[moves[i].dst]] + (q_core::IsMovePromotion(moves[i]) ? 1024 : 0);
     }
 }
 
@@ -224,7 +220,17 @@ void MovePicker::GetNewMoves() {
                 break;
             }
             case Stage::Promotion: {
+                const size_t list_old_size = list_.size;
                 movegen_.GenerateAllPromotions(position_.board, list_);
+                if (list_.size != list_old_size) {
+                    auto* ptr = std::partition(list_.moves + list_old_size, list_.moves + list_.size, [&](const q_core::Move move){
+                        return q_core::GetPromotionPiece(move) == q_core::Piece::Queen;
+                    });
+                    std::copy(ptr, list_.moves + list_.size, bad_list_.moves + bad_list_.size);
+                    const size_t underpromotions_cnt = list_.moves + list_.size - ptr;
+                    bad_list_.size += underpromotions_cnt;
+                    list_.size -= underpromotions_cnt;
+                };
                 break;
             }
             case Stage::KillerMoves: {
