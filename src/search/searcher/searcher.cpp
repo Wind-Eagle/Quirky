@@ -182,6 +182,8 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 #define UNMAKE_MOVE(position, move) \
     position.UnmakeMove(move, _make_move_info, _evaluator_update_info);
 
+inline static constexpr int16_t QS_SEE_PRUNING_THRESHOLD = -20;
+
 q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_t beta) {
     CHECK_STOP;
     stat_.IncNodesCount();
@@ -203,7 +205,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
         CHECK_STOP;
         if (!in_check && q_core::IsMoveCapture(move) && !q_eval::IsScoreMate(alpha) &&
             position_.HasNonPawns()) {
-            if (!q_core::IsSEENotNegative(position_.board, move, 0, SEE_CELLS_VALUE)) {
+            if (!q_core::IsSEENotNegative(position_.board, move, QS_SEE_PRUNING_THRESHOLD, SEE_CELLS_VALUE)) {
                 continue;
             }
         }

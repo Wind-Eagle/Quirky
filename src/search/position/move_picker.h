@@ -38,11 +38,11 @@ class HistoryTable {
     std::array<std::array<std::array<int16_t, q_core::NUMBER_OF_PIECES>, q_core::BOARD_SIZE>, q_core::NUMBER_OF_CELLS> capture_table_;
 };
 
-inline static constexpr std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
-    0, 100, 300, 300, 500, 900, 3000, 100, 300, 300, 500, 900, 3000};
+// Values are inherited from Obsidian chess engine
+// https://github.com/gab8192/Obsidian/blob/main/src/types.h
 
-  inline static constexpr std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_SMALL_VALUE = {
-    0, 25, 75, 75, 125, 225, 750, 25, 75, 75, 125, 225, 750};
+inline static constexpr std::array<int16_t, q_core::NUMBER_OF_CELLS> SEE_CELLS_VALUE = {
+    0, 100, 370, 390, 610, 1210, 3000, 100, 370, 390, 610, 1210, 3000};
 
 class MovePicker {
   public:
