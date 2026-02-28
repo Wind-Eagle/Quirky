@@ -6,7 +6,6 @@
 #include "core/board/types.h"
 #include "core/moves/attack.h"
 #include "core/moves/move.h"
-#include "core/util.h"
 #include "eval/score.h"
 #include "search/control/control.h"
 #include "search/position/move_picker.h"
@@ -483,14 +482,18 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
     }
 
+    HistoryTable::AdditionalKeyInfo history_info;
+    history_info.depth = depth;
+    for (uint8_t i = 0; i < HistoryTable::AdditionalKeyInfo::CH_SIZE; i++) {
+        history_info.prev_moves[i] = idepth > i ? local_context_[idepth - i - 1].current_move : q_core::NULL_MOVE;
+    }
+
     // Try moves one by one
     MovePicker move_picker(position_, tt_move, global_context_.killer_moves[idepth],
-                           global_context_.history_table);
+                           global_context_.history_table, history_info);
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
     size_t history_moves_done = 0;
-    q_core::MoveList captures;
-    q_core::MoveList quiet_moves;
 
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
@@ -528,10 +531,10 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         SEND_ROOT_MOVE;
 
         if (q_core::IsMoveCapture(move)) {
-            captures.moves[captures.size++] = move;
+            history_info.captures.moves[history_info.captures.size++] = move;
         }
-        if (!q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move)) {
-            quiet_moves.moves[quiet_moves.size++] = move;
+        if (IsMoveQuiet(move)) {
+            history_info.quiets.moves[history_info.quiets.size++] = move;
         }
 
         moves_done++;
@@ -581,7 +584,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             if (IsMoveNull(local_context_[idepth].skip_move)) {
                 tt_store_move(beta, best_move);
                 global_context_.killer_moves[idepth].Update(best_move);
-                global_context_.history_table.Update(position_, depth, best_move, captures, quiet_moves);
+                global_context_.history_table.Update(position_.board, best_move, history_info);
             }
             return beta;
         }
