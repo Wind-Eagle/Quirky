@@ -13,28 +13,32 @@
 
 namespace q_search {
 
-KillerMoves::KillerMoves() {
+HistoryTable::KillerMoves::KillerMoves() {
     for (size_t i = 0; i < COUNT; i++) {
         moves_[i] = q_core::NULL_MOVE;
     }
 }
 
-void KillerMoves::Add(const q_core::Move move) {
+void HistoryTable::KillerMoves::Add(const q_core::Move move) {
     for (size_t j = COUNT - 1; j >= 1; j--) {
         moves_[j] = moves_[j - 1];
     }
     moves_[0] = move;
 }
 
-q_core::Move KillerMoves::GetMove(const uint8_t index) const { return moves_[index]; }
-
-void KillerMoves::Update(const q_core::Move best_move) {
-    if (IsMoveQuiet(best_move)) {
-        Add(best_move);
-    }
-}
+q_core::Move HistoryTable::KillerMoves::GetMove(const uint8_t index) const { return moves_[index]; }
 
 HistoryTable::HistoryTable() {
+    for (size_t i = 0; i < 256; i++) {
+        killer_moves_[i] = KillerMoves();
+    }
+
+    for (q_core::cell_t i = 0; i < q_core::BOARD_SIZE; i++) {
+        for (q_core::coord_t j = 0; j < q_core::NUMBER_OF_CELLS; j++) {
+            counter_moves_[i][j] = q_core::NULL_MOVE;
+        }
+    }
+
     for (q_core::cell_t i = 0; i < q_core::BOARD_SIZE; i++) {
         for (q_core::coord_t j = 0; j < q_core::BOARD_SIZE; j++) {
             simple_table_[0][i][j] = 0;
@@ -107,6 +111,27 @@ inline void AddToEntry(int16_t& entry, int adj) {
     entry += adj - entry * std::abs(adj) / 16384;
 }
 
+HistoryTable::KillerMoves HistoryTable::GetAllKillerMoves(const AdditionalKeyInfo& info) const {
+    return killer_moves_[info.idepth];
+}
+
+q_core::Move HistoryTable::GetKillerMove(size_t index, const AdditionalKeyInfo& info) const {
+    return killer_moves_[info.idepth].GetMove(index);
+}
+
+q_core::Move HistoryTable::GetCounterMove(const q_core::Board& board, const AdditionalKeyInfo& info) const {
+    return counter_moves_[info.prev_moves[0].dst][board.cells[info.prev_moves[0].dst]];
+}
+
+void HistoryTable::UpdateKillerMove(q_core::Move move, const AdditionalKeyInfo& info) {
+    killer_moves_[info.idepth].Add(move);
+}
+
+void HistoryTable::UpdateCounterMove(const q_core::Board& board, q_core::Move move, const AdditionalKeyInfo& info) {
+    counter_moves_[info.prev_moves[0].dst][board.cells[info.prev_moves[0].dst]] = move;
+}
+
+
 void HistoryTable::UpdateQuiet(const q_core::Board& board, const q_core::Move move, const AdditionalKeyInfo& info, const int adj) {
     AddToEntry(GetSimpleEntry(board, move), adj);
 
@@ -145,6 +170,13 @@ int HistoryTable::GetCaptureScore(const q_core::Board& board, const q_core::Move
 }
 
 void HistoryTable::Update(const q_core::Board& board, q_core::Move best_move, const AdditionalKeyInfo& info) {
+    if (IsMoveQuiet(best_move)) {
+        UpdateKillerMove(best_move, info);
+        if (!IsMoveNull(info.prev_moves[0])) {
+            UpdateCounterMove(board, best_move, info);
+        }
+    }
+
     const int adj = std::min(1708, 4 * info.depth * info.depth + 191 * info.depth - 118);
 
     if (q_core::IsMoveCapture(best_move)) {
@@ -179,13 +211,18 @@ MovePicker::Stage GetNextStage(MovePicker::Stage stage) {
 }
 
 MovePicker::MovePicker(const Position& position, const q_core::Move tt_move,
-                       const KillerMoves& killer_moves, const HistoryTable& history_table, const HistoryTable::AdditionalKeyInfo& history_info)
+                       const HistoryTable& history_table, const HistoryTable::AdditionalKeyInfo& history_info)
     : position_(position),
       tt_move_(tt_move),
-      killer_moves_(killer_moves),
       history_table_(history_table),
       history_info_(history_info),
-      movegen_(position.board) {}
+      movegen_(position.board) {
+        killer_moves_ = history_table_.GetAllKillerMoves(history_info_);
+        counter_move_ = q_core::NULL_MOVE;
+        if (!IsMoveNull(history_info_.prev_moves[0])) {
+            counter_move_ = history_table_.GetCounterMove(position_.board, history_info_);
+        }
+      }
 
 #define SKIP_MOVE                     \
     pos_++;                           \
@@ -240,6 +277,15 @@ void ScoreQuiets(const q_core::Board& board, const HistoryTable& history_table, 
     }
 }
 
+bool MovePicker::IsKillerMove(const q_core::Move move) const {
+    for (size_t i = 0; i < HistoryTable::KillerMoves::COUNT; i++) {
+        if (move == killer_moves_.GetMove(i)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void MovePicker::GetNewMoves() {
     while (pos_ == list_.size) {
         if (stage_ != Stage::End) {
@@ -277,7 +323,7 @@ void MovePicker::GetNewMoves() {
                 break;
             }
             case Stage::KillerMoves: {
-                for (size_t i = 0; i < KillerMoves::COUNT; i++) {
+                for (size_t i = 0; i < HistoryTable::KillerMoves::COUNT; i++) {
                     if (IsValidKiller(position_.board, killer_moves_.GetMove(i))) {
                         list_.moves[list_.size] = killer_moves_.GetMove(i);
                         list_.size++;
@@ -285,18 +331,18 @@ void MovePicker::GetNewMoves() {
                 }
                 break;
             }
+            case Stage::CounterMove: {
+                if (!IsKillerMove(counter_move_) && IsValidKiller(position_.board, counter_move_)) {
+                    list_.moves[list_.size] = counter_move_;
+                    list_.size++;
+                }
+                break;
+            }
             case Stage::History: {
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllSimpleMoves(position_.board, list_);
                 for (size_t i = list_old_size; i < list_.size; i++) {
-                    bool is_killer_move = false;
-                    for (size_t j = 0; j < KillerMoves::COUNT; j++) {
-                        if (list_.moves[i] == killer_moves_.GetMove(j)) {
-                            is_killer_move = true;
-                            break;
-                        }
-                    }
-                    if (is_killer_move) {
+                    if (IsKillerMove(list_.moves[i]) || list_.moves[i] == counter_move_) {
                         std::swap(list_.moves[i], list_.moves[list_.size - 1]);
                         list_.size--;
                     }

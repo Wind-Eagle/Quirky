@@ -18,9 +18,6 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& 
                    SearchControl& control, SearchStat& stat)
     : tt_(tt), rt_(rt), position_(position), control_(control), stat_(stat) {
     global_context_.history_table = HistoryTable();
-    for (idepth_t i = 0; i < MAX_IDEPTH; i++) {
-        global_context_.killer_moves[i] = KillerMoves();
-    }
     global_context_.best_move = q_core::NULL_MOVE;
     for (size_t i = 0; i < MAX_IDEPTH; i++) {
         local_context_[i] = LocalContext();
@@ -484,13 +481,13 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     HistoryTable::AdditionalKeyInfo history_info;
     history_info.depth = depth;
+    history_info.idepth = idepth;
     for (uint8_t i = 0; i < HistoryTable::AdditionalKeyInfo::CH_SIZE; i++) {
         history_info.prev_moves[i] = idepth > i ? local_context_[idepth - i - 1].current_move : q_core::NULL_MOVE;
     }
 
     // Try moves one by one
-    MovePicker move_picker(position_, tt_move, global_context_.killer_moves[idepth],
-                           global_context_.history_table, history_info);
+    MovePicker move_picker(position_, tt_move, global_context_.history_table, history_info);
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
     size_t history_moves_done = 0;
@@ -538,12 +535,12 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
 
         moves_done++;
-        history_moves_done += move_picker.GetStage() == MovePicker::Stage::History ? 1 : 0;
+        history_moves_done += move_picker.GetStage() >= MovePicker::Stage::CounterMove ? 1 : 0;
         q_eval::score_t score = q_eval::SCORE_UNKNOWN;
         local_context_[idepth].current_move = move;
 
         // Late move reduction
-        if (move_picker.GetStage() >= MovePicker::Stage::History && depth >= LMR_DEPTH_THRESHOLD &&
+        if (move_picker.GetStage() >= MovePicker::Stage::CounterMove && depth >= LMR_DEPTH_THRESHOLD &&
             moves_done > 1 && !position_.IsCheck()) {
             depth_t depth_reduction =
                 LMR_DEPTH_REDUCTION[std::min(depth, static_cast<depth_t>(31))]
@@ -583,7 +580,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             SAVE_ROOT_BEST_MOVE;
             if (IsMoveNull(local_context_[idepth].skip_move)) {
                 tt_store_move(beta, best_move);
-                global_context_.killer_moves[idepth].Update(best_move);
                 global_context_.history_table.Update(position_.board, best_move, history_info);
             }
             return beta;

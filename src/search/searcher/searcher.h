@@ -35,7 +35,6 @@ class Searcher {
     static constexpr idepth_t MAX_IDEPTH = 255;
     struct GlobalContext {
         HistoryTable history_table;
-        KillerMoves killer_moves[MAX_IDEPTH];
         q_core::MoveList root_forbidden_moves;
         size_t pv_count;
         q_core::Move best_move;
