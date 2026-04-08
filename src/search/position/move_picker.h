@@ -2,6 +2,7 @@
 #define QUIRKY_SRC_SEARCH_POSITION_MOVE_PICKER_H
 
 #include <cstddef>
+#include <cstdint>
 #include "core/board/board.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
@@ -9,6 +10,16 @@
 #include "position.h"
 
 namespace q_search {
+
+struct StatefulMove {
+  q_core::Move move;
+  q_core::cell_t cell;
+  int8_t info;
+};
+
+inline StatefulMove ConstructStatefulMove(q_core::Move move, q_core::cell_t cell, int8_t info = 0) {
+  return {.move = move, .cell = cell, .info = info};
+}
 
 inline constexpr bool IsMoveQuiet(const q_core::Move move) {
     return !q_core::IsMoveCapture(move) && !q_core::IsMovePromotion(move);
@@ -19,7 +30,7 @@ class HistoryTable {
     struct AdditionalKeyInfo {
       static constexpr uint8_t CH_SIZE = 6;
 
-      std::array<q_core::Move, CH_SIZE> prev_moves;
+      std::array<StatefulMove, CH_SIZE> prev_moves;
       q_core::MoveList captures;
       q_core::MoveList quiets;
       depth_t depth;
@@ -41,19 +52,19 @@ class HistoryTable {
 
     KillerMoves GetAllKillerMoves(const AdditionalKeyInfo& info) const;
     q_core::Move GetKillerMove(size_t index, const AdditionalKeyInfo& info) const;
-    q_core::Move GetCounterMove(const q_core::Board& board, const AdditionalKeyInfo& info) const;
+    q_core::Move GetCounterMove(const AdditionalKeyInfo& info) const;
     int GetQuietScore(const q_core::Board& board, q_core::Move move, const AdditionalKeyInfo& info) const;
     int GetCaptureScore(const q_core::Board& board, q_core::Move move) const;
 
   private:
     int16_t& GetSimpleEntry(const q_core::Board& board, q_core::Move move);
     int16_t& GetCaptureEntry(const q_core::Board& board, q_core::Move move);
-    int16_t& GetContinuationEntry(const q_core::Board& board, q_core::Move move, q_core::Move prev_move);
+    int16_t& GetContinuationEntry(const q_core::Board& board, q_core::Move move, StatefulMove prev_move);
     const int16_t& GetSimpleEntry(const q_core::Board& board, q_core::Move move) const;
     const int16_t& GetCaptureEntry(const q_core::Board& board, q_core::Move move) const;
-    const int16_t& GetContinuationEntry(const q_core::Board& board, q_core::Move move, q_core::Move prev_move) const;
+    const int16_t& GetContinuationEntry(const q_core::Board& board, q_core::Move move, StatefulMove prev_move) const;
     void UpdateKillerMove(q_core::Move move, const AdditionalKeyInfo& info);
-    void UpdateCounterMove(const q_core::Board& board, q_core::Move move, const AdditionalKeyInfo& info);
+    void UpdateCounterMove(q_core::Move move, const AdditionalKeyInfo& info);
     void UpdateQuiet(const q_core::Board& board, q_core::Move move, const AdditionalKeyInfo& info, int adj);
     void UpdateCapture(const q_core::Board& board, q_core::Move move, int adj);
 

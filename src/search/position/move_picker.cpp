@@ -84,8 +84,8 @@ int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board, const q_core:
 }
 
 int16_t& HistoryTable::GetContinuationEntry(const q_core::Board& board,
-                                           const q_core::Move move, const q_core::Move prev_move) {
-    return continuation_table_[q_core::IsMoveCapture(prev_move)][prev_move.dst][board.cells[prev_move.src]][move.dst][board.cells[move.src]];
+                                           const q_core::Move move, const StatefulMove prev_move) {
+    return continuation_table_[q_core::IsMoveCapture(prev_move.move)][prev_move.move.dst][prev_move.cell][move.dst][board.cells[move.src]];
 }
 
 const int16_t& HistoryTable::GetSimpleEntry(const q_core::Board& board,
@@ -103,8 +103,8 @@ const int16_t& HistoryTable::GetCaptureEntry(const q_core::Board& board,
 }
 
 const int16_t& HistoryTable::GetContinuationEntry(const q_core::Board& board,
-                                           const q_core::Move move, const q_core::Move prev_move) const {
-    return continuation_table_[q_core::IsMoveCapture(prev_move)][prev_move.dst][board.cells[prev_move.src]][move.dst][board.cells[move.src]];
+                                           const q_core::Move move, const StatefulMove prev_move) const {
+    return continuation_table_[q_core::IsMoveCapture(prev_move.move)][prev_move.move.dst][prev_move.cell][move.dst][board.cells[move.src]];
 }
 
 inline void AddToEntry(int16_t& entry, int adj) {
@@ -119,16 +119,16 @@ q_core::Move HistoryTable::GetKillerMove(size_t index, const AdditionalKeyInfo& 
     return killer_moves_[info.idepth].GetMove(index);
 }
 
-q_core::Move HistoryTable::GetCounterMove(const q_core::Board& board, const AdditionalKeyInfo& info) const {
-    return counter_moves_[info.prev_moves[0].dst][board.cells[info.prev_moves[0].dst]];
+q_core::Move HistoryTable::GetCounterMove(const AdditionalKeyInfo& info) const {
+    return counter_moves_[info.prev_moves[0].move.dst][info.prev_moves[0].cell];
 }
 
 void HistoryTable::UpdateKillerMove(q_core::Move move, const AdditionalKeyInfo& info) {
     killer_moves_[info.idepth].Add(move);
 }
 
-void HistoryTable::UpdateCounterMove(const q_core::Board& board, q_core::Move move, const AdditionalKeyInfo& info) {
-    counter_moves_[info.prev_moves[0].dst][board.cells[info.prev_moves[0].dst]] = move;
+void HistoryTable::UpdateCounterMove(q_core::Move move, const AdditionalKeyInfo& info) {
+    counter_moves_[info.prev_moves[0].move.dst][info.prev_moves[0].cell] = move;
 }
 
 
@@ -136,7 +136,7 @@ void HistoryTable::UpdateQuiet(const q_core::Board& board, const q_core::Move mo
     AddToEntry(GetSimpleEntry(board, move), adj);
 
     const auto add_to_ch = [&](size_t index) {
-        if (!q_core::IsMoveNull(info.prev_moves[index])) {
+        if (!q_core::IsMoveNull(info.prev_moves[index].move)) {
             AddToEntry(GetContinuationEntry(board, move, info.prev_moves[index]), adj);
         }
     };
@@ -155,7 +155,7 @@ int HistoryTable::GetQuietScore(const q_core::Board& board, const q_core::Move m
     int res = simple_score;
 
     const auto add_ch = [&](size_t index) {
-        res += !q_core::IsMoveNull(info.prev_moves[index]) ? GetContinuationEntry(board, move, info.prev_moves[index]) : simple_score;
+        res += !q_core::IsMoveNull(info.prev_moves[index].move) ? GetContinuationEntry(board, move, info.prev_moves[index]) : simple_score;
     };
 
     add_ch(0);
@@ -172,8 +172,8 @@ int HistoryTable::GetCaptureScore(const q_core::Board& board, const q_core::Move
 void HistoryTable::Update(const q_core::Board& board, q_core::Move best_move, const AdditionalKeyInfo& info) {
     if (IsMoveQuiet(best_move)) {
         UpdateKillerMove(best_move, info);
-        if (!IsMoveNull(info.prev_moves[0])) {
-            UpdateCounterMove(board, best_move, info);
+        if (!IsMoveNull(info.prev_moves[0].move)) {
+            UpdateCounterMove(best_move, info);
         }
     }
 
@@ -219,8 +219,8 @@ MovePicker::MovePicker(const Position& position, const q_core::Move tt_move,
       movegen_(position.board) {
         killer_moves_ = history_table_.GetAllKillerMoves(history_info_);
         counter_move_ = q_core::NULL_MOVE;
-        if (!IsMoveNull(history_info_.prev_moves[0])) {
-            counter_move_ = history_table_.GetCounterMove(position_.board, history_info_);
+        if (!IsMoveNull(history_info_.prev_moves[0].move)) {
+            counter_move_ = history_table_.GetCounterMove(history_info_);
         }
       }
 

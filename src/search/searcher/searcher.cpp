@@ -357,7 +357,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     const q_eval::score_t initial_beta = beta;
 
     // Prepare local context
-    local_context_[idepth].current_move = q_core::NULL_MOVE;
+    local_context_[idepth].current_move = ConstructStatefulMove(q_core::NULL_MOVE, q_core::EMPTY_CELL);
     local_context_[idepth].eval = q_eval::SCORE_UNKNOWN;
 
     // Checking transposition table
@@ -439,7 +439,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
 
         // Null move pruning
-        if (!IsMoveNull(local_context_[idepth - 1].current_move) &&
+        if (!IsMoveNull(local_context_[idepth - 1].current_move.move) &&
             IsMoveNull(local_context_[idepth].skip_move) &&
             position_.HasNonPawns(position_.board.move_side) && depth > 1 &&
             idepth >= global_context_.nmp_min_idepth) {
@@ -483,7 +483,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     history_info.depth = depth;
     history_info.idepth = idepth;
     for (uint8_t i = 0; i < HistoryTable::AdditionalKeyInfo::CH_SIZE; i++) {
-        history_info.prev_moves[i] = idepth > i ? local_context_[idepth - i - 1].current_move : q_core::NULL_MOVE;
+        history_info.prev_moves[i] = idepth > i ? local_context_[idepth - i - 1].current_move : ConstructStatefulMove(q_core::NULL_MOVE, q_core::EMPTY_CELL);
     }
 
     // Try moves one by one
@@ -499,6 +499,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         if (move == local_context_[idepth].skip_move) {
             continue;
         }
+        const StatefulMove cur_move = ConstructStatefulMove(move, position_.board.cells[move.src]);
 
         // Singular extension
         depth_t extension = 0;
@@ -537,7 +538,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         moves_done++;
         history_moves_done += move_picker.GetStage() >= MovePicker::Stage::CounterMove ? 1 : 0;
         q_eval::score_t score = q_eval::SCORE_UNKNOWN;
-        local_context_[idepth].current_move = move;
+        local_context_[idepth].current_move = cur_move;
 
         // Late move reduction
         if (move_picker.GetStage() >= MovePicker::Stage::CounterMove && depth >= LMR_DEPTH_THRESHOLD &&
