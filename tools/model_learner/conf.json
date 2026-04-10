@@ -1,0 +1,60 @@
+{
+    "datasets": {
+        "preliminary": {
+            "directory": "/home/wind-eagle/Chess/dataset/500M",
+            "train_chunk_prefix": "preliminary_train_chunk",
+            "test_prefix": "preliminary_test"
+        },
+        "full": {
+            "directory": "/home/wind-eagle/Chess/dataset/500M",
+            "train_chunk_prefix": "train_chunk",
+            "test_prefix": "test"
+        }
+    },
+    "model": {
+        "feature_layer_size": 512,
+        "weight_scale": 512,
+        "precise_weight_scale": 16
+    },
+    "training": {
+        "lr_start": 0.00464158883361,
+        "stages": [
+            {
+                "dataset": "preliminary",
+                "checkpoint": "first_stage_checkpoint.pt",
+                "batch_size": 65536,
+                "lr_steps": 4,
+                "patience": 7,
+                "weight_decay": 7.5e-6,
+                "optimizer": {
+                    "type": "ReduceLROnPlateau",
+                    "step": 0.464158883361
+                }
+            },
+            {
+                "dataset": "full",
+                "checkpoint": "second_stage_checkpoint.pt",
+                "batch_size": 262144,
+                "lr_steps": 1,
+                "patience": 7,
+                "weight_decay": 1.75e-6,
+                "optimizer": {
+                    "type": "ReduceLROnPlateau",
+                    "step": 0.464158883361
+                }
+            },
+            {
+                "dataset": "full",
+                "checkpoint": "third_stage_checkpoint.pt",
+                "batch_size": 262144,
+                "lr_steps": 7,
+                "patience": 3,
+                "weight_decay": 1.75e-6,
+                "optimizer": {
+                    "type": "ReduceLROnPlateau",
+                    "step": 0.464158883361
+                }
+            }
+        ]
+    }
+}
