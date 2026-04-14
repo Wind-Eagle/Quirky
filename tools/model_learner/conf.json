@@ -42,7 +42,7 @@
                     "step": 0.464158883361,
                     "patience": 7
                 },
-                "weight_decay": 1.75e-6
+                "weight_decay": 7.5e-7
             },
             {
                 "batch_size": 16384,
@@ -53,9 +53,9 @@
                     "lr_steps": 7,
                     "type": "ReduceLROnPlateau",
                     "step": 0.464158883361,
-                    "patience": 3
+                    "patience": 2
                 },
-                "weight_decay": 1.75e-6
+                "weight_decay": 7.5e-7
 
             }
         ]
