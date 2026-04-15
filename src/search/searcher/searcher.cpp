@@ -299,6 +299,8 @@ inline static constexpr std::array<depth_t, RPR_DEPTH_THRESHOLD + 1> RPR_MARGIN 
 
 inline static constexpr depth_t IIR_DEPTH_THRESHOLD = 4;
 
+inline static constexpr int32_t LMP_ADDITIONAL_MOVES = 3;
+
 inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
 inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
     GetLMRDepthReduction();
@@ -420,7 +422,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     }
 
     const bool is_check = position_.IsCheck();
-
     if (node_type == NodeType::Simple && !is_check) {
         // Futility pruning
         if (depth <= FPR_DEPTH_THRESHOLD && !q_eval::IsScoreMate(beta) &&
@@ -500,6 +501,13 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             continue;
         }
         const StatefulMove cur_move = ConstructStatefulMove(move, position_.board.cells[move.src]);
+
+        if (node_type != NodeType::Root && !q_eval::IsScoreMate(alpha) && moves_done > 0 && position_.HasNonPawns(position_.board.move_side)) {
+            // Late moves pruning
+            if (moves_done >= static_cast<size_t>(depth * depth + LMP_ADDITIONAL_MOVES)) {
+                move_picker.SkipQuiets();
+            }
+        }
 
         // Singular extension
         depth_t extension = 0;

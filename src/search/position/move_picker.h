@@ -95,6 +95,7 @@ class MovePicker {
         Bad = 7,
         End = 8
     };
+    void SkipQuiets();
     q_core::Move GetNextMove();
     Stage GetStage() const;
 
@@ -114,6 +115,7 @@ class MovePicker {
     size_t pos_ = 0;
     size_t stage_start_pos_ = 0;
     Stage stage_ = Stage::Start;
+    bool skip_quiets_ = false;
 };
 
 class QuiescenseMovePicker {

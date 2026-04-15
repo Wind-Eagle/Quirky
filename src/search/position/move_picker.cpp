@@ -240,6 +240,10 @@ bool IsCaptureGood(const q_core::Board& board, const q_core::Move move,
              q_core::GetPromotionPiece(move) != q_core::Piece::Queen);
 }
 
+void MovePicker::SkipQuiets() {
+    skip_quiets_ = true;
+}
+
 q_core::Move MovePicker::GetNextMove() {
     GetNewMoves();
     if (Q_UNLIKELY(stage_ == Stage::End)) {
@@ -253,6 +257,9 @@ q_core::Move MovePicker::GetNextMove() {
             break;
         }
         bad_list_.moves[bad_list_.size++] = list_.moves[pos_];
+        SKIP_MOVE;
+    }
+    while (skip_quiets_ && IsMoveQuiet(list_.moves[pos_])) {
         SKIP_MOVE;
     }
     return list_.moves[pos_++];
@@ -323,6 +330,9 @@ void MovePicker::GetNewMoves() {
                 break;
             }
             case Stage::KillerMoves: {
+                if (skip_quiets_) {
+                    break;
+                }
                 for (size_t i = 0; i < HistoryTable::KillerMoves::COUNT; i++) {
                     if (IsValidKiller(position_.board, killer_moves_.GetMove(i))) {
                         list_.moves[list_.size] = killer_moves_.GetMove(i);
@@ -332,6 +342,9 @@ void MovePicker::GetNewMoves() {
                 break;
             }
             case Stage::CounterMove: {
+                if (skip_quiets_) {
+                    break;
+                }
                 if (!IsKillerMove(counter_move_) && IsValidKiller(position_.board, counter_move_)) {
                     list_.moves[list_.size] = counter_move_;
                     list_.size++;
@@ -339,6 +352,9 @@ void MovePicker::GetNewMoves() {
                 break;
             }
             case Stage::History: {
+                if (skip_quiets_) {
+                    break;
+                }
                 const size_t list_old_size = list_.size;
                 movegen_.GenerateAllSimpleMoves(position_.board, list_);
                 for (size_t i = list_old_size; i < list_.size; i++) {
