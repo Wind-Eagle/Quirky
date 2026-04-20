@@ -19,16 +19,17 @@ time_t SearchTimer::GetSoftTime(const GameTimeControl& time_control) const {
     const PlayerTime player_time =
         (position_.board.move_side == q_core::Color::White ? time_control.white_time
                                                            : time_control.black_time);
+    
+    const size_t moves_to_go = time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO ? time_control.moves_to_go : 50;
+    const time_t time_left = std::max(
+        static_cast<time_t>(1), 
+        player_time.time + player_time.increment * (moves_to_go - 1) - std::min(static_cast<time_t>(25), player_time.time / 2) * (moves_to_go + 2));
+
     time_t soft_time = 0;
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
-        soft_time = player_time.time / time_control.moves_to_go * 0.5 + player_time.increment;
-        soft_time = std::min(soft_time, player_time.time - time_control.moves_to_go * 50);
+        soft_time = std::min(1.0 / moves_to_go, 0.9 * player_time.time / time_left) * time_left;
     } else {
-        float no_time_factor = player_time.time < 200 ? 5 : player_time.time < 1000 ? 2 : 1;
-        uint16_t moves_to_go_imitation = 30;
-        soft_time = player_time.time / moves_to_go_imitation / no_time_factor * 0.5 * 0.6 +
-                    player_time.increment;
-        soft_time = std::min(soft_time, player_time.time / 2);
+        soft_time = std::min(1.0 / moves_to_go, 0.2 * player_time.time / time_left) * time_left;
     }
     return soft_time;
 }
@@ -41,15 +42,11 @@ time_t SearchTimer::GetMaxTime(const InfiniteTimeControl&, time_t soft_time) con
     return soft_time;
 }
 
-time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control, time_t soft_time) const {
+time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control, time_t) const {
     const PlayerTime player_time =
         (position_.board.move_side == q_core::Color::White ? time_control.white_time
                                                            : time_control.black_time);
-    if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {
-        return std::min(soft_time * std::min(6, (time_control.moves_to_go + 3) / 2),
-                        player_time.time - time_control.moves_to_go * 50);
-    }
-    return std::min(soft_time * 6, player_time.time / 2);
+    return std::min(player_time.time / 2.0 + player_time.increment, player_time.time * 0.8);
 }
 
 static constexpr std::array<float, 5> PV_STABILITY_FACTOR = {2.5, 1.2, 0.9, 0.8, 0.75};
@@ -62,7 +59,8 @@ void SearchTimer::UpdateOnNextDepth(const GameTimeControl&) {
         context_.should_stop = true;
         return;
     }
-    float time_adjust_factor = 1;
+    // instead of score factor
+    float time_adjust_factor = 0.8;
     time_adjust_factor *=
         PV_STABILITY_FACTOR[std::min(context_.pv_stability, static_cast<uint16_t>(4))];
     float node_frac =
