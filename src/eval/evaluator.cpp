@@ -32,16 +32,20 @@ score_t Evaluator::Evaluate(const q_core::Board& board) const {
         state.Build(board);
         return state == state_;
     }());
-    score_t res = ApplyModel(state_.model_input, board.move_side);
+    score_t res = ApplyModel(state_->model_input, board.move_side);
     return res;
 }
 
-void Evaluator::StartTrackingBoard(const q_core::Board& board) { state_.Build(board); }
+void Evaluator::StartTrackingBoard(const q_core::Board& board, State* state) {
+    state_ = state;
+    state_->Build(board);
+}
 
 void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
-                             const q_core::MakeMoveInfo& move_info, EvaluatorUpdateInfo& info) {
-    info.old_model_input = state_.model_input;
-    alignas(64) auto& new_model_input = state_.model_input;
+                             const q_core::MakeMoveInfo& move_info, State* state) {
+    *state = *state_;
+    state_ = state;
+    alignas(64) auto& new_model_input = state_->model_input;
     const q_core::Color move_side = q_core::GetInvertedColor(board.move_side);
 
     const MoveBasicType move_basic_type = GetMoveBasicType(move);
@@ -100,8 +104,8 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
     }
 }
 
-void Evaluator::RevertOnMove(const q_core::Board&, q_core::Move, EvaluatorUpdateInfo& info) {
-    state_.model_input = info.old_model_input;
+void Evaluator::SetState(State* state) {
+    state_ = state;
 }
 
 }  // namespace q_eval

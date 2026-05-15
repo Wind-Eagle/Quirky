@@ -15,10 +15,12 @@ namespace q_search {
 
 class Searcher {
   public:
-    Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& position,
+    Searcher(TranspositionTable& tt, RepetitionTable& rt, const q_core::Board& board,
              SearchControl& control, SearchStat& stat);
     void Run(depth_t max_depth, size_t pv_count);
-    static constexpr depth_t MAX_DEPTH = 127;
+    const Position& GetPosition() const;
+
+    static constexpr depth_t MAX_DEPTH = (Position::MAX_BUFFER_SIZE - 1) / 2;
 
   private:
     enum class NodeType { Root, PV, Simple };
@@ -32,7 +34,7 @@ class Searcher {
     std::vector<q_core::Move> GetPV(q_core::Move best_move);
     bool ShouldStop();
 
-    static constexpr idepth_t MAX_IDEPTH = 255;
+    static constexpr idepth_t MAX_IDEPTH = Position::MAX_BUFFER_SIZE - 1;
     struct GlobalContext {
         HistoryTable history_table;
         q_core::MoveList root_forbidden_moves;

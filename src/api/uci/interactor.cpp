@@ -33,14 +33,14 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciSetOptionCom
 }
 
 uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionCommand& command) {
-    auto res = context.position.MakeFromFEN(command.fen);
+    auto res = context.board.MakeFromFEN(command.fen);
     if (res != q_core::Board::FENParseStatus::Ok) {
-        context.position.MakeFromFEN(STARTPOS_FEN);
+        context.board.MakeFromFEN(STARTPOS_FEN);
         return UciErrorResponse{.error_message = "Invalid FEN", .is_fatal = false};
     }
     context.moves.clear();
     if (command.moves != std::nullopt) {
-        q_core::Board check_board = context.position.board;
+        q_core::Board check_board = context.board;
         for (const auto& move_str : *command.moves) {
             if (!q_core::IsStringMoveWellFormated(check_board, move_str)) {
                 return UciErrorResponse{.error_message = "Invalid move string", .is_fatal = false};
@@ -55,7 +55,7 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionComm
 }
 
 uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& command) {
-    context.launcher.Start(context.position, context.moves, command.time_control,
+    context.launcher.Start(context.board, context.moves, command.time_control,
                            command.max_depth);
     return UciEmptyResponse{};
 }
@@ -80,7 +80,7 @@ uci_response_t UciInteractor::ProcessUciCommand(const uci_command_t& command) {
 }
 
 UciInteractor::UciInteractor() {
-    context_.position.MakeFromFEN(STARTPOS_FEN);
+    context_.board.MakeFromFEN(STARTPOS_FEN);
     context_.should_stop = false;
 }
 

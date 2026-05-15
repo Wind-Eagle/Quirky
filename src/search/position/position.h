@@ -14,27 +14,36 @@ using depth_t = int16_t;
 using idepth_t = uint16_t;
 
 struct Position {
-    q_core::Board board;
-    q_eval::Evaluator evaluator;
+    public:
+        q_core::Board board;
+        q_eval::Evaluator evaluator;
 
-    q_core::Board::FENParseStatus MakeFromFEN(const std::string_view& fen);
+        explicit Position(const q_core::Board& b);
+        explicit Position(std::string_view s);
 
-    bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
-                  q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
-    bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
-                  q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info,
-                  const std::function<void()>& after_board_change);
-    void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
-                    q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info);
+        Position(const Position&) = delete;
 
-    void MakeNullMove(q_core::coord_t& old_en_passant_coord);
-    void UnmakeNullMove(const q_core::coord_t& old_en_passant_coord);
+        ~Position();
 
-    bool HasNonPawns() const;
-    bool HasNonPawns(q_core::Color c) const;
-    bool IsCheck() const;
+        static constexpr size_t MAX_BUFFER_SIZE = 256;
 
-    q_eval::score_t GetEvaluatorScore() const;
+        bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info);
+        bool MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
+                    const std::function<void()>& after_board_change);
+        void UnmakeMove(q_core::Move move, const q_core::MakeMoveInfo& make_move_info);
+
+        void MakeNullMove(q_core::coord_t& old_en_passant_coord);
+        void UnmakeNullMove(const q_core::coord_t& old_en_passant_coord);
+
+        bool HasNonPawns() const;
+        bool HasNonPawns(q_core::Color c) const;
+        bool IsCheck() const;
+
+        q_eval::score_t GetEvaluatorScore() const;
+    private:
+      void ConstructPosition();
+      alignas(64) std::array<q_eval::Evaluator::State*, MAX_BUFFER_SIZE> buffer_;
+      [[maybe_unused]]size_t buffer_head_ = 0;
 };
 
 }  // namespace q_search

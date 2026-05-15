@@ -3,28 +3,42 @@
 #include "core/moves/attack.h"
 #include "core/board/types.h"
 #include "core/util.h"
+#include "eval/evaluator.h"
 
 namespace q_search {
 
-void Position::UnmakeMove(const q_core::Move move, const q_core::MakeMoveInfo& make_move_info,
-                          q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info) {
-    evaluator.RevertOnMove(board, move, evaluator_update_info);
+Position::Position(const q_core::Board& b) {
+    board = b;
+    ConstructPosition();
+}
+
+Position::Position(const std::string_view s) {
+    board.MakeFromFEN(s);
+    ConstructPosition();
+}
+
+Position::~Position() {
+    for (size_t i = 0; i < MAX_BUFFER_SIZE; i++) {
+        delete buffer_[i];
+    }
+}
+
+void Position::UnmakeMove(const q_core::Move move, const q_core::MakeMoveInfo& make_move_info) {
+    evaluator.SetState(buffer_[--buffer_head_]);
     q_core::UnmakeMove(board, move, make_move_info);
 }
 
-bool Position::MakeMove(const q_core::Move move, q_core::MakeMoveInfo& make_move_info,
-                        q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info) {
+bool Position::MakeMove(const q_core::Move move, q_core::MakeMoveInfo& make_move_info) {
     q_core::MakeMove(board, move, make_move_info);
     if (!q_core::WasMoveLegal(board, move)) {
         q_core::UnmakeMove(board, move, make_move_info);
         return false;
     }
-    evaluator.UpdateOnMove(board, move, make_move_info, evaluator_update_info);
+    evaluator.UpdateOnMove(board, move, make_move_info, buffer_[++buffer_head_]);
     return true;
 }
 
 bool Position::MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
-                        q_eval::Evaluator::EvaluatorUpdateInfo& evaluator_update_info,
                         const std::function<void()>& after_board_change) {
     q_core::MakeMove(board, move, make_move_info);
     if (!q_core::WasMoveLegal(board, move)) {
@@ -32,7 +46,7 @@ bool Position::MakeMove(q_core::Move move, q_core::MakeMoveInfo& make_move_info,
         return false;
     }
     after_board_change();
-    evaluator.UpdateOnMove(board, move, make_move_info, evaluator_update_info);
+    evaluator.UpdateOnMove(board, move, make_move_info,buffer_[++buffer_head_]);
     return true;
 }
 
@@ -44,16 +58,14 @@ void Position::UnmakeNullMove(const q_core::coord_t& old_en_passant_coord) {
     q_core::UnmakeNullMove(board, old_en_passant_coord);
 }
 
-bool Position::IsCheck() const { return q_core::IsKingInCheck(board); }
-
-q_core::Board::FENParseStatus Position::MakeFromFEN(const std::string_view& fen) {
-    auto res = board.MakeFromFEN(fen);
-    if (res != q_core::Board::FENParseStatus::Ok) {
-        return res;
+void Position::ConstructPosition() {
+    for (size_t i = 0; i < MAX_BUFFER_SIZE; i++) {
+        buffer_[i] = new q_eval::Evaluator::State();
     }
-    evaluator.StartTrackingBoard(board);
-    return q_core::Board::FENParseStatus::Ok;
+    evaluator.StartTrackingBoard(board, buffer_[0]);
 }
+
+bool Position::IsCheck() const { return q_core::IsKingInCheck(board); }
 
 q_eval::score_t Position::GetEvaluatorScore() const { return evaluator.Evaluate(board); }
 

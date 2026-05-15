@@ -73,7 +73,7 @@ void SearchTimer::UpdateOnNextDepth(const GameTimeControl&) {
     }
 }
 
-SearchTimer::SearchTimer(time_control_t time_control, Position& position, SearchStat& stat)
+SearchTimer::SearchTimer(time_control_t time_control, const Position& position, SearchStat& stat)
     : time_control_(time_control), position_(position), stat_(stat) {
     start_time_ = std::chrono::steady_clock::now();
 }

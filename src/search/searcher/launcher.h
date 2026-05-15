@@ -13,7 +13,7 @@ namespace q_search {
 class SearchLauncher {
   public:
     ~SearchLauncher();
-    void Start(const Position& start_position, const std::vector<q_core::Move>& moves,
+    void Start(const q_core::Board& board, const std::vector<q_core::Move>& moves,
                time_control_t time_control, depth_t max_depth);
     void Stop();
     void Join();
@@ -22,7 +22,7 @@ class SearchLauncher {
     void ChangePVCount(size_t new_pv_count);
 
   private:
-    void StartMainThread(const Position& start_position, const std::vector<q_core::Move>& moves,
+    void StartMainThread(q_core::Board board, const std::vector<q_core::Move>& moves,
                          time_control_t time_control, depth_t max_depth);
     static constexpr uint8_t TT_DEFAULT_BYTE_SIZE_LOG = 25;
     std::thread thread_;

@@ -38,7 +38,7 @@ using time_control_t = std::variant<GameTimeControl, FixedTimeControl, InfiniteT
 
 class SearchTimer {
   public:
-    SearchTimer(time_control_t time_control, Position& position, SearchStat& stat);
+    SearchTimer(time_control_t time_control, const Position& position, SearchStat& stat);
     void ProcessNextDepth(const SearchResult& result);
     std::chrono::milliseconds GetWaitTime();
     time_t GetTimeSinceStart() const;

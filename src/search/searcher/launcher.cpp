@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 
+#include "core/moves/board_manipulation.h"
 #include "search/position/position.h"
 #include "util/string.h"
 #include "core/board/board.h"
@@ -22,28 +23,27 @@ uint8_t GetRTByteSizeLog(size_t moves_count) {
     return q_util::GetHighestBit((moves_count + Searcher::MAX_DEPTH) * 4) + 3;
 }
 
-void ProcessPositionMoves(Position& position, const std::vector<q_core::Move>& moves,
+void ProcessPositionMoves(q_core::Board& board, const std::vector<q_core::Move>& moves,
                           RepetitionTable& rt) {
     RepetitionTable helper_rt{GetRTByteSizeLog(moves.size())};
     for (const auto& move : moves) {
-        if (helper_rt.Has(position.board.hash)) {
-            rt.Insert(position.board.hash);
+        if (helper_rt.Has(board.hash)) {
+            rt.Insert(board.hash);
         } else {
-            helper_rt.Insert(position.board.hash);
+            helper_rt.Insert(board.hash);
         }
         q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
-        position.MakeMove(move, make_move_info, evaluator_update_info);
+        q_core::MakeMove(board, move, make_move_info);
     }
 }
 
-void SearchLauncher::Start(const Position& start_position, const std::vector<q_core::Move>& moves,
+void SearchLauncher::Start(const q_core::Board& board, const std::vector<q_core::Move>& moves,
                            time_control_t time_control, depth_t max_depth) {
     Join();
     control_.Reset();
     tt_.NextPosition();
-    thread_ = std::thread([this, start_position, moves, time_control, max_depth]() {
-        StartMainThread(start_position, moves, time_control, max_depth);
+    thread_ = std::thread([this, board, moves, time_control, max_depth]() {
+        StartMainThread(board, moves, time_control, max_depth);
     });
 }
 
@@ -101,28 +101,27 @@ void PrintBestMove(const q_core::Move move) {
 
 SearchLauncher::~SearchLauncher() { Join(); }
 
-void SearchLauncher::StartMainThread(const Position& start_position,
+void SearchLauncher::StartMainThread(q_core::Board board,
                                      const std::vector<q_core::Move>& moves,
                                      time_control_t time_control, depth_t max_depth) {
     RepetitionTable rt{GetRTByteSizeLog(moves.size())};
-    Position position = start_position;
-    ProcessPositionMoves(position, moves, rt);
+    ProcessPositionMoves(board, moves, rt);
 
     size_t root_legal_moves_found = 0;
-    q_core::Movegen root_movegen(position.board);
+    q_core::Movegen root_movegen(board);
     q_core::MoveList all_root_moves;
-    root_movegen.GenerateAllMoves(position.board, all_root_moves);
+    root_movegen.GenerateAllMoves(board, all_root_moves);
     q_core::Move random_move;
     for (size_t i = 0; i < all_root_moves.size; i++) {
         q_core::MakeMoveInfo make_move_info;
-        q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
-        bool legal = position.MakeMove(all_root_moves.moves[i], make_move_info, evaluator_update_info);
-        if (!legal) {
+        MakeMove(board, all_root_moves.moves[i], make_move_info);
+        if (!q_core::WasMoveLegal(board, all_root_moves.moves[i])) {
+            q_core::UnmakeMove(board, all_root_moves.moves[i], make_move_info);
             continue;
         }
         random_move = all_root_moves.moves[i];
         root_legal_moves_found++;
-        position.UnmakeMove(all_root_moves.moves[i], make_move_info, evaluator_update_info);
+        UnmakeMove(board, all_root_moves.moves[i], make_move_info);
         if (root_legal_moves_found >= std::max(static_cast<size_t>(2), pv_count_)) {
             break;
         }
@@ -139,8 +138,8 @@ void SearchLauncher::StartMainThread(const Position& start_position,
     }
 
     SearchStat stat;
-    Searcher searcher(tt_, rt, position, control_, stat);
-    SearchTimer timer(time_control, position, stat);
+    Searcher searcher(tt_, rt, board, control_, stat);
+    SearchTimer timer(time_control, searcher.GetPosition(), stat);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth, real_pv_count); });
 
     SearchResult final_result{};

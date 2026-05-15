@@ -5,6 +5,7 @@
 
 #include "core/board/types.h"
 #include "core/moves/attack.h"
+#include "core/moves/board_manipulation.h"
 #include "core/moves/move.h"
 #include "eval/score.h"
 #include "search/control/control.h"
@@ -14,9 +15,9 @@
 
 namespace q_search {
 
-Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& position,
+Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const q_core::Board& board,
                    SearchControl& control, SearchStat& stat)
-    : tt_(tt), rt_(rt), position_(position), control_(control), stat_(stat) {
+    : tt_(tt), rt_(rt), position_(board), control_(control), stat_(stat) {
     global_context_.history_table = HistoryTable();
     global_context_.best_move = q_core::NULL_MOVE;
     for (size_t i = 0; i < MAX_IDEPTH; i++) {
@@ -25,20 +26,23 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const Position& 
     global_context_.nmp_min_idepth = 0;
 }
 
+const Position& Searcher::GetPosition() const {
+    return position_;
+}
+
 std::vector<q_core::Move> Searcher::GetPV(q_core::Move best_move) {
     if (q_core::IsMoveNull(best_move)) {
         return {};
     }
 
     RepetitionTable rt(10);
-    Position position = position_;
+    q_core::Board board = position_.board;
     q_core::MakeMoveInfo make_move_info;
-    q_eval::Evaluator::EvaluatorUpdateInfo evaluator_update_info;
     std::vector<q_core::Move> pv;
 
-    position.MakeMove(best_move, make_move_info, evaluator_update_info);
+    MakeMove(board, best_move, make_move_info);
     while (pv.size() < 64) {
-        const q_core::hash_t position_hash = position.board.hash;
+        const q_core::hash_t position_hash = board.hash;
         if (!rt.Insert(position_hash)) {
             break;
         }
@@ -46,8 +50,9 @@ std::vector<q_core::Move> Searcher::GetPV(q_core::Move best_move) {
         auto* tt_entry = tt_.GetEntry(position_hash, tt_entry_found);
         if (tt_entry_found) {
             const q_core::Move tt_move = q_core::GetDecompressedMove(tt_entry->move);
-            if (q_core::IsMovePseudolegal(position.board, tt_move)) {
-                if (position.MakeMove(tt_move, make_move_info, evaluator_update_info)) {
+            if (q_core::IsMovePseudolegal(board, tt_move)) {
+                MakeMove(board, tt_move, make_move_info);
+                if (q_core::WasMoveLegal(board, tt_move)) {
                     pv.push_back(tt_move);
                     continue;
                 }
@@ -159,24 +164,22 @@ bool Searcher::ShouldStop() { return control_.IsStopped(); }
 
 #define AUTO_MAKE_MOVE(position, move)                                              \
     q_core::MakeMoveInfo _make_move_info;                                           \
-    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
-    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info); \
+    bool _legal = position.MakeMove(move, _make_move_info); \
     if (!_legal) {                                                                  \
         continue;                                                                   \
     }                                                                               \
-    Q_DEFER { position.UnmakeMove(move, _make_move_info, _evaluator_update_info); }
+    Q_DEFER { position.UnmakeMove(move, _make_move_info); }
 
 #define MAKE_MOVE_WITH_PREFETCH(position, move)                                     \
     q_core::MakeMoveInfo _make_move_info;                                           \
-    q_eval::Evaluator::EvaluatorUpdateInfo _evaluator_update_info;                  \
-    bool _legal = position.MakeMove(move, _make_move_info, _evaluator_update_info,  \
+    bool _legal = position.MakeMove(move, _make_move_info,                          \
                                     [&]() { tt_.Prefetch(position_.board.hash); }); \
     if (!_legal) {                                                                  \
         continue;                                                                   \
     }
 
 #define UNMAKE_MOVE(position, move) \
-    position.UnmakeMove(move, _make_move_info, _evaluator_update_info);
+    position.UnmakeMove(move, _make_move_info);
 
 inline static constexpr int16_t QS_SEE_PRUNING_THRESHOLD = -20;
 
