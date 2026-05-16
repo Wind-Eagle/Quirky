@@ -37,6 +37,15 @@ add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/model_weights.h
 )
 
+execute_process(
+    COMMAND git rev-parse --short=8 HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+add_definitions(-DGIT_HASH="${GIT_COMMIT_HASH}")
+
 add_library(util INTERFACE src/util/io.h src/util/macro.h src/util/hash.h src/util/bit.h src/util/string.h)
 
 set_target_properties(util PROPERTIES LINKER_LANGUAGE CXX)
