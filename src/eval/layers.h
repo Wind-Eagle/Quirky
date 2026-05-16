@@ -5,8 +5,6 @@
 // https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md
 // https://github.com/jhonnold/berserk/blob/main/src/nn/evaluate.c
 
-// Compilation without avx2 is currently not supported
-
 #include <immintrin.h>
 
 #include <array>

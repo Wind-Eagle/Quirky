@@ -1,13 +1,10 @@
 #ifndef QUIRKY_SRC_UTIL_BIT_H
 #define QUIRKY_SRC_UTIL_BIT_H
 
-#ifndef NO_AVX2
 #include <immintrin.h>
-#endif
 
 #include <concepts>
 #include <cstdint>
-#include <limits>
 
 #include "macro.h"
 
@@ -78,7 +75,6 @@ inline constexpr uint64_t ScatterByte(const uint8_t num) {
     return ans;
 }
 
-#ifndef NO_AVX2
 inline uint64_t DepositBits(const uint64_t submask, const uint64_t mask) {
     return _pdep_u64(submask, mask);
 }
@@ -86,34 +82,6 @@ inline uint64_t DepositBits(const uint64_t submask, const uint64_t mask) {
 inline uint64_t ExtractBits(const uint64_t mask, const uint64_t submask) {
     return _pext_u64(mask, submask);
 }
-#else
-inline uint64_t DepositBits(uint64_t src, uint64_t mask) {
-    uint64_t result = 0;
-    int src_pos = 0;
-    while (mask) {
-        const uint64_t lsb = mask & -mask;
-        if (src & (1ULL << src_pos)) {
-            result |= lsb;
-        }
-        src_pos++;
-        mask ^= lsb;
-    }
-    return result;
-}
-inline uint64_t ExtractBits(uint64_t src, uint64_t mask) {
-    uint64_t result = 0;
-    int res_pos = 0;
-    while (mask) {
-        const uint64_t lsb = mask & -mask;
-        if (src & lsb) {
-            result |= (1ULL << res_pos);
-        }
-        res_pos++;
-        mask ^= lsb;
-    }
-    return result;
-}
-#endif
 
 }  // namespace q_util
 
