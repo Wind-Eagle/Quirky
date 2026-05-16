@@ -3,6 +3,18 @@
 
 #include "reader.h"
 
-void WriteBoardsToCSV(const PositionSet& position_set, std::ofstream& train_out, std::ofstream& test_out, float ratio);
+struct OutputSources {
+    std::vector<std::ofstream> preliminary_train_outs;
+    std::ofstream preliminary_test_out;
+    std::vector<std::ofstream> train_outs;
+    std::ofstream test_out;
+
+    float test_ratio;
+    float preliminary_ratio;
+    size_t preliminary_chunks_count;
+    size_t chunks_count;
+};
+
+void WriteBoardsToCSV(const PositionSet& position_set, OutputSources& output_sources);
 
 #endif  // QUIRKY_TOOLS_EVAL_MODEL_SAMPLER_WRITER_H

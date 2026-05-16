@@ -1,8 +1,8 @@
 #include "board_manipulation.h"
 
+#include "attack.h"
 #include "core/board/hash.h"
 #include "core/util.h"
-#include "attack.h"
 #include "move.h"
 
 namespace q_core {

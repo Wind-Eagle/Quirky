@@ -2,9 +2,9 @@
 
 #include <string_view>
 
-#include "util/string.h"
 #include "interactor.h"
 #include "search/searcher/searcher.h"
+#include "util/string.h"
 
 namespace q_api {
 
@@ -114,7 +114,8 @@ uci_command_t ParseUciCommand(const std::string_view& command) {
                     return UciUnparsedCommand{.parse_error = "Expected valid argument as time"};
                 }
                 int64_t arg = std::stoll(args[i + 1]);
-                arg = std::max(arg, static_cast<int64_t>(0));  // Special fix for CCRL negative time issues
+                arg = std::max(
+                    arg, static_cast<int64_t>(0));  // Special fix for CCRL negative time issues
                 if (args[i] == "wtime") {
                     time_control.white_time.time = arg;
                 } else if (args[i] == "btime") {

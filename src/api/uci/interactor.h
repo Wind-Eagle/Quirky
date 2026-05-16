@@ -5,9 +5,9 @@
 #include <variant>
 #include <vector>
 
+#include "core/board/board.h"
 #include "search/control/time.h"
 #include "search/searcher/launcher.h"
-#include "util/error.h"
 
 namespace q_api {
 
@@ -43,14 +43,14 @@ struct UciReadyResponse {};
 struct UciEmptyResponse {};
 struct UciErrorResponse {
     std::string error_message;
-    std::optional<QuirkyError> fatal_error;
+    bool is_fatal;
 };
 
 using uci_response_t =
     std::variant<UciInitResponse, UciReadyResponse, UciEmptyResponse, UciErrorResponse>;
 
 struct UciContext {
-    q_search::Position position;
+    q_core::Board board;
     std::vector<q_core::Move> moves;
     q_search::SearchLauncher launcher;
     bool should_stop;

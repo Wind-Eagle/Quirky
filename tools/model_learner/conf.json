@@ -1,0 +1,63 @@
+{
+    "datasets": {
+        "preliminary": {
+            "directory": ".",
+            "train_chunk_prefix": "preliminary_train_chunk",
+            "test_prefix": "preliminary_test"
+        },
+        "full": {
+            "directory": ".",
+            "train_chunk_prefix": "train_chunk",
+            "test_prefix": "test"
+        }
+    },
+    "model": {
+        "feature_layer_size": 512,
+        "weight_scale": 512,
+        "precise_weight_scale": 16
+    },
+    "training": {
+        "stages": [
+            {
+                "batch_size": 16384,
+                "checkpoint": "first_stage_checkpoint.pt",
+                "dataset": "preliminary",
+                "scheduler": {
+                    "lr_start": 0.001,
+                    "lr_steps": 2,
+                    "type": "ReduceLROnPlateau",
+                    "step": 0.464158883361,
+                    "patience": 7
+                },
+                "weight_decay": 1.75e-6
+            },
+            {
+                "batch_size": 16384,
+                "checkpoint": "second_stage_checkpoint.pt",
+                "dataset": "full",
+                "scheduler": {
+                    "lr_start": 0.000215443469,
+                    "lr_steps": 1,
+                    "type": "ReduceLROnPlateau",
+                    "step": 0.464158883361,
+                    "patience": 7
+                },
+                "weight_decay": 7.5e-7
+            },
+            {
+                "batch_size": 16384,
+                "checkpoint": "third_stage_checkpoint.pt",
+                "dataset": "full",
+                "scheduler": {
+                    "lr_start": 0.0001,
+                    "lr_steps": 7,
+                    "type": "ReduceLROnPlateau",
+                    "step": 0.464158883361,
+                    "patience": 2
+                },
+                "weight_decay": 7.5e-7
+
+            }
+        ]
+    }
+}

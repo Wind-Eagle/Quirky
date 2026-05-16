@@ -1,7 +1,5 @@
 #include "logger.h"
 
-#include <optional>
-
 #include "interactor.h"
 #include "util/io.h"
 
@@ -12,9 +10,9 @@ void LogStart() {
 }
 
 void LogUciResponseInner(const UciInitResponse&) {
-    q_util::Print("id name Quirky 2.1");
+    q_util::Print("id name Quirky 3.0");
     q_util::Print("id author Wind-Eagle");
-    q_util::Print("option name Hash type spin default 8 min 1 max 1024");
+    q_util::Print("option name Hash type spin default 32 min 1 max 1024");
     q_util::Print("option name MultiPV type spin default 1 min 1 max 256");
     q_util::Print("uciok");
 }
@@ -24,9 +22,10 @@ void LogUciResponseInner(const UciReadyResponse&) { q_util::Print("readyok"); }
 void LogUciResponseInner(const UciEmptyResponse&) {}
 
 void LogUciResponseInner(const UciErrorResponse& response) {
-    q_util::PrintError(response.error_message);
-    if (response.fatal_error != std::nullopt) {
-        q_util::ExitWithError(*response.fatal_error);
+    if (!response.is_fatal) {
+        q_util::PrintError(response.error_message);
+    } else {
+        q_util::ExitWithError(response.error_message);
     }
 }
 

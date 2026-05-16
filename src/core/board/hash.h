@@ -3,9 +3,9 @@
 
 #include <array>
 
+#include "types.h"
 #include "util/hash.h"
 #include "util/macro.h"
-#include "types.h"
 
 namespace {
 

@@ -12,7 +12,7 @@ Position ReadPosition(std::ifstream& in) {
     const auto res = q_util::ReadLine(in);
     const auto parts = q_util::SplitString(*res, ',');
     const auto& fen = parts[0];
-    float target = std::stod(parts.back()) * 2 -1;
+    float target = std::stod(parts.back()) * 2 - 1;
     q_core::Board board;
     board.MakeFromFEN(fen);
     if (board.move_side == q_core::Color::Black) {
