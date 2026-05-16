@@ -7,6 +7,7 @@
 #include "core/board/board.h"
 #include "core/moves/board_manipulation.h"
 #include "eval/evaluator.h"
+#include "eval/score.h"
 
 namespace q_search {
 
@@ -39,9 +40,27 @@ struct Position {
         bool HasNonPawns(q_core::Color c) const;
         bool IsCheck() const;
 
-        q_eval::score_t GetEvaluatorScore() const;
+        void PrefetchEvaluatorCache();
+        q_eval::score_t GetEvaluatorScore();
+
     private:
+      struct EvaluatorCache {
+        struct Entry {
+            uint32_t hash_first;
+            uint16_t hash_second;
+            q_eval::score_t score = q_eval::SCORE_UNKNOWN;
+        };
+
+        void Store(const q_core::Board& board, q_eval::score_t score);
+        q_eval::score_t Load(const q_core::Board& board) const;
+        void Prefetch(const q_core::Board& board);
+
+        static constexpr uint8_t EVALUATOR_CACHE_SIZE_LOG = 16;
+        std::array<Entry, (1 << EVALUATOR_CACHE_SIZE_LOG)> data{};
+      };
+
       void ConstructPosition();
+      EvaluatorCache cache_;
       alignas(64) std::array<q_eval::Evaluator::State*, MAX_BUFFER_SIZE> buffer_;
       [[maybe_unused]]size_t buffer_head_ = 0;
 };
