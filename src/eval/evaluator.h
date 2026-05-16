@@ -2,8 +2,8 @@
 #define QUIRKY_SRC_EVAL_EVAL_H
 
 #include "core/board/board.h"
-#include "core/moves/move.h"
 #include "core/moves/board_manipulation.h"
+#include "core/moves/move.h"
 #include "eval/score.h"
 #include "model.h"
 
@@ -29,7 +29,7 @@ class Evaluator {
 
     void StartTrackingBoard(const q_core::Board& board, State* state);
     void UpdateOnMove(const q_core::Board& board, q_core::Move move,
-                             const q_core::MakeMoveInfo& move_info, State* state);
+                      const q_core::MakeMoveInfo& move_info, State* state);
     void SetState(State* state);
 
   private:

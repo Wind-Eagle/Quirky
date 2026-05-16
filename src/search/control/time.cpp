@@ -19,11 +19,13 @@ time_t SearchTimer::GetSoftTime(const GameTimeControl& time_control) const {
     const PlayerTime player_time =
         (position_.board.move_side == q_core::Color::White ? time_control.white_time
                                                            : time_control.black_time);
-    
-    const size_t moves_to_go = time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO ? time_control.moves_to_go : 50;
-    const time_t time_left = std::max(
-        static_cast<time_t>(1), 
-        player_time.time + player_time.increment * (moves_to_go - 1) - std::min(static_cast<time_t>(25), player_time.time / 2) * (moves_to_go + 2));
+
+    const size_t moves_to_go =
+        time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO ? time_control.moves_to_go : 50;
+    const time_t time_left =
+        std::max(static_cast<time_t>(1),
+                 player_time.time + player_time.increment * (moves_to_go - 1) -
+                     std::min(static_cast<time_t>(25), player_time.time / 2) * (moves_to_go + 2));
 
     time_t soft_time = 0;
     if (time_control.moves_to_go != GameTimeControl::NO_MOVES_TO_GO) {

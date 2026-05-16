@@ -1,8 +1,8 @@
 #include "attack.h"
 
-#include "core/util.h"
 #include "core/board/types.h"
 #include "core/moves/move.h"
+#include "core/util.h"
 #include "magic.h"
 #include "util/bit.h"
 

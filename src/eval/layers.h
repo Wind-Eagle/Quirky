@@ -36,7 +36,8 @@ struct ModelReader {
     T ReadWeight(int scale) {
         float weight = MODEL_WEIGHTS[index_++];
         int64_t final_weight = std::round(weight * scale);
-        if (final_weight > static_cast<int64_t>(std::numeric_limits<T>::max()) || final_weight < static_cast<int64_t>(std::numeric_limits<T>::min())) {
+        if (final_weight > static_cast<int64_t>(std::numeric_limits<T>::max()) ||
+            final_weight < static_cast<int64_t>(std::numeric_limits<T>::min())) {
             q_util::ExitWithError("Model weights are out of range");
         }
         return final_weight;
@@ -52,7 +53,8 @@ struct FeatureLayer {
     void Initialize(ModelReader& reader) {
         for (size_t i = 0; i < INPUT_SIZE; i++) {
             for (size_t j = 0; j < OUTPUT_SIZE / 2; j++) {
-                weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * (1 << FEATURE_ADDITIONAL_PRECISION));
+                weights_[i][j] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE *
+                                                            (1 << FEATURE_ADDITIONAL_PRECISION));
                 const q_core::cell_t cell = i / q_core::BOARD_SIZE + 1;
                 const q_core::coord_t coord = i % q_core::BOARD_SIZE;
                 size_t pos =
@@ -62,7 +64,8 @@ struct FeatureLayer {
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE / 2; i++) {
-            biases_[i] = reader.ReadWeight<int16_t>(ACTIVATION_SCALE * (1 << FEATURE_ADDITIONAL_PRECISION));
+            biases_[i] =
+                reader.ReadWeight<int16_t>(ACTIVATION_SCALE * (1 << FEATURE_ADDITIONAL_PRECISION));
             biases_[i + OUTPUT_SIZE / 2] = biases_[i];
         }
     }
@@ -88,7 +91,7 @@ struct FeatureLayer {
         __m256i regs[16];
         for (size_t c = 0; c < OUTPUT_SIZE / 256; c++) {
             const size_t unroll_offset = c * 256;
-            
+
             __m256i* inputs = (__m256i*)&input[unroll_offset];
             for (size_t i = 0; i < 16; i++) {
                 regs[i] = _mm256_load_si256(&inputs[i]);
@@ -109,7 +112,7 @@ struct FeatureLayer {
         __m256i regs[16];
         for (size_t c = 0; c < OUTPUT_SIZE / 256; c++) {
             const size_t unroll_offset = c * 256;
-            
+
             __m256i* inputs = (__m256i*)&input[unroll_offset];
             for (size_t i = 0; i < 16; i++) {
                 regs[i] = _mm256_load_si256(&inputs[i]);
@@ -131,11 +134,12 @@ struct FeatureLayer {
         }
     }
 
-    void SubSubAdd(int16_t* __restrict input, size_t position_first, size_t position_second, size_t position_third) {
+    void SubSubAdd(int16_t* __restrict input, size_t position_first, size_t position_second,
+                   size_t position_third) {
         __m256i regs[16];
         for (size_t c = 0; c < OUTPUT_SIZE / 256; c++) {
             const size_t unroll_offset = c * 256;
-            
+
             __m256i* inputs = (__m256i*)&input[unroll_offset];
             for (size_t i = 0; i < 16; i++) {
                 regs[i] = _mm256_load_si256(&inputs[i]);
@@ -178,7 +182,8 @@ struct LinearLayer {
             }
         }
         for (size_t i = 0; i < OUTPUT_SIZE; i++) {
-            biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE * (1 << LINEAR_ADDITIONAL_PRECISION));
+            biases_[i] = reader.ReadWeight<int32_t>(ACTIVATION_SCALE * WEIGHT_SCALE *
+                                                    (1 << LINEAR_ADDITIONAL_PRECISION));
         }
         for (size_t i = 0; i < 256; i++) {
             for (size_t j = 0; j < 8; j++) {
@@ -409,14 +414,15 @@ inline void ClippedReLU16(int size, int8_t* output, const int16_t* input) {
     const int control = 0b11011000;
 
     for (int i = 0; i < num_out_chunks; ++i) {
-        const __m256i in0 =
-            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 0) * IN_REGISTER_WIDTH]), FEATURE_ADDITIONAL_PRECISION);
-        const __m256i in1 =
-            _mm256_srai_epi16(_mm256_load_si256((const __m256i*)&input[(i * 2 + 1) * IN_REGISTER_WIDTH]), FEATURE_ADDITIONAL_PRECISION);
+        const __m256i in0 = _mm256_srai_epi16(
+            _mm256_load_si256((const __m256i*)&input[(i * 2 + 0) * IN_REGISTER_WIDTH]),
+            FEATURE_ADDITIONAL_PRECISION);
+        const __m256i in1 = _mm256_srai_epi16(
+            _mm256_load_si256((const __m256i*)&input[(i * 2 + 1) * IN_REGISTER_WIDTH]),
+            FEATURE_ADDITIONAL_PRECISION);
 
         const __m256i result =
             _mm256_permute4x64_epi64(_mm256_max_epi8(_mm256_packs_epi16(in0, in1), zero), control);
-
 
         _mm256_store_si256((__m256i*)&output[i * OUT_REGISTER_WIDTH], result);
     }

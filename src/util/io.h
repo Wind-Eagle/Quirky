@@ -5,11 +5,9 @@
 #include <mutex>
 #include <optional>
 
-#include "error.h"
-
 namespace {
 
- std::mutex print_mutex;
+std::mutex print_mutex;
 
 inline void PrintToStream(std::ostream& stream) { stream << std::endl; }
 

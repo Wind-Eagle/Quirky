@@ -1,9 +1,8 @@
 #ifndef QUIRKY_SRC_EVAL_SCORE_H
 #define QUIRKY_SRC_EVAL_SCORE_H
 
-#include "util/math.h"
-
 #include <cstdint>
+#include <cstdlib>
 
 namespace q_eval {
 
@@ -20,7 +19,7 @@ constexpr score_t SCORE_ALMOST_MATE = -25000;
 constexpr stage_t STAGE_MAX = 24;
 
 inline constexpr bool IsScoreMate(const score_t score) {
-    return q_util::Abs(score) > -SCORE_ALMOST_MATE;
+    return std::abs(score) > -SCORE_ALMOST_MATE;
 }
 
 }  // namespace q_eval

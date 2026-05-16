@@ -1,4 +1,5 @@
 #include "transposition_table.h"
+
 #include "core/moves/move.h"
 
 namespace q_search {
@@ -27,7 +28,9 @@ void TranspositionTable::Store(TranspositionTable::Entry& old_entry, const q_cor
     if (!q_core::IsMoveNull(move) || old_entry.hash_low != value_hash) {
         old_entry.move = q_core::GetCompressedMove(move);
     }
-    if (node_type == NodeType::ExactValue || old_entry.hash_low != value_hash || depth + 4 + (is_pv ? 2 : 0) > old_entry.depth || old_entry.info.GetGeneration() != generation_) {
+    if (node_type == NodeType::ExactValue || old_entry.hash_low != value_hash ||
+        depth + 4 + (is_pv ? 2 : 0) > old_entry.depth ||
+        old_entry.info.GetGeneration() != generation_) {
         old_entry.hash_low = value_hash;
         old_entry.eval_score = eval_score;
         old_entry.score = score;

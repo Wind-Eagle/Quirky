@@ -55,8 +55,7 @@ uci_response_t ProcessUciCommandInner(UciContext& context, const UciPositionComm
 }
 
 uci_response_t ProcessUciCommandInner(UciContext& context, const UciGoCommand& command) {
-    context.launcher.Start(context.board, context.moves, command.time_control,
-                           command.max_depth);
+    context.launcher.Start(context.board, context.moves, command.time_control, command.max_depth);
     return UciEmptyResponse{};
 }
 

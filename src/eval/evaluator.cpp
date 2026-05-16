@@ -2,12 +2,12 @@
 
 #include <array>
 
-#include "core/util.h"
 #include "core/board/board.h"
 #include "core/board/geometry.h"
 #include "core/board/types.h"
 #include "core/moves/board_manipulation.h"
 #include "core/moves/move.h"
+#include "core/util.h"
 #include "eval/score.h"
 #include "model.h"
 #include "util/macro.h"
@@ -52,9 +52,11 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
     switch (move_basic_type) {
         case MoveBasicType::Simple: {
             if (move_info.dst_cell == EMPTY_CELL) {
-                SubAdd(new_model_input, board.cells[move.dst], move.src, board.cells[move.dst], move.dst);
+                SubAdd(new_model_input, board.cells[move.dst], move.src, board.cells[move.dst],
+                       move.dst);
             } else {
-                SubSubAdd(new_model_input, board.cells[move.dst], move.src, move_info.dst_cell, move.dst, board.cells[move.dst], move.dst);
+                SubSubAdd(new_model_input, board.cells[move.dst], move.src, move_info.dst_cell,
+                          move.dst, board.cells[move.dst], move.dst);
             }
             break;
         }
@@ -78,11 +80,15 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
             const cell_t king = MakeCell(move_side, Piece::King);
             const cell_t rook = MakeCell(move_side, Piece::Rook);
             if (GetCastlingSide(move) == CastlingSide::Kingside) {
-                SubAdd(new_model_input, king, king_initial_position, king, king_initial_position + 2);
-                SubAdd(new_model_input, rook, king_initial_position + 3, rook, king_initial_position + 1);
+                SubAdd(new_model_input, king, king_initial_position, king,
+                       king_initial_position + 2);
+                SubAdd(new_model_input, rook, king_initial_position + 3, rook,
+                       king_initial_position + 1);
             } else {
-                SubAdd(new_model_input, king, king_initial_position, king, king_initial_position - 2);
-                SubAdd(new_model_input, rook, king_initial_position - 4, rook, king_initial_position - 1);
+                SubAdd(new_model_input, king, king_initial_position, king,
+                       king_initial_position - 2);
+                SubAdd(new_model_input, rook, king_initial_position - 4, rook,
+                       king_initial_position - 1);
             }
             break;
         }
@@ -95,7 +101,8 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
             if (move_info.dst_cell == EMPTY_CELL) {
                 SubAdd(new_model_input, pawn, move.src, promotion_cell, move.dst);
             } else {
-                SubSubAdd(new_model_input, pawn, move.src, move_info.dst_cell, move.dst, promotion_cell, move.dst);
+                SubSubAdd(new_model_input, pawn, move.src, move_info.dst_cell, move.dst,
+                          promotion_cell, move.dst);
             }
             break;
         }
@@ -104,8 +111,6 @@ void Evaluator::UpdateOnMove(const q_core::Board& board, q_core::Move move,
     }
 }
 
-void Evaluator::SetState(State* state) {
-    state_ = state;
-}
+void Evaluator::SetState(State* state) { state_ = state; }
 
 }  // namespace q_eval

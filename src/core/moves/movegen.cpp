@@ -1,12 +1,12 @@
 #include "movegen.h"
 
-#include "util/bit.h"
 #include "core/board/geometry.h"
-#include "core/util.h"
 #include "core/board/types.h"
 #include "core/moves/attack.h"
+#include "core/util.h"
 #include "magic.h"
 #include "move.h"
+#include "util/bit.h"
 
 namespace q_core {
 

@@ -3,12 +3,12 @@
 #include <cstring>
 #include <vector>
 
-#include "util/bit.h"
-#include "util/string.h"
 #include "core/util.h"
 #include "geometry.h"
 #include "hash.h"
 #include "types.h"
+#include "util/bit.h"
+#include "util/string.h"
 
 namespace q_core {
 

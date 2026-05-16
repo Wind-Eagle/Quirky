@@ -3,13 +3,13 @@
 
 #include <vector>
 
+#include "core/moves/move.h"
 #include "search/control/control.h"
 #include "search/control/stat.h"
 #include "search/position/move_picker.h"
 #include "search/position/position.h"
 #include "search/position/repetition_table.h"
 #include "search/position/transposition_table.h"
-#include "core/moves/move.h"
 
 namespace q_search {
 

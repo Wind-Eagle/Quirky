@@ -10,8 +10,7 @@ void PrintHelp() {
     q_util::Print(
         "Quirky eval model sampler is a tool that can transform labeled fens set"
         "into a dataset for Quirky eval model learner. Usage:\n",
-        "--help: print help\n",
-        "--input [path to file] - file with raw dataset\n",
+        "--help: print help\n", "--input [path to file] - file with raw dataset\n",
         "--output [path to directory] - directory with datasets\n",
         "--test-ratio [float] - ratio of test dataset elements\n"
         "--preliminary-ratio [float] - ratio of preliminary dataset elements\n"
@@ -39,14 +38,21 @@ void Make(const SamplerArguments& args) {
     output_sources.chunks_count = args.chunks_count;
 
     for (size_t i = 0; i < args.preliminary_chunks_count; i++) {
-         output_sources.preliminary_train_outs.emplace_back(std::string(args.out_dir) + "/preliminary_train_chunk_" + std::to_string(i + 1) + ".qds", std::ios::binary);
+        output_sources.preliminary_train_outs.emplace_back(std::string(args.out_dir) +
+                                                               "/preliminary_train_chunk_" +
+                                                               std::to_string(i + 1) + ".qds",
+                                                           std::ios::binary);
     }
-    output_sources.preliminary_test_out = std::ofstream(std::string(args.out_dir) + "/preliminary_test.qds", std::ios::binary);
+    output_sources.preliminary_test_out =
+        std::ofstream(std::string(args.out_dir) + "/preliminary_test.qds", std::ios::binary);
 
     for (size_t i = 0; i < args.chunks_count; i++) {
-         output_sources.train_outs.emplace_back(std::string(args.out_dir) + "/train_chunk_" + std::to_string(i + 1) + ".qds", std::ios::binary);
+        output_sources.train_outs.emplace_back(
+            std::string(args.out_dir) + "/train_chunk_" + std::to_string(i + 1) + ".qds",
+            std::ios::binary);
     }
-    output_sources.test_out = std::ofstream(std::string(args.out_dir) + "/test.qds", std::ios::binary);
+    output_sources.test_out =
+        std::ofstream(std::string(args.out_dir) + "/test.qds", std::ios::binary);
     while (true) {
         PositionSet game_set = ReadPositions(in, (1 << 20));
         if (game_set.positions.empty()) {
@@ -54,7 +60,7 @@ void Make(const SamplerArguments& args) {
         }
         std::string out_file_name = std::to_string(pos++);
         if (out_file_name.size() == 1) {
-            out_file_name .insert(out_file_name.begin(), '0');
+            out_file_name.insert(out_file_name.begin(), '0');
         }
         WriteBoardsToCSV(game_set, output_sources);
     }
@@ -83,8 +89,7 @@ int main(int argc, char* argv[]) {
             sampler_arguments.preliminary_chunks_count = std::stoi(argv[i + 1]);
         } else if (std::string(argv[i]) == "--chunks-count") {
             sampler_arguments.chunks_count = std::stoi(argv[i + 1]);
-        }
-        else {
+        } else {
             q_util::ExitWithError("Unexpected argument");
         }
     }

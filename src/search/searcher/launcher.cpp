@@ -3,19 +3,19 @@
 #include <string>
 #include <utility>
 
-#include "core/moves/board_manipulation.h"
-#include "search/position/position.h"
-#include "util/string.h"
 #include "core/board/board.h"
+#include "core/moves/board_manipulation.h"
 #include "core/moves/move.h"
 #include "core/moves/movegen.h"
 #include "eval/score.h"
 #include "search/control/control.h"
 #include "search/control/stat.h"
+#include "search/position/position.h"
 #include "search/position/transposition_table.h"
 #include "searcher.h"
 #include "util/bit.h"
 #include "util/io.h"
+#include "util/string.h"
 
 namespace q_search {
 
@@ -80,9 +80,8 @@ void PrintSearchResult(const SearchResult& result, const SearchStat& stat, size_
         depth_string += " multipv " + std::to_string(result.index + 1);
     }
 
-    q_util::Print(depth_string, "time", time_since_start, score_str,
-                  "nodes", stat.GetNodesCount(), "nps", GetNPS(stat, time_since_start),
-                  !pv_str.empty() ? "pv " + pv_str : "");
+    q_util::Print(depth_string, "time", time_since_start, score_str, "nodes", stat.GetNodesCount(),
+                  "nps", GetNPS(stat, time_since_start), !pv_str.empty() ? "pv " + pv_str : "");
 }
 
 void PrintRootMove(const RootMove& root_move) {
@@ -101,8 +100,7 @@ void PrintBestMove(const q_core::Move move) {
 
 SearchLauncher::~SearchLauncher() { Join(); }
 
-void SearchLauncher::StartMainThread(q_core::Board board,
-                                     const std::vector<q_core::Move>& moves,
+void SearchLauncher::StartMainThread(q_core::Board board, const std::vector<q_core::Move>& moves,
                                      time_control_t time_control, depth_t max_depth) {
     RepetitionTable rt{GetRTByteSizeLog(moves.size())};
     ProcessPositionMoves(board, moves, rt);
@@ -226,8 +224,6 @@ void SearchLauncher::ChangeTTSize(size_t new_tt_size_mb) {
     tt_ = TranspositionTable(20 + q_util::GetHighestBit(new_tt_size_mb));
 }
 
-void SearchLauncher::ChangePVCount(size_t new_pv_count) {
-    pv_count_ = new_pv_count;
-}
+void SearchLauncher::ChangePVCount(size_t new_pv_count) { pv_count_ = new_pv_count; }
 
 }  // namespace q_search
