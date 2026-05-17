@@ -18,7 +18,6 @@ class Searcher {
     Searcher(TranspositionTable& tt, RepetitionTable& rt, const q_core::Board& board,
              SearchControl& control, SearchStat& stat);
     void Run(depth_t max_depth, size_t pv_count);
-    const Position& GetPosition() const;
 
     static constexpr depth_t MAX_DEPTH = (Position::MAX_BUFFER_SIZE - 1) / 2;
 
