@@ -17,7 +17,7 @@ time_t SearchTimer::GetSoftTime(const InfiniteTimeControl&) const { return TIME_
 
 time_t SearchTimer::GetSoftTime(const GameTimeControl& time_control) const {
     const PlayerTime player_time =
-        (position_.board.move_side == q_core::Color::White ? time_control.white_time
+        (board_.move_side == q_core::Color::White ? time_control.white_time
                                                            : time_control.black_time);
 
     const size_t moves_to_go =
@@ -46,7 +46,7 @@ time_t SearchTimer::GetMaxTime(const InfiniteTimeControl&, time_t soft_time) con
 
 time_t SearchTimer::GetMaxTime(const GameTimeControl& time_control, time_t) const {
     const PlayerTime player_time =
-        (position_.board.move_side == q_core::Color::White ? time_control.white_time
+        (board_.move_side == q_core::Color::White ? time_control.white_time
                                                            : time_control.black_time);
     return std::min(player_time.time / 2.0 + player_time.increment, player_time.time * 0.8);
 }
@@ -75,8 +75,8 @@ void SearchTimer::UpdateOnNextDepth(const GameTimeControl&) {
     }
 }
 
-SearchTimer::SearchTimer(time_control_t time_control, const Position& position, SearchStat& stat)
-    : time_control_(time_control), position_(position), stat_(stat) {
+SearchTimer::SearchTimer(time_control_t time_control, const q_core::Board& board, SearchStat& stat)
+    : time_control_(time_control), board_(board), stat_(stat) {
     start_time_ = std::chrono::steady_clock::now();
 }
 

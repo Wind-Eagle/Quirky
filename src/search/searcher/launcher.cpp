@@ -137,7 +137,7 @@ void SearchLauncher::StartMainThread(q_core::Board board, const std::vector<q_co
 
     SearchStat stat;
     Searcher searcher(tt_, rt, board, control_, stat);
-    SearchTimer timer(time_control, searcher.GetPosition(), stat);
+    SearchTimer timer(time_control, board, stat);
     std::thread search_thread = std::thread([&]() { searcher.Run(max_depth, real_pv_count); });
 
     SearchResult final_result{};

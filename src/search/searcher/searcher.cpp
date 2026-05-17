@@ -26,8 +26,6 @@ Searcher::Searcher(TranspositionTable& tt, RepetitionTable& rt, const q_core::Bo
     global_context_.nmp_min_idepth = 0;
 }
 
-const Position& Searcher::GetPosition() const { return position_; }
-
 std::vector<q_core::Move> Searcher::GetPV(q_core::Move best_move) {
     if (q_core::IsMoveNull(best_move)) {
         return {};
