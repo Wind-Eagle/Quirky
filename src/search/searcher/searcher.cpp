@@ -272,11 +272,11 @@ std::array<std::array<depth_t, 64>, 32> GetLMRDepthReduction() {
     std::array<std::array<depth_t, 64>, 32> res{};
     for (size_t depth = 0; depth < 32; depth++) {
         for (size_t move = 0; move < 64; move++) {
-            if (depth < 3 || move < 3) {
+            if (depth < 2 || move < 2) {
                 res[depth][move] = 1;
                 continue;
             }
-            depth_t reduction = std::log(depth) * std::log(std::log(move)) + 2;
+            depth_t reduction = std::log(depth) * std::log(move) / 3 + 1;
             res[depth][move] = reduction;
         }
     }
@@ -300,7 +300,7 @@ inline static constexpr depth_t IIR_DEPTH_THRESHOLD = 4;
 
 inline static constexpr int32_t LMP_ADDITIONAL_MOVES = 3;
 
-inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 3;
+inline static constexpr depth_t LMR_DEPTH_THRESHOLD = 2;
 inline static const std::array<std::array<depth_t, 64>, 32> LMR_DEPTH_REDUCTION =
     GetLMRDepthReduction();
 
@@ -494,7 +494,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     MovePicker move_picker(position_, tt_move, global_context_.history_table, history_info);
     q_core::Move best_move = q_core::NULL_MOVE;
     size_t moves_done = 0;
-    size_t history_moves_done = 0;
 
     for (q_core::Move move = move_picker.GetNextMove();
          move_picker.GetStage() != MovePicker::Stage::End; move = move_picker.GetNextMove()) {
@@ -505,6 +504,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
         const StatefulMove cur_move = ConstructStatefulMove(move, position_.board.cells[move.src]);
 
+        [[maybe_unused]]const int move_history = q_core::IsMoveCapture(move) ? global_context_.history_table.GetCaptureScore(position_.board, move) : global_context_.history_table.GetQuietScore(position_.board, move, history_info);
         if (node_type != NodeType::Root && !q_eval::IsScoreMate(alpha) && moves_done > 0 &&
             position_.HasNonPawns(position_.board.move_side)) {
             // Late moves pruning
@@ -548,18 +548,21 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
 
         moves_done++;
-        history_moves_done += move_picker.GetStage() >= MovePicker::Stage::CounterMove ? 1 : 0;
         q_eval::score_t score = q_eval::SCORE_UNKNOWN;
         local_context_[idepth].current_move = cur_move;
 
         // Late move reduction
-        if (move_picker.GetStage() >= MovePicker::Stage::CounterMove &&
-            depth >= LMR_DEPTH_THRESHOLD && moves_done > 1 && !position_.IsCheck()) {
+        if (depth >= LMR_DEPTH_THRESHOLD && moves_done > 1 &&
+            (IsMoveQuiet(move) || node_type == NodeType::Simple) &&
+            (moves_done > 3 || node_type != NodeType::Root) && !position_.IsCheck()) {
             depth_t depth_reduction =
                 LMR_DEPTH_REDUCTION[std::min(depth, static_cast<depth_t>(31))]
-                                   [std::min(static_cast<size_t>(63), history_moves_done)];
-            if (node_type == NodeType::Simple) {
+                                   [std::min(static_cast<size_t>(63), moves_done)];
+            if (move_picker.GetStage() > MovePicker::Stage::CounterMove && node_type == NodeType::Simple) {
                 depth_reduction++;
+            }
+            if (move_picker.GetStage() == MovePicker::Stage::KillerMoves || move_picker.GetStage() == MovePicker::Stage::CounterMove) {
+                depth_reduction -= 2;
             }
 
             depth_reduction = std::min(static_cast<depth_t>(new_depth - 1),
