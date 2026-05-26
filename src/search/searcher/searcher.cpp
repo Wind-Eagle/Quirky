@@ -504,7 +504,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         }
         const StatefulMove cur_move = ConstructStatefulMove(move, position_.board.cells[move.src]);
 
-        [[maybe_unused]]const int move_history = q_core::IsMoveCapture(move) ? global_context_.history_table.GetCaptureScore(position_.board, move) : global_context_.history_table.GetQuietScore(position_.board, move, history_info);
+        const int move_history = q_core::IsMoveCapture(move) ? global_context_.history_table.GetCaptureScore(position_.board, move) : global_context_.history_table.GetQuietScore(position_.board, move, history_info);
         if (node_type != NodeType::Root && !q_eval::IsScoreMate(alpha) && moves_done > 0 &&
             position_.HasNonPawns(position_.board.move_side)) {
             // Late moves pruning
@@ -555,12 +555,19 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         if (depth >= LMR_DEPTH_THRESHOLD && moves_done > 1 &&
             (IsMoveQuiet(move) || node_type == NodeType::Simple) &&
             (moves_done > 3 || node_type != NodeType::Root) && !position_.IsCheck()) {
+
+            // LMR base
             depth_t depth_reduction =
                 LMR_DEPTH_REDUCTION[std::min(depth, static_cast<depth_t>(31))]
                                    [std::min(static_cast<size_t>(63), moves_done)];
+            depth_reduction -= move_history / 8192;
+
+            // LMR reduction
             if (move_picker.GetStage() > MovePicker::Stage::CounterMove && node_type == NodeType::Simple) {
                 depth_reduction++;
             }
+
+            // LMR extension
             if (move_picker.GetStage() == MovePicker::Stage::KillerMoves || move_picker.GetStage() == MovePicker::Stage::CounterMove) {
                 depth_reduction -= 2;
             }
