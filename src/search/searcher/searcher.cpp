@@ -189,7 +189,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
         const q_eval::score_t score = position_.GetEvaluatorScore();
         best_score = score;
         if (best_score >= beta) {
-            return beta;
+            return best_score;
         }
         alpha = std::max(best_score, alpha);
     }
@@ -215,7 +215,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
             if (best_score > alpha) {
                 alpha = best_score;
                 if (best_score >= beta) {
-                    return beta;
+                    return best_score;
                 }
             }
         }
@@ -223,7 +223,7 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
     if (in_check && moves_done == 0) {
         return q_eval::SCORE_ALMOST_MATE;
     }
-    return alpha;
+    return best_score;
 }
 
 q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
