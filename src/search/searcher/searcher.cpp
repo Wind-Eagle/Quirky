@@ -431,7 +431,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         if (depth <= FPR_DEPTH_THRESHOLD && !q_eval::IsScoreMate(beta) &&
             IsMoveNull(local_context_[idepth].skip_move)) {
             if (local_context_[idepth].eval >= beta + FPR_MARGIN[depth]) {
-                return beta;
+                return (static_cast<int>(local_context_[idepth].eval) + beta) / 2;
             }
         }
 
