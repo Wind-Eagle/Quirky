@@ -182,15 +182,18 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
     CHECK_STOP;
     stat_.IncNodesCount();
 
+    q_eval::score_t best_score = q_eval::SCORE_MATE;
     bool in_check = position_.IsCheck();
 
     if (!in_check) {
         const q_eval::score_t score = position_.GetEvaluatorScore();
-        alpha = std::max(alpha, score);
-        if (alpha >= beta) {
+        best_score = score;
+        if (best_score >= beta) {
             return beta;
         }
+        alpha = std::max(best_score, alpha);
     }
+
     QuiescenseMovePicker move_picker(position_, in_check, global_context_.history_table);
     size_t moves_done = 0;
     for (q_core::Move move = move_picker.GetNextMove();
@@ -207,9 +210,14 @@ q_eval::score_t Searcher::QuiescenseSearch(q_eval::score_t alpha, q_eval::score_
         AUTO_MAKE_MOVE(position_, move);
         moves_done++;
         q_eval::score_t new_score = -QuiescenseSearch(-beta, -alpha);
-        alpha = std::max(alpha, new_score);
-        if (alpha >= beta) {
-            return beta;
+        if (new_score > best_score) {
+            best_score = new_score;
+            if (best_score > alpha) {
+                alpha = best_score;
+                if (best_score >= beta) {
+                    return beta;
+                }
+            }
         }
     }
     if (in_check && moves_done == 0) {
@@ -246,19 +254,19 @@ q_eval::score_t AdjustCheckmate(const q_eval::score_t score, depth_t depth) {
 #define SAVE_ROOT_BEST_MOVE \
     if constexpr (node_type == NodeType::Root) global_context_.best_move = best_move;
 
-#define SEND_ROOT_LOWERBOUND                                          \
+#define SEND_ROOT_LOWERBOUND(root_score)                              \
     if (node_type == NodeType::Root && global_context_.pv_count == 1) \
     control_.AddResult(SearchResult{.bound_type = Lower,              \
-                                    .score = std::min(alpha, beta),   \
+                                    .score = root_score,              \
                                     .best_move = best_move,           \
                                     .depth = depth,                   \
                                     .index = 0,                       \
                                     .pv = {}})
 
-#define SEND_ROOT_UPPERBOUND                                          \
+#define SEND_ROOT_UPPERBOUND(root_score)                              \
     if (node_type == NodeType::Root && global_context_.pv_count == 1) \
     control_.AddResult(SearchResult{.bound_type = Upper,              \
-                                    .score = alpha,                   \
+                                    .score = root_score,              \
                                     .best_move = best_move,           \
                                     .depth = depth,                   \
                                     .index = 0,                       \
@@ -332,12 +340,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
     // Performing quiescense search
     if (depth <= 0) {
-        if (alpha >= -q_eval::SCORE_ALMOST_MATE) {
-            return alpha;
-        }
-        if (beta <= q_eval::SCORE_ALMOST_MATE) {
-            return beta;
-        }
         return QuiescenseSearch(alpha, beta);
     }
 
@@ -346,7 +348,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         alpha = std::max(alpha, static_cast<q_eval::score_t>(q_eval::SCORE_MATE + idepth));
         beta = std::min(beta, static_cast<q_eval::score_t>(-(q_eval::SCORE_MATE + idepth + 1)));
         if (alpha >= beta) {
-            return beta;
+            return alpha;
         }
     }
 
@@ -395,8 +397,10 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
         tt_move = q_core::GetDecompressedMove(tt_entry->move);
         tt_pv |= tt_entry->info.IsPV();
         const bool is_cutoff_allowed =
-            (node_type == NodeType::Simple) & (tt_entry->depth >= depth) &
-            (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT);
+            (node_type == NodeType::Simple) &&
+            (tt_entry->depth >= depth) &&
+            (position_.board.fifty_rule_move_count < FIFTY_MOVES_RULE_HASH_TABLE_LIMIT) &&
+            (tt_entry->score != q_eval::SCORE_UNKNOWN);
         if (is_cutoff_allowed) {
             const q_eval::score_t score = AdjustCheckmate(tt_entry->score, idepth);
             const auto tt_node_type = tt_entry->info.GetNodeType();
@@ -449,14 +453,17 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                     depth / 3 + 3 + std::min(4, (local_context_[idepth].eval - beta) / 150);
                 q_core::coord_t old_en_passant_coord;
                 position_.MakeNullMove(old_en_passant_coord);
-                const q_eval::score_t new_score = -Search<NodeType::Simple>(
+                q_eval::score_t new_score = -Search<NodeType::Simple>(
                     depth - reduction, idepth + 1, -beta, -beta + 1, !is_cut_node);
                 position_.UnmakeNullMove(old_en_passant_coord);
                 CHECK_STOP;
                 if (new_score >= beta) {
+                    if (new_score > -q_eval::SCORE_ALMOST_MATE) {
+                        new_score = beta;
+                    }
                     if (depth < NMP_VERIFICATION_DEPTH_THRESHOLD ||
                         global_context_.nmp_min_idepth > 0) {
-                        return beta;
+                        return new_score;
                     }
                     global_context_.nmp_min_idepth = idepth + (depth - reduction) * 3 / 4;
                     local_context_[idepth].nmp_verification = true;
@@ -466,7 +473,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                     global_context_.nmp_min_idepth = 0;
                     CHECK_STOP;
                     if (verif_score >= beta) {
-                        return beta;
+                        return new_score;
                     }
                 }
             }
@@ -493,6 +500,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
     // Try moves one by one
     MovePicker move_picker(position_, tt_move, global_context_.history_table, history_info);
     q_core::Move best_move = q_core::NULL_MOVE;
+    q_eval::score_t best_score = q_eval::SCORE_MATE;
     size_t moves_done = 0;
 
     for (q_core::Move move = move_picker.GetNextMove();
@@ -532,7 +540,7 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
             if (new_score < singular_beta) {
                 extension++;
             } else if (singular_beta >= beta) {
-                return beta;
+                return singular_beta;
             }
         }
         depth_t new_depth = depth + extension;
@@ -593,38 +601,45 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
 
         ON_ROOT_MOVE_SEARCHED;
 
-        if (score > alpha) {
-            alpha = score;
-            best_move = move;
-            if (depth == 1) {
-                SAVE_ROOT_BEST_MOVE;
+        if (score > best_score) {
+            best_score = score;
+            if (best_score > alpha) {
+                best_move = move;
+                alpha = best_score;
+
+                if (depth == 1) {
+                    SAVE_ROOT_BEST_MOVE;
+                }
+                SEND_ROOT_LOWERBOUND(best_score);
+
+                if (best_score >= beta) {
+                    SAVE_ROOT_BEST_MOVE;
+                    if (IsMoveNull(local_context_[idepth].skip_move)) {
+                        tt_store_move(best_score, best_move);
+                        global_context_.history_table.Update(position_.board, best_move, history_info);
+                    }
+                    return best_score;
+                }
             }
-            SEND_ROOT_LOWERBOUND;
-        }
-        if (alpha >= beta) {
-            SAVE_ROOT_BEST_MOVE;
-            if (IsMoveNull(local_context_[idepth].skip_move)) {
-                tt_store_move(beta, best_move);
-                global_context_.history_table.Update(position_.board, best_move, history_info);
-            }
-            return beta;
         }
     }
     if (moves_done == 0) {
+        if (!IsMoveNull(local_context_[idepth].skip_move)) {
+            return alpha;
+        }
         if (q_core::IsKingInCheck(position_.board)) {
-            return IsMoveNull(local_context_[idepth].skip_move) ? q_eval::SCORE_MATE + idepth
-                                                                : alpha;
+            return q_eval::SCORE_MATE + idepth;
         }
         return 0;
     }
     SAVE_ROOT_BEST_MOVE;
     if (q_core::IsMoveNull(best_move)) {
-        SEND_ROOT_UPPERBOUND;
+        SEND_ROOT_UPPERBOUND(best_score);
     }
     if (IsMoveNull(local_context_[idepth].skip_move)) {
-        tt_store_move(alpha, best_move);
+        tt_store_move(best_score, best_move);
     }
-    return alpha;
+    return best_score;
 }
 
 template q_eval::score_t Searcher::Search<Searcher::NodeType::Root>(depth_t depth, idepth_t idepth,
