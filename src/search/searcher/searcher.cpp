@@ -381,9 +381,6 @@ q_eval::score_t Searcher::Search(depth_t depth, idepth_t idepth, q_eval::score_t
                 tt_node_type = TranspositionTable::NodeType::UpperBound;
             }
             if (score >= initial_beta) {
-                if (!q_eval::IsScoreMate(score)) {
-                    score = initial_beta;
-                }
                 tt_node_type = TranspositionTable::NodeType::LowerBound;
             }
             score = AdjustCheckmate(score, -static_cast<depth_t>(idepth));
