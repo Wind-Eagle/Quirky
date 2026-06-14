@@ -2,6 +2,7 @@
 
 #include "interactor.h"
 #include "util/io.h"
+#include "git_version.h"
 
 namespace q_api {
 

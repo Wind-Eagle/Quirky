@@ -24,19 +24,19 @@ include_directories("${PROJECT_BINARY_DIR}")
 include_directories(src)
 
 add_custom_command(
-    COMMAND ${PROJECT_SOURCE_DIR}/src/incbin/embed.py --input ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne --output ${PROJECT_BINARY_DIR}/model_weights.h
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/incbin/embed.py  ${PROJECT_SOURCE_DIR}/src/incbin/model.qnne
+    COMMAND ${PROJECT_SOURCE_DIR}/incbin/embed.py --input ${PROJECT_SOURCE_DIR}/incbin/model.qnne --output ${PROJECT_BINARY_DIR}/model_weights.h
+    DEPENDS ${PROJECT_SOURCE_DIR}/incbin/embed.py  ${PROJECT_SOURCE_DIR}/incbin/model.qnne
     OUTPUT ${PROJECT_BINARY_DIR}/model_weights.h
 )
 
-execute_process(
-    COMMAND git rev-parse --short=8 HEAD
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_COMMIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
+add_custom_target(generate_git_hash
+    COMMAND "${CMAKE_COMMAND}"
+        -D SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+        -D BINARY_DIR="${CMAKE_BINARY_DIR}"
+        -P "${CMAKE_SOURCE_DIR}/cmake/generate_git_hash.cmake"
+    BYPRODUCTS "${CMAKE_BINARY_DIR}/git_version.h"
+    COMMENT "Generating git commit hash header"
 )
-add_definitions(-DGIT_HASH="${GIT_COMMIT_HASH}")
 
 add_library(util INTERFACE src/util/io.h src/util/macro.h src/util/hash.h src/util/bit.h src/util/string.h)
 
@@ -56,6 +56,7 @@ add_library(api src/api/api.cpp src/api/uci/protocol.cpp src/api/uci/parser.cpp 
 target_link_libraries(api core eval search util)
 
 add_executable(Quirky src/main.cpp)
+add_dependencies(Quirky generate_git_hash)
 target_link_libraries(Quirky core api util eval search)
 
 add_executable(model_sampler
