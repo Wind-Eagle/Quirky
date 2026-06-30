@@ -1,12 +1,12 @@
 {
     "datasets": {
         "preliminary": {
-            "directory": ".",
+            "directory": "..",
             "train_chunk_prefix": "preliminary_train_chunk",
             "test_prefix": "preliminary_test"
         },
         "full": {
-            "directory": ".",
+            "directory": "..",
             "train_chunk_prefix": "train_chunk",
             "test_prefix": "test"
         }
@@ -21,23 +21,10 @@
             {
                 "batch_size": 16384,
                 "checkpoint": "first_stage_checkpoint.pt",
-                "dataset": "preliminary",
-                "scheduler": {
-                    "lr_start": 0.001,
-                    "lr_steps": 2,
-                    "type": "ReduceLROnPlateau",
-                    "step": 0.464158883361,
-                    "patience": 7
-                },
-                "weight_decay": 3.5e-6
-            },
-            {
-                "batch_size": 16384,
-                "checkpoint": "second_stage_checkpoint.pt",
                 "dataset": "full",
                 "scheduler": {
-                    "lr_start": 0.000215443469,
-                    "lr_steps": 2,
+                    "lr_start": 0.001,
+                    "lr_steps": 4,
                     "type": "ReduceLROnPlateau",
                     "step": 0.464158883361,
                     "patience": 7
@@ -46,7 +33,7 @@
             },
             {
                 "batch_size": 16384,
-                "checkpoint": "third_stage_checkpoint.pt",
+                "checkpoint": "second_stage_checkpoint.pt",
                 "dataset": "full",
                 "scheduler": {
                     "lr_start": 0.000046415888,
