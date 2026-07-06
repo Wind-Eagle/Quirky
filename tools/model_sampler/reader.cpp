@@ -2,8 +2,6 @@
 
 #include <fstream>
 
-#include "../../src/core/moves/board_manipulation.h"
-#include "../../src/core/moves/move.h"
 #include "../../src/util/string.h"
 #include "core/board/types.h"
 #include "util/io.h"
@@ -12,7 +10,8 @@ Position ReadPosition(std::ifstream& in) {
     const auto res = q_util::ReadLine(in);
     const auto parts = q_util::SplitString(*res, ',');
     const auto& fen = parts[0];
-    float target = std::stod(parts.back()) * 2 - 1;
+    float target = std::stod(parts[static_cast<int>(parts.size()) - 4]) +
+                   std::stod(parts[static_cast<int>(parts.size()) - 3]) / 2;
     q_core::Board board;
     board.MakeFromFEN(fen);
     if (board.move_side == q_core::Color::Black) {
