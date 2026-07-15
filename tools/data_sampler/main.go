@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"time"
 )
 
 func getEstimatedCount(gamesInBatch int, fensInGame int) int {
@@ -42,9 +43,10 @@ func main() {
 	fmt.Println("Estimated fens: " + fmt.Sprintf("%d", estimatedCount))
 
 	for num := range settings.Batches {
-		fensFile := fmt.Sprintf("%d", num) + ".fen"
-		intermediateFile := fmt.Sprintf("%d", num) + ".txt"
-		datasetFile := fmt.Sprintf("%d", num) + ".raw"
+		runID := time.Now().Format("20060102_150405")
+		fensFile := fmt.Sprintf("%s.fen", runID)
+		intermediateFile := fmt.Sprintf("%s.txt", runID)
+		datasetFile := fmt.Sprintf("%s.raw", runID)
 		fmt.Println("Batch #" + fmt.Sprintf("%d", num) + ", getting FENs")
 		GenFens(fensFile, settings)
 		fmt.Println("Batch #" + fmt.Sprintf("%d", num) + ", filtering FENs")
